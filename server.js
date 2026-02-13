@@ -10,7 +10,9 @@ app.use(cors());
 app.use(express.json());
 
 // CONFIGURAÇÃO DO BANCO (vamos trocar depois pela do Railway)
-
+app.get("/", (req, res) => {
+  res.send("Servidor da Agenda funcionando 🚀");
+});
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
