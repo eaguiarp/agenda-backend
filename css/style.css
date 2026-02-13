@@ -1,0 +1,25 @@
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+
+//==============================
+// mensagem-erro
+//==============================
+#mensagem {
+  margin: 10px 0;
+  padding: 10px;
+  display: none;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.mensagem-erro {
+  background-color: #ffd6d6;
+  color: #7a0000;
+}
+
+.mensagem-sucesso {
+  background-color: #d6ffe0;
+  color: #005f2f;
+}
