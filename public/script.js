@@ -1,7 +1,6 @@
 // ===============================
 // ELEMENTOS DO DOM E INICIALIZAÇÃO
 // ===============================
-
 const form = document.getElementById("form-agendamento");
 const inputData = document.getElementById("data");
 const inputHora = document.getElementById("hora");
@@ -13,6 +12,7 @@ const btnLimpar = document.getElementById("btn-limpar");
 const lista = document.getElementById("lista-agendamentos");
 
 const hoje = new Date().toISOString().split("T")[0];
+const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
 
 document.addEventListener("DOMContentLoaded", () => {
     if (inputData) {
@@ -43,11 +43,6 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        if (data < hoje) {
-            mostrarMensagem("Não é possível agendar em datas passadas.", "erro");
-            return;
-        }
-
         await criarAgendamento(data, hora, placa);
     });
 });
@@ -55,30 +50,6 @@ document.addEventListener("DOMContentLoaded", () => {
 // ===============================
 // REGRAS DE NEGÓCIO E FLUXO
 // ===============================
-
-function carregarHorarios() {
-    const selectHora = document.getElementById('hora');
-    const horarios = [];
-    
-    // Gera horários das 07:00 às 18:00 com intervalo de 20 min
-    for (let h = 7; h <= 18; h++) {
-        for (let m = 0; m < 60; m += 20) {
-            const horaFormatada = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-            horarios.push(horaFormatada);
-        }
-    }
-
-    horarios.forEach(horario => {
-        const option = document.createElement('option');
-        option.value = horario;
-        option.textContent = horario;
-        selectHora.appendChild(option);
-    });
-}
-
-// Chame a função quando o documento carregar
-document.addEventListener('DOMContentLoaded', carregarHorarios);
-
 
 function existeConflitoHorario(novo, lista) {
     return lista.some(a =>
@@ -96,17 +67,10 @@ function existePlacaNoMesmoDia(novo, lista) {
     );
 }
 
-// CORREÇÃO: Função abraçando toda a lógica corretamente
 async function criarAgendamento(data, hora, placa) {
     const agendamentos = await obterAgendamentos();
 
-    const novoAgendamento = {
-        id: Date.now().toString(), // Melhor usar string para IDs
-        data,
-        hora,
-        placa,
-        status: "agendado"
-    };
+    const novoAgendamento = { data, hora, placa };
 
     if (existeConflitoHorario(novoAgendamento, agendamentos)) {
         mostrarMensagem("Já existe agendamento nesse horário.", "erro");
@@ -129,10 +93,8 @@ async function criarAgendamento(data, hora, placa) {
 }
 
 // ===============================
-// BACKEND (Comunicação com API via Fetch)
+// BACKEND (Comunicação API)
 // ===============================
-
-const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
 
 async function obterAgendamentos() {
     try {
@@ -140,49 +102,44 @@ async function obterAgendamentos() {
         if (!resposta.ok) throw new Error("Erro ao buscar dados");
         return await resposta.json();
     } catch (erro) {
-        mostrarMensagem("Erro de conexão com o servidor.", "erro");
         console.error(erro);
-        return []; // Retorna lista vazia para não quebrar a tela
+        return [];
     }
 }
+
 async function salvarAgendamento(agendamento) {
     try {
-        // Atenção: A URL deve ser a do seu Railway
-        const resposta = await fetch("https://agenda-backend-production-5b72.up.railway.app/agendamentos", {
+        const resposta = await fetch(API_URL, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json" // Avisa que estamos mandando JSON
-            },
-            body: JSON.stringify({
-                data: agendamento.data,
-                hora: agendamento.hora,
-                placa: agendamento.placa // Tem que bater com o req.body do server.js
-            })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(agendamento)
         });
-
-        if (!resposta.ok) {
-            throw new Error("Erro ao salvar no servidor");
-        }
-
-        const dadosSalvos = await resposta.json(); // Aqui volta o objeto com o ID!
-        console.log("Salvo com sucesso! ID:", dadosSalvos.id);
-        
-        return true; // Retorna true para o código saber que deu certo
-
+        return resposta.ok;
     } catch (erro) {
-        console.error("Erro na requisição:", erro);
-        mostrarMensagem("Erro ao conectar com o servidor.", "erro");
         return false;
     }
 }
 
-// CORREÇÃO: Função de exclusão adicionada
+async function finalizarAgendamento(id) {
+    try {
+        const resposta = await fetch(`${API_URL}/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "finalizado" })
+        });
+        if (resposta.ok) {
+            renderizarLista();
+            mostrarMensagem("Carga finalizada!", "sucesso");
+        }
+    } catch (erro) {
+        mostrarMensagem("Erro ao finalizar.", "erro");
+    }
+}
+
 async function excluirAgendamento(id) {
     try {
-        await fetch(`${API_URL}/${id}`, {
-            method: "DELETE"
-        });
-        await renderizarLista();
+        await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+        renderizarLista();
         mostrarMensagem("Agendamento excluído.", "sucesso");
     } catch (erro) {
         mostrarMensagem("Erro ao excluir.", "erro");
@@ -190,7 +147,7 @@ async function excluirAgendamento(id) {
 }
 
 // ===============================
-// HORÁRIOS (Lógica de Renderização)
+// HORÁRIOS (Lógica Inteligente)
 // ===============================
 
 async function renderizarOpcoesHorario() {
@@ -200,61 +157,120 @@ async function renderizarOpcoesHorario() {
     }
 
     inputHora.innerHTML = '<option value="">Selecione o horário</option>';
-
     const agendamentos = await obterAgendamentos();
     const dataSelecionada = inputData.value;
     
+    // Ajuste de fuso para pegar o dia da semana correto
+    const dataObj = new Date(dataSelecionada + 'T12:00:00');
+    const diaSemana = dataObj.getDay(); // 0 = Domingo, 1 = Segunda...
+
     const agora = new Date();
-    const horaAtual = agora.getHours();
-    const minutoAtual = agora.getMinutes();
-    const minutosAgora = horaAtual * 60 + minutoAtual;
+    const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
 
-    let minutosAtuais = 0;
-    const fimDoDia = 24 * 60;
+    let horariosDisponiveis = [];
 
-    // CORREÇÃO: Chaves no lugar certo para o While e para o fechamento da função
-    while (minutosAtuais < fimDoDia) {
-        let h = Math.floor(minutosAtuais / 60);
-        let m = minutosAtuais % 60;
-
-        let horarioFormatado = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-        let intervalo = 60;
-
-        if (h >= 0 && h < 3) intervalo = 25;
-        else if (h === 3) intervalo = 60;
-        else if (h >= 4 && h < 11) intervalo = 40;
-        else if (h >= 11 && h < 13) intervalo = 60;
-        else if (h >= 13 && h < 16) intervalo = 40;
-        else if (h >= 17 && h < 20) intervalo = 40;
-        else if (h >= 20) intervalo = 30;
-
-        // Bloqueio inventário
-        if (h === 6 || h === 16) {
-            minutosAtuais += 60;
-            continue;
+    // ==========================================
+    // REGRAS PARA DOMINGO (Plantão Específico)
+    // ==========================================
+    if (diaSemana === 0) {
+        // Manhã: 06:00 até 11:50 (a cada 25 min)
+        for (let m = 360; m <= 710; m += 25) {
+            horariosDisponiveis.push(m);
         }
+        // Tarde: 13:10 até 14:50 (a cada 25 min)
+        for (let m = 790; m <= 890; m += 25) {
+            horariosDisponiveis.push(m);
+        }
+    } 
+    // ==========================================
+    // REGRAS PARA SEGUNDA A SÁBADO
+    // ==========================================
+    else {
+        let minutosAtuais = 0;
+        
+        // Se for Segunda, bloqueia até as 06:59 (inicia às 07:00)
+        if (diaSemana === 1) minutosAtuais = 420; 
 
-        // Bloquear horários passados se for hoje
-        if (dataSelecionada === hoje && minutosAtuais < minutosAgora) {
+        while (minutosAtuais < 1440) {
+            let h = Math.floor(minutosAtuais / 60);
+            let intervalo = 60; // Padrão
+
+            // 00h às 03h (25 min)
+            if (h >= 0 && h < 3) {
+                intervalo = 25;
+            }
+            // 03h às 04h (Apenas 03:30 - Janta)
+            else if (h === 3) {
+                if (minutosAtuais < 210) { minutosAtuais = 210; } // Pula para 03:30
+                intervalo = 90; // Próximo já cai em 05:00? Não, vai ser tratado abaixo
+            }
+            // 04h às 06h (40 min)
+            else if (h >= 4 && h < 6) {
+                intervalo = 40;
+            }
+            // 06h às 07h (INVENTÁRIO)
+            else if (h === 6) { 
+                minutosAtuais = 420; continue; 
+            }
+            // 07h às 11h (40 min)
+            else if (h >= 7 && h < 11) {
+                intervalo = 40;
+            }
+            // 11h às 13h (60 min)
+            else if (h >= 11 && h < 13) {
+                intervalo = 60;
+            }
+            // 13h às 16h (40 min)
+            else if (h >= 13 && h < 16) {
+                intervalo = 40;
+            }
+            // 16h às 17h (INVENTÁRIO)
+            else if (h === 16) { 
+                minutosAtuais = 1020; continue; 
+            }
+            // 17h às 19h (40 min)
+            else if (h >= 17 && h < 19) {
+                intervalo = 40;
+            }
+            // 20h às 24h (30 min)
+            else if (h >= 20) {
+                intervalo = 30;
+            }
+            // Horário de "Ajuste Operacional" entre 19h e 20h (Pula)
+            else if (h === 19) {
+                minutosAtuais = 1200; continue;
+            }
+
+            if (minutosAtuais < 1440) {
+                horariosDisponiveis.push(minutosAtuais);
+            }
             minutosAtuais += intervalo;
-            continue;
         }
+    }
 
-        const jaOcupado = agendamentos.some(a =>
-            a.data === dataSelecionada &&
-            a.hora === horarioFormatado &&
+    // ==========================================
+    // RENDERIZAR NO SELECT (Limpando Ocupados)
+    // ==========================================
+    horariosDisponiveis.forEach(m => {
+        let hr = Math.floor(m / 60).toString().padStart(2, '0');
+        let min = (m % 60).toString().padStart(2, '0');
+        let horarioFormatado = `${hr}:${min}`;
+
+        const ocupado = agendamentos.some(a => 
+            a.data === dataSelecionada && 
+            a.hora === horarioFormatado && 
             a.status !== "finalizado"
         );
+        
+        const passado = (dataSelecionada === hoje && m < minutosAgora);
 
-        if (!jaOcupado) {
+        if (!ocupado && !passado) {
             const option = document.createElement("option");
             option.value = horarioFormatado;
             option.textContent = horarioFormatado;
             inputHora.appendChild(option);
         }
-
-        minutosAtuais += intervalo;
-    }
+    });
 }
 
 // ===============================
@@ -274,8 +290,14 @@ async function renderizarLista() {
         return bateData && batePlaca;
     });
 
+    // Atualiza contadores do dashboard
+    const countTotal = document.getElementById("count-total");
+    const countPendente = document.getElementById("count-pendente");
+    if(countTotal) countTotal.textContent = listaFiltrada.filter(a => a.data === hoje).length;
+    if(countPendente) countPendente.textContent = listaFiltrada.filter(a => a.status === "agendado").length;
+
     if (listaFiltrada.length === 0) {
-        lista.innerHTML = "<li class='vazio'>Nenhum agendamento encontrado para este filtro.</li>";
+        lista.innerHTML = "<li class='vazio'>Nenhum agendamento encontrado.</li>";
         return;
     }
 
@@ -284,46 +306,24 @@ async function renderizarLista() {
     listaFiltrada.forEach(item => {
         const li = document.createElement("li");
         li.className = "item-agendamento";
-        li.textContent = `${item.data} - ${item.hora} - ${item.placa} [${item.status}] `;
+        if (item.status === "finalizado") li.classList.add("finalizado");
 
-        if (item.status === "finalizado") {
-            li.style.opacity = "0.5";
-            li.style.textDecoration = "line-through";
-        }
-
-        const btnFinalizar = document.createElement("button");
-        btnFinalizar.textContent = "Finalizar";
-        btnFinalizar.onclick = () => finalizarAgendamento(item.id);
-        btnFinalizar.disabled = item.status === "finalizado";
-
-        const btnExcluir = document.createElement("button");
-        btnExcluir.textContent = "Excluir";
-        btnExcluir.style.marginLeft = "5px";
-        btnExcluir.onclick = () => {
-            if(confirm("Deseja realmente excluir este agendamento?")) {
-                excluirAgendamento(item.id);
-            }
-        };
-
-        li.appendChild(btnFinalizar);
-        li.appendChild(btnExcluir);
+        li.innerHTML = `
+            <span>${item.data} - ${item.hora} - <strong>${item.placa}</strong></span>
+            <div class="acoes">
+                <button class="btn-fin" onclick="finalizarAgendamento('${item.id}')" ${item.status === "finalizado" ? 'disabled' : ''}>Finalizar</button>
+                <button class="btn-exc" onclick="if(confirm('Excluir?')) excluirAgendamento('${item.id}')">Excluir</button>
+            </div>
+        `;
         lista.appendChild(li);
     });
 }
 
-// ===============================
-// MENSAGEM (Feedback Visual)
-// ===============================
-
 function mostrarMensagem(texto, tipo) {
     const div = document.getElementById("mensagem");
     if (!div) return;
-
     div.textContent = texto;
     div.className = tipo === "erro" ? "mensagem-erro" : "mensagem-sucesso";
     div.style.display = "block";
-
-    setTimeout(() => {
-        div.style.display = "none";
-    }, 3000);
+    setTimeout(() => { div.style.display = "none"; }, 3000);
 }
