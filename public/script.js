@@ -171,9 +171,16 @@ async function renderizarOpcoesHorario() {
     // REGRAS PARA DOMINGO
     // ==========================================
     if (diaSemana === 0) {
-        for (let m = 360; m <= 710; m += 25) horariosDisponiveis.push(m);
-        for (let m = 790; m <= 890; m += 25) horariosDisponiveis.push(m);
-    } 
+        // Manhã: 06:00 até 11:50 (a cada 25 min) -> m <= 710
+        for (let m = 360; m <= 710; m += 25) {
+            horariosDisponiveis.push(m);
+        }
+        // Tarde: 13:10 até 14:00 (a cada 25 min) -> m <= 840
+        // Isso vai gerar: 13:10, 13:35 e 14:00.
+        for (let m = 790; m <= 840; m += 25) {
+            horariosDisponiveis.push(m);
+        }
+    }
     // ==========================================
     // REGRAS PARA OS DEMAIS DIAS
     // ==========================================
