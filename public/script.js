@@ -149,7 +149,6 @@ async function excluirAgendamento(id) {
 // ===============================
 // HORÁRIOS (Lógica Inteligente)
 // ===============================
-
 async function renderizarOpcoesHorario() {
     if (!inputData.value) {
         inputHora.innerHTML = '<option value="">Selecione a data primeiro</option>';
@@ -160,9 +159,8 @@ async function renderizarOpcoesHorario() {
     const agendamentos = await obterAgendamentos();
     const dataSelecionada = inputData.value;
     
-    // Ajuste de fuso para pegar o dia da semana correto
     const dataObj = new Date(dataSelecionada + 'T12:00:00');
-    const diaSemana = dataObj.getDay(); // 0 = Domingo, 1 = Segunda...
+    const diaSemana = dataObj.getDay(); // 0 = Dom, 1 = Seg, 6 = Sáb
 
     const agora = new Date();
     const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
@@ -170,84 +168,63 @@ async function renderizarOpcoesHorario() {
     let horariosDisponiveis = [];
 
     // ==========================================
-    // REGRAS PARA DOMINGO (Plantão Específico)
+    // REGRAS PARA DOMINGO
     // ==========================================
     if (diaSemana === 0) {
-        // Manhã: 06:00 até 11:50 (a cada 25 min)
-        for (let m = 360; m <= 710; m += 25) {
-            horariosDisponiveis.push(m);
-        }
-        // Tarde: 13:10 até 14:50 (a cada 25 min)
-        for (let m = 790; m <= 890; m += 25) {
-            horariosDisponiveis.push(m);
-        }
+        for (let m = 360; m <= 710; m += 25) horariosDisponiveis.push(m);
+        for (let m = 790; m <= 890; m += 25) horariosDisponiveis.push(m);
     } 
     // ==========================================
-    // REGRAS PARA SEGUNDA A SÁBADO
+    // REGRAS PARA OS DEMAIS DIAS
     // ==========================================
     else {
-        let minutosAtuais = 0;
+        let mAtuais = 0;
         
-        // Se for Segunda, bloqueia até as 06:59 (inicia às 07:00)
-        if (diaSemana === 1) minutosAtuais = 420; 
+        // TRAVA SEGUNDA: Começa apenas às 07:00
+        if (diaSemana === 1) mAtuais = 420; 
 
-        while (minutosAtuais < 1440) {
-            let h = Math.floor(minutosAtuais / 60);
-            let intervalo = 60; // Padrão
+        while (mAtuais < 1440) {
+            let h = Math.floor(mAtuais / 60);
+            
+            // TRAVA SÁBADO: Encerra às 16:00 (960 minutos)
+            if (diaSemana === 6 && mAtuais > 960) break;
 
-            // 00h às 03h (25 min)
-            if (h >= 0 && h < 3) {
-                intervalo = 25;
-            }
-            // 03h às 04h (Apenas 03:30 - Janta)
-            else if (h === 3) {
-                if (minutosAtuais < 210) { minutosAtuais = 210; } // Pula para 03:30
-                intervalo = 90; // Próximo já cai em 05:00? Não, vai ser tratado abaixo
-            }
-            // 04h às 06h (40 min)
-            else if (h >= 4 && h < 6) {
-                intervalo = 40;
-            }
-            // 06h às 07h (INVENTÁRIO)
-            else if (h === 6) { 
-                minutosAtuais = 420; continue; 
-            }
-            // 07h às 11h (40 min)
-            else if (h >= 7 && h < 11) {
-                intervalo = 40;
-            }
-            // 11h às 13h (60 min)
-            else if (h >= 11 && h < 13) {
-                intervalo = 60;
-            }
-            // 13h às 16h (40 min)
-            else if (h >= 13 && h < 16) {
-                intervalo = 40;
-            }
-            // 16h às 17h (INVENTÁRIO)
-            else if (h === 16) { 
-                minutosAtuais = 1020; continue; 
-            }
-            // 17h às 19h (40 min)
-            else if (h >= 17 && h < 19) {
-                intervalo = 40;
-            }
-            // 20h às 24h (30 min)
-            else if (h >= 20) {
-                intervalo = 30;
-            }
-            // Horário de "Ajuste Operacional" entre 19h e 20h (Pula)
-            else if (h === 19) {
-                minutosAtuais = 1200; continue;
-            }
+            let intervalo = 60;
 
-            if (minutosAtuais < 1440) {
-                horariosDisponiveis.push(minutosAtuais);
-            }
-            minutosAtuais += intervalo;
+            if (h >= 0 && h < 3) intervalo = 25;
+            else if (h === 3) { if (mAtuais < 210) mAtuais = 210; intervalo = 90; }
+            else if (h >= 4 && h < 6) intervalo = 40;
+            else if (h === 6) { mAtuais = 420; continue; } // Inventário 06h-07h
+            else if (h >= 7 && h < 11) intervalo = 40;
+            else if (h >= 11 && h < 13) intervalo = 60;
+            else if (h >= 13 && h < 16) intervalo = 40;
+            else if (h === 16) { mAtuais = 1020; continue; } // Inventário 16h-17h
+            else if (h >= 17 && h < 19) intervalo = 40;
+            else if (h === 19) { mAtuais = 1200; continue; } // Ajuste 19h-20h
+            else if (h >= 20) intervalo = 30;
+
+            if (mAtuais < 1440) horariosDisponiveis.push(mAtuais);
+            mAtuais += intervalo;
         }
     }
 
+    // Renderização com filtro de ocupados/passados
+    horariosDisponiveis.forEach(m => {
+        let hr = Math.floor(m / 60).toString().padStart(2, '0');
+        let min = (m % 60).toString().padStart(2, '0');
+        let horarioFormatado = `${hr}:${min}`;
+
+        const ocupado = agendamentos.some(a => a.data === dataSelecionada && a.hora === horarioFormatado && a.status !== "finalizado");
+        const passado = (dataSelecionada === hoje && m < minutosAgora);
+
+        if (!ocupado && !passado) {
+            const option = document.createElement("option");
+            option.value = horarioFormatado;
+            option.textContent = horarioFormatado;
+            inputHora.appendChild(option);
+        }
+    });
+}
     // ==========================================
     // RENDERIZAR NO SELECT (Limpando Ocupados)
     // ==========================================
