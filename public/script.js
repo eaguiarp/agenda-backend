@@ -248,7 +248,6 @@ async function renderizarOpcoesHorario() {
             inputHora.appendChild(option);
         }
     });
-}
 
 // ===============================
 // LISTA E DASHBOARD
