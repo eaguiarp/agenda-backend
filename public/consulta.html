@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Agendamento</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { text-align: center; padding: 20px; font-family: sans-serif; }
+        .busca-container { margin: 50px auto; max-width: 400px; }
+        input#placa-busca { 
+            width: 100%; 
+            padding: 15px; 
+            font-size: 1.5rem; 
+            text-align: center; 
+            text-transform: uppercase;
+            border: 2px solid #5a6b5c;
+            border-radius: 8px;
+        }
+        button#btn-buscar { 
+            width: 100%; 
+            padding: 15px; 
+            margin-top: 10px; 
+            font-size: 1.2rem; 
+            background: #5a6b5c; 
+            color: white; 
+            border: none; 
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        #resultado { margin-top: 30px; padding: 20px; border-radius: 8px; display: none; }
+        .agendado { background: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; }
+        .finalizado { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
+    </style>
+</head>
+<body>
+
+    <h1>AgendaCD</h1>
+    <p>Consulte o status do seu agendamento</p>
+
+    <div class="busca-container">
+        <input type="text" id="placa-busca" placeholder="ABC1D23" maxlength="7">
+        <button id="btn-buscar">VER MEU HORÁRIO</button>
+    </div>
+
+    <div id="resultado"></div>
+
+    <script>
+        const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
+
+        document.getElementById('btn-buscar').addEventListener('click', async () => {
+            const placa = document.getElementById('placa-busca').value.trim().toUpperCase();
+            const resDiv = document.getElementById('resultado');
+
+            if (placa.length < 3) {
+                alert("Digite a placa completa.");
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL);
+                const dados = await response.json();
+                
+                // Busca a placa nos agendamentos de HOJE
+                const hoje = new Date().toISOString().split("T")[0];
+                const registro = dados.find(a => a.placa.toUpperCase() === placa && a.data === hoje);
+
+                resDiv.style.display = "block";
+
+                if (registro) {
+                    resDiv.className = registro.status === 'finalizado' ? 'finalizado' : 'agendado';
+                    resDiv.innerHTML = `
+                        <h2>Veículo Encontrado!</h2>
+                        <p>Placa: <strong>${registro.placa}</strong></p>
+                        <p>Seu Horário: <span style="font-size: 2rem; display: block;">${registro.hora}</span></p>
+                        <p>Status: <strong>${registro.status.toUpperCase()}</strong></p>
+                    `;
+                } else {
+                    resDiv.className = "";
+                    resDiv.style.background = "#fff3e0";
+                    resDiv.innerHTML = "<h3>Placa não encontrada para hoje.</h3><p>Verifique se digitou corretamente ou procure a portaria.</p>";
+                }
+            } catch (error) {
+                alert("Erro ao consultar servidor.");
+            }
+        });
+    </script>
+</body>
+</html>
