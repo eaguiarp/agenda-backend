@@ -217,7 +217,7 @@ async function renderizarLista() {
     const countTotal = document.getElementById("count-total");
     const countPendente = document.getElementById("count-pendente");
     if(countTotal) countTotal.textContent = listaFiltrada.filter(a => a.data === hoje).length;
-    if(countPendente) countPendente.textContent = listaFiltrada.filter(a => a.status === "agendado" || a.status === "chamando").length;
+if(countPendente) countPendente.textContent = listaFiltrada.filter(a => a.status === "agendado" || a.status === "chamando").length;
 
     if (listaFiltrada.length === 0) {
         lista.innerHTML = "<li class='vazio'>Nenhum agendamento encontrado.</li>";

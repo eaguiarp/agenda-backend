@@ -1,25 +1,80 @@
+/* Configurações Gerais */
 body {
-  font-family: Arial, sans-serif;
-  padding: 20px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    padding: 20px;
+    background-color: #f4f7f6;
+    color: #333;
 }
 
-//==============================
-// mensagem-erro
-//==============================
+/* Container das Mensagens */
 #mensagem {
-  margin: 10px 0;
-  padding: 10px;
-  display: none;
-  border-radius: 6px;
-  font-weight: 500;
+    margin: 10px 0;
+    padding: 12px;
+    display: none;
+    border-radius: 6px;
+    font-weight: 500;
+    text-align: center;
 }
 
 .mensagem-erro {
-  background-color: #ffd6d6;
-  color: #7a0000;
+    background-color: #ffd6d6;
+    color: #7a0000;
+    border: 1px solid #ffb3b3;
 }
 
 .mensagem-sucesso {
-  background-color: #d6ffe0;
-  color: #005f2f;
+    background-color: #d6ffe0;
+    color: #005f2f;
+    border: 1px solid #a3ffbd;
+}
+
+/* Estilização da Lista de Agendamentos */
+.item-agendamento {
+    background: white;
+    margin-bottom: 10px;
+    padding: 15px;
+    border-radius: 8px;
+    list-style: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    border-left: 5px solid #ccc; /* Linha padrão cinza */
+}
+
+/* Destaque para quando o veículo for chamado (Amarelo) */
+.item-agendamento[style*="border-left"] {
+    /* O JS vai sobrescrever a cor, mas aqui garantimos o estilo */
+    box-shadow: 0 4px 10px rgba(241, 196, 15, 0.2);
+}
+
+/* Estilo dos Botões de Ação */
+.acoes {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.item-agendamento button {
+    border: none;
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.75rem;
+    transition: transform 0.1s, opacity 0.2s;
+}
+
+.item-agendamento button:active {
+    transform: scale(0.95);
+}
+
+.btn-cha { background-color: #3498db !important; color: white; } /* Azul */
+.btn-fin { background-color: #2ecc71 !important; color: white; } /* Verde */
+.btn-exc { background-color: #e74c3c !important; color: white; } /* Vermelho */
+
+.item-agendamento button:disabled {
+    background-color: #bdc3c7 !important;
+    color: #7f8c8d !important;
+    cursor: not-allowed;
+    opacity: 0.6;
 }

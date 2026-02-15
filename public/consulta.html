@@ -87,7 +87,7 @@
     <script>
         const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
 
-        document.getElementById('btn-buscar').addEventListener('click', async () => {
+       document.getElementById('btn-buscar').addEventListener('click', async () => {
             const placa = document.getElementById('placa-busca').value.trim().toUpperCase();
             const resDiv = document.getElementById('resultado');
 
@@ -100,24 +100,37 @@
                 const response = await fetch(API_URL);
                 const dados = await response.json();
                 
-                // Busca a placa nos agendamentos de HOJE
-                const hoje = new Date().toISOString().split("T")[0];
-                const registro = dados.find(a => a.placa.toUpperCase() === placa && a.data === hoje);
+                const hojeStr = new Date().toISOString().split("T")[0];
+
+                // Filtra agendamentos daquela placa que sejam de hoje em diante
+                const meusAgendamentos = dados.filter(a => 
+                    a.placa.toUpperCase() === placa && 
+                    a.data >= hojeStr
+                );
 
                 resDiv.style.display = "block";
+                resDiv.innerHTML = ""; // Limpa busca anterior
 
-                if (registro) {
-                    resDiv.className = registro.status === 'finalizado' ? 'finalizado' : 'agendado';
-                    resDiv.innerHTML = `
-                        <h2>Veículo Encontrado!</h2>
-                        <p>Placa: <strong>${registro.placa}</strong></p>
-                        <p>Seu Horário: <span style="font-size: 2rem; display: block;">${registro.hora}</span></p>
-                        <p>Status: <strong>${registro.status.toUpperCase()}</strong></p>
-                    `;
+                if (meusAgendamentos.length > 0) {
+                    // Ordena por data e hora para o motorista ver o mais próximo primeiro
+                    meusAgendamentos.sort((a, b) => new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`));
+
+                    let htmlBase = `<h2>Resultados para ${placa}</h2>`;
+                    
+                    meusAgendamentos.forEach(item => {
+                        const classeStatus = item.status === 'finalizado' ? 'finalizado' : 'agendado';
+                        htmlBase += `
+                            <div class="resultado-item ${classeStatus}" style="margin-bottom: 15px; padding: 15px; border-radius: 8px; border: 1px solid #ccc;">
+                                <p>Data: <strong>${item.data}</strong></p>
+                                <p>Horário: <span style="font-size: 1.5rem;">${item.hora}</span></p>
+                                <p>Status: <strong>${item.status.toUpperCase()}</strong></p>
+                            </div>
+                        `;
+                    });
+                    resDiv.innerHTML = htmlBase;
                 } else {
-                    resDiv.className = "";
                     resDiv.style.background = "#fff3e0";
-                    resDiv.innerHTML = "<h3>Placa não encontrada para hoje.</h3><p>Verifique se digitou corretamente ou procure a portaria.</p>";
+                    resDiv.innerHTML = "<h3>Nenhum agendamento futuro encontrado.</h3><p>Verifique a placa ou fale com a logística.</p>";
                 }
             } catch (error) {
                 alert("Erro ao consultar servidor.");

@@ -41,7 +41,7 @@
             const hoje = new Date().toISOString().split("T")[0];
             
             // Filtra apenas hoje e quem NÃO foi finalizado
-            const ativos = dados.filter(a => a.data === hoje && a.status !== "finalizado");
+            const ativos = dados.filter(a => a.status !== "finalizado");
             
             const container = document.getElementById("painel");
             container.innerHTML = "";
