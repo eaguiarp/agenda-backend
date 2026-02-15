@@ -56,6 +56,30 @@ document.addEventListener("DOMContentLoaded", () => {
 // REGRAS DE NEGÓCIO E FLUXO
 // ===============================
 
+function carregarHorarios() {
+    const selectHora = document.getElementById('hora');
+    const horarios = [];
+    
+    // Gera horários das 07:00 às 18:00 com intervalo de 20 min
+    for (let h = 7; h <= 18; h++) {
+        for (let m = 0; m < 60; m += 20) {
+            const horaFormatada = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+            horarios.push(horaFormatada);
+        }
+    }
+
+    horarios.forEach(horario => {
+        const option = document.createElement('option');
+        option.value = horario;
+        option.textContent = horario;
+        selectHora.appendChild(option);
+    });
+}
+
+// Chame a função quando o documento carregar
+document.addEventListener('DOMContentLoaded', carregarHorarios);
+
+
 function existeConflitoHorario(novo, lista) {
     return lista.some(a =>
         a.data === novo.data &&
