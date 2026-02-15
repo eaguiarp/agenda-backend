@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel de Chamada - CD Itaboraí</title>
+    <style>
+        body { background: #000; color: #fff; font-family: 'Arial Black', sans-serif; text-align: center; margin: 0; overflow: hidden; }
+        .header { background: #5a6b5c; padding: 20px; font-size: 2rem; border-bottom: 5px solid #fff; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; }
+        .card { background: #222; border-radius: 15px; padding: 30px; border: 2px solid #444; }
+        .placa { font-size: 5rem; display: block; margin-bottom: 10px; }
+        .hora { font-size: 2.5rem; color: #aaa; }
+        
+        /* Efeito de Chamada */
+        .chamando { 
+            background: #f1c40f !important; 
+            color: #000 !important; 
+            border: 10px solid #fff;
+            animation: piscar 1s infinite;
+            grid-column: span 2; /* Ocupa a largura toda se estiver chamando */
+        }
+        .chamando .hora { color: #333; }
+
+        @keyframes piscar {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">VEÍCULOS EM ATENDIMENTO - ITABORAÍ</div>
+    <div id="painel" class="grid"></div>
+
+    <script>
+        const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
+
+        async function atualizarTV() {
+            const res = await fetch(API_URL);
+            const dados = await res.json();
+            const hoje = new Date().toISOString().split("T")[0];
+            
+            // Filtra apenas hoje e quem NÃO foi finalizado
+            const ativos = dados.filter(a => a.data === hoje && a.status !== "finalizado");
+            
+            const container = document.getElementById("painel");
+            container.innerHTML = "";
+
+            ativos.forEach(item => {
+                const div = document.createElement("div");
+                div.className = `card ${item.status === 'chamando' ? 'chamando' : ''}`;
+                div.innerHTML = `
+                    <span class="placa">${item.placa}</span>
+                    <span class="hora">HORÁRIO: ${item.hora} - ${item.status.toUpperCase()}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        setInterval(atualizarTV, 10000);
+        atualizarTV();
+    </script>
+</body>
+</html>

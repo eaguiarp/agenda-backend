@@ -92,6 +92,21 @@ async function criarAgendamento(data, hora, placa) {
     }
 }
 
+async function chamarVeiculo(id) {
+    try {
+        const resposta = await fetch(`${API_URL}/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "chamando" })
+        });
+        if (resposta.ok) {
+            renderizarLista();
+            mostrarMensagem("Chamada enviada para a TV!", "sucesso");
+        }
+    } catch (erro) {
+        mostrarMensagem("Erro ao chamar.", "erro");
+    }
+}
 // ===============================
 // BACKEND (Comunicação API)
 // ===============================
@@ -301,6 +316,15 @@ async function renderizarLista() {
         lista.appendChild(li);
     });
 }
+
+// Dentro do renderizarLista, onde tem os botões:
+const btnChamar = document.createElement("button");
+btnChamar.textContent = "CHAMAR";
+btnChamar.style.background = "#3498db";
+btnChamar.style.color = "white";
+btnChamar.onclick = () => chamarVeiculo(item.id);
+// Adicione ele ao li:
+li.appendChild(btnChamar);
 
 function mostrarMensagem(texto, tipo) {
     const div = document.getElementById("mensagem");
