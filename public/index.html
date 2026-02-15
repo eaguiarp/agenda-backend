@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>AgendaCD</title>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#5a6b5c">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h1>AgendaCD</h1>
+
+  <div id="mensagem" style="display: none;"></div>
+
+  <section>
+    <h2>Novo agendamento</h2>
+
+    <form id="form-agendamento">
+      <input type="date" id="data" required>
+
+      <select id="hora" required>
+        <option value="">Selecione o horário</option>
+      </select>
+
+      <input type="text" id="placa" placeholder="Placa do veículo" required autocomplete="off">
+
+      <button type="submit">Salvar</button>
+    </form>
+  </section>
+
+  <hr>
+
+  <section id="dashboard">
+    <div class="contadores">
+      <p>Total Hoje: <span id="count-total">0</span></p>
+      <p>Aguardando: <span id="count-pendente">0</span></p>
+    </div>
+
+    <div class="filtros">
+      <label for="filtro-data">Filtrar por dia:</label> 
+      <input type="date" id="filtro-data">
+      <button id="btn-limpar" type="button">Ver Tudo</button>
+    </div>
+
+    <div class="filtros">
+      <label for="busca-placa">Buscar Placa:</label>
+      <input type="text" id="busca-placa" placeholder="Digite a placa...">
+    </div>
+
+    <section>
+      <h2>Agendamentos</h2>
+      <ul id="lista-agendamentos">
+        </ul>
+    </section>
+  </section> <script src="script.js"></script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js").catch(err => console.log("SW falhou:", err));
+    }
+  </script>
+
+</body>
+</html>
