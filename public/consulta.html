@@ -6,32 +6,71 @@
     <title>Consulta de Agendamento</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        body { text-align: center; padding: 20px; font-family: sans-serif; }
-        .busca-container { margin: 50px auto; max-width: 400px; }
-        input#placa-busca { 
-            width: 100%; 
-            padding: 15px; 
-            font-size: 1.5rem; 
-            text-align: center; 
-            text-transform: uppercase;
-            border: 2px solid #5a6b5c;
-            border-radius: 8px;
-        }
-        button#btn-buscar { 
-            width: 100%; 
-            padding: 15px; 
-            margin-top: 10px; 
-            font-size: 1.2rem; 
-            background: #5a6b5c; 
-            color: white; 
-            border: none; 
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        #resultado { margin-top: 30px; padding: 20px; border-radius: 8px; display: none; }
-        .agendado { background: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; }
-        .finalizado { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
-    </style>
+    /* Reset básico para ocupar a tela toda */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body { 
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* Centraliza verticalmente */
+        align-items: center;     /* Centraliza horizontalmente */
+        min-height: 100vh;       /* Garante que o corpo tenha a altura da tela */
+        padding: 20px; 
+        font-family: sans-serif; 
+        background-color: #f8f9fa;
+    }
+
+    h1 { color: #5a6b5c; margin-bottom: 10px; }
+    p { color: #666; margin-bottom: 30px; }
+
+    .busca-container { 
+        width: 100%; 
+        max-width: 400px; 
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* Um sombreado leve para dar profundidade */
+    }
+
+    input#placa-busca { 
+        width: 100%; 
+        padding: 15px; 
+        font-size: 1.8rem; 
+        text-align: center; 
+        text-transform: uppercase;
+        border: 2px solid #5a6b5c;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        color: #333;
+    }
+
+    button#btn-buscar { 
+        width: 100%; 
+        padding: 18px; 
+        font-size: 1.2rem; 
+        background: #5a6b5c; 
+        color: white; 
+        border: none; 
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.3s;
+    }
+
+    button#btn-buscar:hover { background: #455246; }
+
+    #resultado { 
+        margin-top: 20px; 
+        width: 100%;
+        max-width: 400px;
+        padding: 20px; 
+        border-radius: 8px; 
+        display: none; 
+    }
+
+    .agendado { background: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; }
+    .finalizado { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
+</style>
 </head>
 <body>
 
