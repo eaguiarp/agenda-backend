@@ -108,7 +108,7 @@ async function criarAgendamento(data, hora, placa) {
 // BACKEND (Comunicação com API via Fetch)
 // ===============================
 
-const API_URL = "https://SEU-DOMINIO-RAILWAY/agendamentos";
+const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
 
 async function obterAgendamentos() {
     try {

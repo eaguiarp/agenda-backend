@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Configuração do banco
+// Configuração do banco de dados (Railway)
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
@@ -16,16 +16,42 @@ const pool = new Pool({
   },
 });
 
-// Rota principal
+// Rota principal (Teste de vida)
 app.get("/", (req, res) => {
   res.send("Servidor da Agenda funcionando 🚀");
 });
 
-// Listar agendamentos
+// ========================================================
+// ROTA MÁGICA: Crie a tabela acessando /criar-banco
+// ========================================================
+app.get("/criar-banco", async (req, res) => {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS agendamentos (
+                id SERIAL PRIMARY KEY,
+                data VARCHAR(20) NOT NULL,
+                hora VARCHAR(10) NOT NULL,
+                placa VARCHAR(20) NOT NULL,
+                status VARCHAR(20) DEFAULT 'agendado'
+            );
+        `);
+        res.send("<h1>Sucesso! Tabela 'agendamentos' criada. Pode testar o app!</h1>");
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Erro ao criar tabela: " + error.message);
+    }
+});
+
+// ========================================================
+// ROTAS DA APLICAÇÃO
+// ========================================================
+
+// 1. Listar agendamentos
 app.get("/agendamentos", async (req, res) => {
   try {
+    // Ordenar por data e hora para ficar bonito na lista
     const result = await pool.query(
-      "SELECT * FROM agendamentos ORDER BY data"
+      "SELECT * FROM agendamentos ORDER BY data, hora"
     );
     res.json(result.rows);
   } catch (error) {
@@ -34,48 +60,28 @@ app.get("/agendamentos", async (req, res) => {
   }
 });
 
-// Criar agendamento
-app.post("/agendamentos", async (req, res) => {
-  try {
-    const { empresa, data, horario, nome } = req.body;
-
-    await pool.query(
-      "INSERT INTO agendamentos (empresa, data, horario, nome) VALUES ($1, $2, $3, $4)",
-      [empresa, data, horario, nome]
-    );
-
-    res.json({ sucesso: true });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ erro: "Erro ao criar agendamento" });
-  }
-});
-
-// ARQUIVO: server.js (ou index.js) - No Backend
-
+// 2. Criar agendamento (CORRIGIDO: Só existe UM agora)
 app.post("/agendamentos", async (req, res) => {
     try {
         // Recebe os dados que vieram do Frontend
         const { data, hora, placa } = req.body; 
 
-        // AQUI entra o seu código do pool.query
-        // Note que adicionei "RETURNING *" no final para pegar o ID gerado
+        // Insere e devolve o ID gerado (RETURNING *)
         const novoAgendamento = await pool.query(
             "INSERT INTO agendamentos (data, hora, placa, status) VALUES ($1, $2, $3, $4) RETURNING *",
             [data, hora, placa, "agendado"]
         );
 
-        // Devolve para o Frontend o agendamento criado (com o ID!)
+        // Devolve o objeto completo para o Frontend
         res.json(novoAgendamento.rows[0]); 
 
     } catch (err) {
         console.error(err);
-        res.status(500).send("Erro no servidor");
+        res.status(500).send("Erro no servidor ao criar agendamento");
     }
 });
 
-
-// Atualizar status
+// 3. Atualizar status (Finalizar)
 app.put("/agendamentos/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -93,7 +99,7 @@ app.put("/agendamentos/:id", async (req, res) => {
   }
 });
 
-// Deletar agendamento
+// 4. Deletar agendamento
 app.delete("/agendamentos/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -110,7 +116,7 @@ app.delete("/agendamentos/:id", async (req, res) => {
   }
 });
 
-// 🚀 Sempre por último
+// 🚀 Inicialização do Servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log("Servidor rodando na porta " + PORT);
