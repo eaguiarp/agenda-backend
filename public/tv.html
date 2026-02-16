@@ -110,15 +110,28 @@
                 const chamando = ativos.find(a => a.status === "chamando");
                 const divPrincipal = document.getElementById("painel-principal");
                 
-                if (chamando) {
+              if (chamando) {
                     divPrincipal.innerHTML = `
                         <h2>CHAMANDO AGORA</h2>
                         <div class="piscando">
                             <div class="placa-gigante">${chamando.placa}</div>
                             <div class="hora-gigante">${chamando.hora}</div>
-                            <div style="font-size: 1.5rem; margin-top: 10px;">DIRIJA-SE À DOCA</div>
+                            
+                            <div style="font-size: 1.1rem; margin-top: 15px; font-weight: bold; line-height: 1.4; color: #000;">
+                                DIRIJA-SE PARA DESCARGA<br>
+                                AO POSICIONAR: DESLIGUE, CALCE O VEÍCULO<br>
+                                E USE EPI AO BAIXAR AS TAMPAS!
+                            </div>
                         </div>
                     `;
+
+                    // Lógica do Som (Mantida)
+                    if (ultimoChamadoID !== chamando.id) {
+                        ultimoChamadoID = chamando.id;
+                        contadorBips = 0; 
+                        tocarSom();
+                    }
+                }
 
                     // Lógica do Som (Toca 3 vezes e para)
                     if (ultimoChamadoID !== chamando.id) {
