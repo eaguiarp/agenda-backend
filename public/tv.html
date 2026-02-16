@@ -1,63 +1,212 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Painel de Chamada - CD Itaboraí</title>
+    <title>Painel Logístico - CD Itaboraí</title>
     <style>
-        body { background: #000; color: #fff; font-family: 'Arial Black', sans-serif; text-align: center; margin: 0; overflow: hidden; }
-        .header { background: #5a6b5c; padding: 20px; font-size: 2rem; border-bottom: 5px solid #fff; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; }
-        .card { background: #222; border-radius: 15px; padding: 30px; border: 2px solid #444; }
-        .placa { font-size: 5rem; display: block; margin-bottom: 10px; }
-        .hora { font-size: 2.5rem; color: #aaa; }
+        /* RESET E GRID */
+        body { margin: 0; padding: 0; background: #121212; color: white; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; }
         
-        /* Efeito de Chamada */
-        .chamando { 
-            background: #f1c40f !important; 
-            color: #000 !important; 
-            border: 10px solid #fff;
-            animation: piscar 1s infinite;
-            grid-column: span 2; /* Ocupa a largura toda se estiver chamando */
+        .container {
+            display: grid;
+            height: 100vh;
+            grid-template-columns: 60% 40%;
+            grid-template-rows: 60% 40%;
+            grid-template-areas: 
+                "principal fila"
+                "inferior fila";
         }
-        .chamando .hora { color: #333; }
 
-        @keyframes piscar {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+        /* ÁREAS */
+        .area-principal { grid-area: principal; border-right: 2px solid #333; border-bottom: 2px solid #333; padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
+        .area-inferior { grid-area: inferior; display: flex; border-right: 2px solid #333; }
+        .area-fila { grid-area: fila; background: #1e1e1e; padding: 20px; }
+
+        /* SUB-DIVISÕES INFERIOR */
+        .box-proximo { width: 50%; border-right: 1px solid #333; padding: 15px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .box-historico { width: 50%; background: #0f2b15; padding: 15px; }
+
+        /* ESTILOS DE TEXTO */
+        h2 { margin: 0 0 10px 0; color: #888; text-transform: uppercase; font-size: 1.2rem; letter-spacing: 2px; }
+        .placa-gigante { font-size: 8rem; font-weight: bold; color: #fff; line-height: 1; }
+        .hora-gigante { font-size: 3rem; color: #f1c40f; margin-top: 10px; }
+        
+        .placa-media { font-size: 4rem; font-weight: bold; }
+        .hora-media { font-size: 2rem; color: #aaa; }
+
+        /* LISTA LATERAL (FILA) */
+        .lista-fila div {
+            background: #333;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.5rem;
         }
+        .lista-fila div span:last-child { color: #f1c40f; font-weight: bold; }
+
+        /* HISTÓRICO (CARREGANDO) */
+        .item-historico {
+            font-size: 1.1rem; color: #bbb; border-bottom: 1px solid #444; padding: 5px 0; display: flex; justify-content: space-between;
+        }
+        .status-badge { font-size: 0.8rem; padding: 2px 5px; border-radius: 4px; }
+        .bg-carregando { background: #e67e22; color: white; }
+        .bg-finalizado { background: #2ecc71; color: black; }
+
+        /* ANIMAÇÃO CHAMANDO */
+        .piscando { animation: piscar 0.8s infinite; background-color: #f1c40f; color: black; padding: 20px; border-radius: 10px; width: 90%; text-align: center; }
+        @keyframes piscar { 0% { opacity: 1; } 50% { opacity: 0.7; transform: scale(1.02); } 100% { opacity: 1; } }
+
+        /* RODAPÉ DO BLOCO */
+        .aviso-sonoro { position: absolute; bottom: 10px; left: 10px; font-size: 0.8rem; color: #555; }
     </style>
 </head>
 <body>
-    <div class="header">VEÍCULOS EM ATENDIMENTO - ITABORAÍ</div>
-    <div id="painel" class="grid"></div>
+
+    <div class="container">
+        <div class="area-principal" id="painel-principal">
+            <h2>Chamando Agora</h2>
+            <div class="placeholder">Aguardando chamada...</div>
+            <div class="aviso-sonoro">🔊 Clique na tela para ativar o som</div>
+        </div>
+
+        <div class="area-inferior">
+            <div class="box-proximo" id="painel-proximo">
+                <h2>Próximo Veículo</h2>
+                </div>
+            <div class="box-historico">
+                <h2>Status Pátio</h2>
+                <div id="painel-historico"></div>
+            </div>
+        </div>
+
+        <div class="area-fila">
+            <h2>Próximos da Fila</h2>
+            <div class="lista-fila" id="painel-fila"></div>
+        </div>
+    </div>
+
+    <audio id="som-alerta" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
 
     <script>
         const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
+        let ultimoChamadoID = null;
+        let contadorBips = 0;
 
         async function atualizarTV() {
-            const res = await fetch(API_URL);
-            const dados = await res.json();
-            const hoje = new Date().toISOString().split("T")[0];
-            
-            // Filtra apenas hoje e quem NÃO foi finalizado
-            const ativos = dados.filter(a => a.status !== "finalizado");
-            
-            const container = document.getElementById("painel");
-            container.innerHTML = "";
+            try {
+                const res = await fetch(API_URL);
+                const dados = await res.json();
+                
+                // Filtra quem não foi finalizado
+                // Ordena por hora
+                const ativos = dados.filter(a => a.status !== "finalizado")
+                                    .sort((a, b) => new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`));
 
-            ativos.forEach(item => {
-                const div = document.createElement("div");
-                div.className = `card ${item.status === 'chamando' ? 'chamando' : ''}`;
-                div.innerHTML = `
-                    <span class="placa">${item.placa}</span>
-                    <span class="hora">HORÁRIO: ${item.hora} - ${item.status.toUpperCase()}</span>
-                `;
-                container.appendChild(div);
-            });
+                // 1. Lógica do CHAMANDO (Principal)
+                const chamando = ativos.find(a => a.status === "chamando");
+                const divPrincipal = document.getElementById("painel-principal");
+                
+                if (chamando) {
+                    divPrincipal.innerHTML = `
+                        <h2>CHAMANDO AGORA</h2>
+                        <div class="piscando">
+                            <div class="placa-gigante">${chamando.placa}</div>
+                            <div class="hora-gigante">${chamando.hora}</div>
+                            <div style="font-size: 1.5rem; margin-top: 10px;">DIRIJA-SE À DOCA</div>
+                        </div>
+                    `;
+
+                    // Lógica do Som (Toca 3 vezes e para)
+                    if (ultimoChamadoID !== chamando.id) {
+                        ultimoChamadoID = chamando.id;
+                        contadorBips = 0; // Reseta contador
+                        tocarSom();
+                    }
+                } else {
+                    divPrincipal.innerHTML = `<h2>Aguardando Chamada</h2><div style="color: #444; font-size: 2rem;">--</div>`;
+                }
+
+                // 2. Lógica do PRÓXIMO (O primeiro 'agendado' da lista)
+                const proximo = ativos.find(a => a.status === "agendado");
+                const divProximo = document.getElementById("painel-proximo");
+                if (proximo) {
+                    divProximo.innerHTML = `
+                        <h2>Próximo Veículo</h2>
+                        <div class="placa-media">${proximo.placa}</div>
+                        <div class="hora-media">${proximo.hora}</div>
+                    `;
+                } else {
+                    divProximo.innerHTML = `<h2>Próximo</h2><p>--</p>`;
+                }
+
+                // 3. Lógica da FILA (Pega os próximos 4 agendados, pulando o que já é "Próximo")
+                const fila = ativos.filter(a => a.status === "agendado" && a.id !== (proximo ? proximo.id : null)).slice(0, 5);
+                const divFila = document.getElementById("painel-fila");
+                divFila.innerHTML = "";
+                fila.forEach(item => {
+                    divFila.innerHTML += `
+                        <div>
+                            <span>${item.placa}</span>
+                            <span>${item.hora}</span>
+                        </div>
+                    `;
+                });
+
+                // 4. Lógica do HISTÓRICO (Carregando + Últimos Finalizados)
+                // Para pegar finalizados, precisamos filtrar do "dados" original
+                const carregando = dados.filter(a => a.status === "carregando");
+                const ultimosFinalizados = dados.filter(a => a.status === "finalizado")
+                                                .sort((a, b) => new Date(b.id) - new Date(a.id)) // Mais recentes primeiro (baseado no ID timestamp)
+                                                .slice(0, 3);
+                
+                const divHist = document.getElementById("painel-historico");
+                divHist.innerHTML = "";
+                
+                // Mostra quem está carregando
+                carregando.forEach(item => {
+                    divHist.innerHTML += `
+                        <div class="item-historico">
+                            <span>${item.placa}</span>
+                            <span class="status-badge bg-carregando">CARREGANDO</span>
+                        </div>
+                    `;
+                });
+                
+                // Mostra últimos finalizados
+                ultimosFinalizados.forEach(item => {
+                    divHist.innerHTML += `
+                        <div class="item-historico">
+                            <span>${item.placa}</span>
+                            <span class="status-badge bg-finalizado">FINALIZADO</span>
+                        </div>
+                    `;
+                });
+
+            } catch (e) { console.error("Erro TV", e); }
         }
 
-        setInterval(atualizarTV, 10000);
+        function tocarSom() {
+            if (contadorBips < 3) {
+                const audio = document.getElementById("som-alerta");
+                audio.play().catch(e => console.log("Clique na tela para habilitar som"));
+                contadorBips++;
+                setTimeout(tocarSom, 2500); // Repete a cada 2.5 segundos
+            }
+        }
+
+        // Habilita som no primeiro clique
+        document.body.addEventListener('click', () => {
+            const audio = document.getElementById("som-alerta");
+            audio.play();
+            audio.pause();
+            audio.currentTime = 0;
+        });
+
+        setInterval(atualizarTV, 5000); // Atualiza a cada 5 segundos
         atualizarTV();
     </script>
 </body>

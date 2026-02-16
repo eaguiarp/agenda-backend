@@ -85,6 +85,22 @@ async function chamarVeiculo(id) {
     }
 }
 
+async function iniciarCarregamento(id) {
+    try {
+        const resposta = await fetch(`${API_URL}/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "carregando" })
+        });
+        if (resposta.ok) {
+            renderizarLista();
+            mostrarMensagem("Veículo em processo de carga!", "sucesso");
+        }
+    } catch (erro) {
+        mostrarMensagem("Erro ao mudar status.", "erro");
+    }
+}
+
 // ===============================
 // BACKEND (Comunicação API)
 // ===============================
@@ -214,41 +230,61 @@ async function renderizarLista() {
         return bateData && batePlaca;
     });
 
+    // Atualiza contadores
     const countTotal = document.getElementById("count-total");
     const countPendente = document.getElementById("count-pendente");
     if(countTotal) countTotal.textContent = listaFiltrada.filter(a => a.data === hoje).length;
-if(countPendente) countPendente.textContent = listaFiltrada.filter(a => a.status === "agendado" || a.status === "chamando").length;
+    
+    // Pendentes agora são: agendado, chamando OU carregando
+    if(countPendente) countPendente.textContent = listaFiltrada.filter(a => 
+        ["agendado", "chamando", "carregando"].includes(a.status)).length;
 
     if (listaFiltrada.length === 0) {
         lista.innerHTML = "<li class='vazio'>Nenhum agendamento encontrado.</li>";
         return;
     }
 
-    listaFiltrada.sort((a, b) => new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`));
+    // Ordenação Inteligente: Chamando > Carregando > Agendado > Finalizado
+    const ordemStatus = { "chamando": 1, "carregando": 2, "agendado": 3, "finalizado": 4 };
+    listaFiltrada.sort((a, b) => {
+        const pesoA = ordemStatus[a.status] || 99;
+        const pesoB = ordemStatus[b.status] || 99;
+        if (pesoA !== pesoB) return pesoA - pesoB;
+        return new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`);
+    });
 
     listaFiltrada.forEach(item => {
         const li = document.createElement("li");
         li.className = "item-agendamento";
-        if (item.status === "finalizado") li.style.opacity = "0.5";
-        if (item.status === "chamando") li.style.borderLeft = "5px solid #f1c40f";
+        
+        // Estilos visuais de status na lista do Gabriel
+        if (item.status === "finalizado") li.style.opacity = "0.6";
+        if (item.status === "chamando") li.style.borderLeft = "5px solid #f1c40f"; // Amarelo
+        if (item.status === "carregando") li.style.borderLeft = "5px solid #e67e22"; // Laranja
+        if (item.status === "finalizado") li.style.borderLeft = "5px solid #2ecc71"; // Verde
+
+        // Simplificação dos nomes de produto (Conforme solicitado)
+        let produtoSimples = "GERAL";
+        if((item.produto || "").includes("CPIII")) produtoSimples = "CPIII";
+        else if((item.produto || "").includes("CPII-F")) produtoSimples = "FMA";
+        else if((item.produto || "").includes("SC-25")) produtoSimples = "M25";
+        else if((item.produto || "").includes("CPV")) produtoSimples = "CPV";
 
         li.innerHTML = `
-            <span>${item.data} - ${item.hora} - <strong>${item.placa}</strong> [${item.status}]</span>
+            <span>${item.hora} - <strong>${item.placa}</strong> <small>(${item.status.toUpperCase()})</small></span>
             <div class="acoes">
-                <button class="btn-cha" onclick="chamarVeiculo('${item.id}')" ${item.status === "finalizado" ? 'disabled' : ''}>CHAMAR</button>
-                <button class="btn-fin" onclick="finalizarAgendamento('${item.id}')" ${item.status === "finalizado" ? 'disabled' : ''}>FINALIZAR</button>
+                ${item.status === 'agendado' ? 
+                    `<button class="btn-cha" onclick="chamarVeiculo('${item.id}')">CHAMAR</button>` : ''}
+                
+                ${item.status === 'chamando' ? 
+                    `<button class="btn-carr" onclick="iniciarCarregamento('${item.id}')">CARREGANDO</button>` : ''}
+                
+                ${['chamando', 'carregando'].includes(item.status) ? 
+                    `<button class="btn-fin" onclick="finalizarAgendamento('${item.id}')">FINALIZAR</button>` : ''}
+                
                 <button class="btn-exc" onclick="if(confirm('Excluir?')) excluirAgendamento('${item.id}')">EXCLUIR</button>
             </div>
         `;
         lista.appendChild(li);
     });
-}
-
-function mostrarMensagem(texto, tipo) {
-    const div = document.getElementById("mensagem");
-    if (!div) return;
-    div.textContent = texto;
-    div.className = tipo === "erro" ? "mensagem-erro" : "mensagem-sucesso";
-    div.style.display = "block";
-    setTimeout(() => { div.style.display = "none"; }, 3000);
 }
