@@ -244,7 +244,7 @@ async function renderizarOpcoesHorario() {
 
 const HORARIOS_EXCLUSIVOS = [
     2*60 + 40,   // 02:40
-    7*60 + 40,   // 07:40
+    7*60 + 30,   // 07:30
     9*60 + 40,   // 09:40
     13*60,       // 13:00
     15*60,       // 15:00
