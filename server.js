@@ -21,7 +21,9 @@ app.use((req, res, next) => {
            users: { 
     'eduardo': 'senhaMestre', 
     'gabriel': 'logistica2026', 
-    'operacao': 'patio123' 
+    'operacao': 'patio123',
+    'tora': "tora2026"
+    'transagil': "trans2026" 
 },, // <--- TROQUE SUA SENHA AQUI
             challenge: true, // Faz aparecer a janelinha do navegador
             realm: 'Painel Logistico Itaborai'
