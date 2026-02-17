@@ -313,7 +313,6 @@ async function renderizarLista() {
     const countPendente = document.getElementById("count-pendente");
     if(countTotal) countTotal.textContent = listaFiltrada.filter(a => a.data === hoje).length;
     
-    // Pendentes agora são: agendado, chamando OU carregando
     if(countPendente) countPendente.textContent = listaFiltrada.filter(a => 
         ["agendado", "chamando", "carregando"].includes(a.status)).length;
 
@@ -322,7 +321,7 @@ async function renderizarLista() {
         return;
     }
 
-    // Ordenação Inteligente: Chamando > Carregando > Agendado > Finalizado
+    // Ordenação Inteligente
     const ordemStatus = { "chamando": 1, "carregando": 2, "agendado": 3, "finalizado": 4 };
     listaFiltrada.sort((a, b) => {
         const pesoA = ordemStatus[a.status] || 99;
@@ -335,21 +334,69 @@ async function renderizarLista() {
         const li = document.createElement("li");
         li.className = "item-agendamento";
         
-        // Estilos visuais de status na lista do Gabriel
+        // Cores visuais
         if (item.status === "finalizado") li.style.opacity = "0.6";
-        if (item.status === "chamando") li.style.borderLeft = "5px solid #f1c40f"; // Amarelo
-        if (item.status === "carregando") li.style.borderLeft = "5px solid #e67e22"; // Laranja
-        if (item.status === "finalizado") li.style.borderLeft = "5px solid #2ecc71"; // Verde
+        if (item.status === "chamando") li.style.borderLeft = "5px solid #f1c40f"; 
+        if (item.status === "carregando") li.style.borderLeft = "5px solid #e67e22"; 
+        if (item.status === "finalizado") li.style.borderLeft = "5px solid #2ecc71"; 
 
-        // Simplificação dos nomes de produto (Conforme solicitado)
+        // === MELHORIA NA EXIBIÇÃO DO PRODUTO ===
+        // === DEFINIÇÃO DO NOME DO PRODUTO (Corrigido) ===
         let produtoSimples = "GERAL";
-        if((item.produto || "").includes("CPIII")) produtoSimples = "CPIII";
-        else if((item.produto || "").includes("CPII-F")) produtoSimples = "FMA";
-        else if((item.produto || "").includes("SC-25")) produtoSimples = "M25";
-        else if((item.produto || "").includes("CPV")) produtoSimples = "CPV";
+        // Convertendo para maiúsculo para garantir a comparação
+        const prod = (item.produto || "").toUpperCase(); 
 
+        if(prod.includes("CPIII-32-RS-SC-V")) {
+            produtoSimples = "UPV / ARARÁ / URio (CPIII)";
+        } 
+        else if(prod.includes("CPII-F-32-SC-V-MA")) {
+            produtoSimples = "CANTAGALO (FMA)";
+        }
+        else if(prod.includes("CPII-E-32-SC-V")) {
+            produtoSimples = "CANTAGALO (E32)";
+        }
+        else if(prod.includes("CPII-F-32-SC-25-MA")) {
+            produtoSimples = "CANTAGALO (M25)";
+        }
+        else if(prod.includes("CPV-ARI-SC-40-V")) {
+            produtoSimples = "CANTAGALO (CPV)";
+        }
+        else if(prod.includes("CANTAGALO")) {
+            produtoSimples = "CANTAGALO";
+        }
+
+        // === EXIBIÇÃO VISUAL NA LISTA ===
         li.innerHTML = `
-            <span>${item.hora} - <strong>${item.placa}</strong> <small>(${item.status.toUpperCase()})</small></span>
+            <div style="line-height: 1.6;">
+                <span style="font-size: 1.1rem;">${item.hora} - <strong>${item.placa}</strong></span>
+                <br>
+                <span style="color: #d35400; font-weight: bold; font-size: 0.85rem;">${produtoSimples}</span> 
+                <small style="color: #999; margin-left: 5px;">(${item.status.toUpperCase()})</small>
+            </div>
+            
+            <div class="acoes">
+                ${item.status === 'agendado' ? 
+                    `<button class="btn-cha" onclick="chamarVeiculo('${item.id}')">CHAMAR</button>` : ''}
+                
+                ${item.status === 'chamando' ? 
+                    `<button class="btn-carr" onclick="iniciarCarregamento('${item.id}')">CARREGANDO</button>` : ''}
+                
+                ${['chamando', 'carregando'].includes(item.status) ? 
+                    `<button class="btn-fin" onclick="finalizarAgendamento('${item.id}')">FINALIZAR</button>` : ''}
+                
+                <button class="btn-exc" onclick="if(confirm('Excluir?')) excluirAgendamento('${item.id}')">EXCLUIR</button>
+            </div>
+        `;
+        lista.appendChild(li);
+        
+        // Aqui está a mágica: Adicionamos o <br> e o span com cor
+        li.innerHTML = `
+            <div style="line-height: 1.5;">
+                <span style="font-size: 1.1rem;">${item.hora} - <strong>${item.placa}</strong></span><br>
+                <span style="color: #d35400; font-weight: bold; font-size: 0.9rem;">${produtoSimples}</span> 
+                <small style="color: #777;">(${item.status.toUpperCase()})</small>
+            </div>
+            
             <div class="acoes">
                 ${item.status === 'agendado' ? 
                     `<button class="btn-cha" onclick="chamarVeiculo('${item.id}')">CHAMAR</button>` : ''}
