@@ -340,32 +340,31 @@ async function renderizarLista() {
         if (item.status === "carregando") li.style.borderLeft = "5px solid #e67e22"; 
         if (item.status === "finalizado") li.style.borderLeft = "5px solid #2ecc71"; 
 
-        // === MELHORIA NA EXIBIÇÃO DO PRODUTO ===
-        // === DEFINIÇÃO DO NOME DO PRODUTO (Corrigido) ===
+        // === LÓGICA FLEXÍVEL DE PRODUTO ===
+        // Aqui ele procura apenas "partes" do nome. É mais garantido!
         let produtoSimples = "GERAL";
-        // Convertendo para maiúsculo para garantir a comparação
         const prod = (item.produto || "").toUpperCase(); 
 
-        if(prod.includes("CPIII-32-RS-SC-V")) {
+        if(prod.includes("CPIII")) {
             produtoSimples = "UPV / ARARÁ / URio (CPIII)";
         } 
-        else if(prod.includes("CPII-F-32-SC-V-MA")) {
+        else if(prod.includes("CPII-F") || prod.includes("FMA")) {
             produtoSimples = "CANTAGALO (FMA)";
         }
-        else if(prod.includes("CPII-E-32-SC-V")) {
+        else if(prod.includes("CPII-E") || prod.includes("E32")) {
             produtoSimples = "CANTAGALO (E32)";
         }
-        else if(prod.includes("CPII-F-32-SC-25-MA")) {
+        else if(prod.includes("SC-25") || prod.includes("M25")) {
             produtoSimples = "CANTAGALO (M25)";
         }
-        else if(prod.includes("CPV-ARI-SC-40-V")) {
+        else if(prod.includes("CPV")) {
             produtoSimples = "CANTAGALO (CPV)";
         }
         else if(prod.includes("CANTAGALO")) {
             produtoSimples = "CANTAGALO";
         }
 
-        // === EXIBIÇÃO VISUAL NA LISTA ===
+        // === EXIBIÇÃO VISUAL ===
         li.innerHTML = `
             <div style="line-height: 1.6;">
                 <span style="font-size: 1.1rem;">${item.hora} - <strong>${item.placa}</strong></span>
@@ -388,7 +387,9 @@ async function renderizarLista() {
             </div>
         `;
         lista.appendChild(li);
-        
+    });
+}
+
         // Aqui está a mágica: Adicionamos o <br> e o span com cor
         li.innerHTML = `
             <div style="line-height: 1.5;">
