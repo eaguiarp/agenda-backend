@@ -341,29 +341,26 @@ async function renderizarLista() {
         if (item.status === "finalizado") li.style.borderLeft = "5px solid #2ecc71"; 
 
         // === LÓGICA FLEXÍVEL DE PRODUTO ===
-        // Aqui ele procura apenas "partes" do nome. É mais garantido!
-        let produtoSimples = "GERAL";
-        const prod = (item.produto || "").toUpperCase(); 
+       
+       const PRODUTOS_MAP = [
+    { match: ["CPIII-32-RS-SC-V", "UPV/ARARÁ/URIO"], label: "CPIII" },
+    { match: ["CPII-F-32-SC-V-MA", "FMA"], label: "MAUA" },
+    { match: ["CPII-E-32-SC-V", "E32"], label: "E32" },
+    { match: ["CPII-F-32-SC-25-MA", "M25"], label: "M25KG" },
+    { match: ["CPV-ARI-SC-40-V"], label: "CPV" },
+    { match: ["CANTAGALO"], label: "CANTAGALO" }
+];
 
-        if(prod.includes("CPIII-32-RS-SC-V (UPV/ARARÁ/URIO)")) {
-            produtoSimples = "UPV / ARARÁ / URio (CPIII)";
-        } 
-        else if(prod.includes("CPII-F-32-SC-V-MA (CANTAGALO)") || prod.includes("FMA")) {
-            produtoSimples = "CANTAGALO (FMA)";
-        }
-        else if(prod.includes("CPII-E-32-SC-V (CANTAGALO)") || prod.includes("E32")) {
-            produtoSimples = "CANTAGALO (E32)";
-        }
-        else if(prod.includes("CPII-F-32-SC-25-MA (CANTAGALO)") || prod.includes("M25")) {
-            produtoSimples = "CANTAGALO (M25)";
-        }
-        else if(prod.includes("CPV-ARI-SC-40-V (CANTAGALO)")) {
-            produtoSimples = "CANTAGALO (CPV)";
-        }
-        else if(prod.includes("CANTAGALO")) {
-            produtoSimples = "CANTAGALO";
-        }
+let produtoSimples = "GERAL";
+const prod = (item.produto || "").toUpperCase();
 
+// Loop para encontrar correspondência
+for (const p of PRODUTOS_MAP) {
+    if (p.match.some(m => prod.includes(m))) {
+        produtoSimples = p.label;
+        break; // sai do loop na primeira correspondência
+    }
+}
         // === EXIBIÇÃO VISUAL ===
         li.innerHTML = `
             <div style="line-height: 1.6;">
