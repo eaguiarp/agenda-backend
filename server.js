@@ -3,13 +3,31 @@ require('dotenv').config();
 const express = require("express");
 const cors = require("cors");
 const { Pool } = require("pg");
-const path = require("path"); // <--- NOVO: Importante para achar a pasta
+const path = require("path");
+const basicAuth = require('express-basic-auth'); // <--- 1. Importação da Segurança
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- MUDANÇA AQUI: Servir os arquivos do Frontend (Pasta public) ---
+// ========================================================
+// 🛡️ BLOCO DE SEGURANÇA (A PORTARIA)
+// ========================================================
+// Colocamos isso ANTES de servir os arquivos.
+app.use((req, res, next) => {
+    // Se for a raiz (/) ou o index.html, pede senha.
+    if (req.path === '/' || req.path === '/index.html') {
+        return basicAuth({
+            users: { 'admin': '1234' }, // <--- TROQUE SUA SENHA AQUI
+            challenge: true, // Faz aparecer a janelinha do navegador
+            realm: 'Painel Logistico Itaborai'
+        })(req, res, next);
+    }
+    // Se for TV, Consulta ou API, deixa passar direto.
+    next();
+});
+
+// --- Servir os arquivos do Frontend (Pasta public) ---
 app.use(express.static(path.join(__dirname, "public")));
 
 // Configuração do banco (Railway)
@@ -21,21 +39,28 @@ const pool = new Pool({
 });
 
 // ========================================================
-// ROTA MÁGICA (Para criar o banco, se precisar rodar de novo)
+// ROTA MÁGICA (Para criar o banco com a nova coluna PRODUTO)
 // ========================================================
 app.get("/criar-banco", async (req, res) => {
-    // ... (mantém igual ao que te passei antes) ...
     try {
+        // Adicionei a coluna 'produto' aqui
         await pool.query(`
             CREATE TABLE IF NOT EXISTS agendamentos (
                 id SERIAL PRIMARY KEY,
                 data VARCHAR(20) NOT NULL,
                 hora VARCHAR(10) NOT NULL,
                 placa VARCHAR(20) NOT NULL,
+                produto VARCHAR(50), 
                 status VARCHAR(20) DEFAULT 'agendado'
             );
         `);
-        res.send("<h1>Sucesso! Tabela criada.</h1>");
+        
+        // Tenta adicionar a coluna caso a tabela já exista (Migração simples)
+        try {
+            await pool.query("ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS produto VARCHAR(50);");
+        } catch (e) { console.log("Coluna produto já existe ou erro ignorável."); }
+
+        res.send("<h1>Sucesso! Tabela verificada e atualizada.</h1>");
     } catch (error) {
         res.status(500).send("Erro: " + error.message);
     }
@@ -56,13 +81,15 @@ app.get("/agendamentos", async (req, res) => {
   }
 });
 
-// Criar
+// Criar (ATUALIZADO PARA SALVAR O PRODUTO)
 app.post("/agendamentos", async (req, res) => {
     try {
-        const { data, hora, placa } = req.body; 
+        // Agora recebemos 'produto' também
+        const { data, hora, placa, produto } = req.body; 
+        
         const novoAgendamento = await pool.query(
-            "INSERT INTO agendamentos (data, hora, placa, status) VALUES ($1, $2, $3, $4) RETURNING *",
-            [data, hora, placa, "agendado"]
+            "INSERT INTO agendamentos (data, hora, placa, produto, status) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+            [data, hora, placa, produto || 'Geral', "agendado"] // Se não vier produto, salva 'Geral'
         );
         res.json(novoAgendamento.rows[0]); 
     } catch (err) {
@@ -71,24 +98,24 @@ app.post("/agendamentos", async (req, res) => {
     }
 });
 
-// Atualizar e Deletar (mantém igual ao anterior...)
+// Atualizar Status (Chamar, Carregando, Finalizar)
 app.put("/agendamentos/:id", async (req, res) => {
-    // ... (copiar do código anterior)
     try {
         const { id } = req.params;
         const { status } = req.body;
+        // Ajuste pequeno para garantir que funciona com qualquer status
         await pool.query("UPDATE agendamentos SET status = $1 WHERE id = $2", [status, id]);
         res.json({ sucesso: true });
-    } catch (error) { res.status(500).json({ erro: "Erro" }); }
+    } catch (error) { res.status(500).json({ erro: "Erro ao atualizar" }); }
 });
 
+// Deletar
 app.delete("/agendamentos/:id", async (req, res) => {
-    // ... (copiar do código anterior)
      try {
         const { id } = req.params;
         await pool.query("DELETE FROM agendamentos WHERE id = $1", [id]);
         res.json({ sucesso: true });
-    } catch (error) { res.status(500).json({ erro: "Erro" }); }
+    } catch (error) { res.status(500).json({ erro: "Erro ao deletar" }); }
 });
 
 // 🚀 Start
