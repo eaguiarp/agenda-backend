@@ -389,28 +389,3 @@ async function renderizarLista() {
         lista.appendChild(li);
     });
 }
-
-        // Aqui está a mágica: Adicionamos o <br> e o span com cor
-        li.innerHTML = `
-            <div style="line-height: 1.5;">
-                <span style="font-size: 1.1rem;">${item.hora} - <strong>${item.placa}</strong></span><br>
-                <span style="color: #d35400; font-weight: bold; font-size: 0.9rem;">${produtoSimples}</span> 
-                <small style="color: #777;">(${item.status.toUpperCase()})</small>
-            </div>
-            
-            <div class="acoes">
-                ${item.status === 'agendado' ? 
-                    `<button class="btn-cha" onclick="chamarVeiculo('${item.id}')">CHAMAR</button>` : ''}
-                
-                ${item.status === 'chamando' ? 
-                    `<button class="btn-carr" onclick="iniciarCarregamento('${item.id}')">CARREGANDO</button>` : ''}
-                
-                ${['chamando', 'carregando'].includes(item.status) ? 
-                    `<button class="btn-fin" onclick="finalizarAgendamento('${item.id}')">FINALIZAR</button>` : ''}
-                
-                <button class="btn-exc" onclick="if(confirm('Excluir?')) excluirAgendamento('${item.id}')">EXCLUIR</button>
-            </div>
-        `;
-        lista.appendChild(li);
-    });
-}
