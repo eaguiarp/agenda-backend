@@ -4,6 +4,7 @@
 const form = document.getElementById("form-agendamento");
 const inputData = document.getElementById("data");
 const inputHora = document.getElementById("hora");
+const selectProduto = document.getElementById("produto");
 const inputPlaca = document.getElementById("placa");
 
 const filtroData = document.getElementById("filtro-data");
@@ -19,6 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     inputData?.addEventListener("change", renderizarOpcoesHorario);
     filtroData?.addEventListener("change", renderizarLista);
+    selectProduto?.addEventListener("change", renderizarOpcoesHorario);
     inputBuscaPlaca?.addEventListener("input", renderizarLista);
 
     btnLimpar?.addEventListener("click", () => {
@@ -33,6 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         const data = inputData.value;
         const hora = inputHora.value;
+        const produto = selectProduto.value;
         const placa = inputPlaca.value.trim().toUpperCase();
 
         if (!data || !hora || !placa) {
@@ -49,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function criarAgendamento(data, hora, placa) {
     const agendamentos = await obterAgendamentos();
-    const novo = { data, hora, placa };
+    const novo = { data, hora, produto, placa };
 
     if (agendamentos.some(a => a.data === data && a.hora === hora && a.status !== "finalizado")) {
         mostrarMensagem("Já existe agendamento nesse horário.", "erro");
@@ -152,31 +155,75 @@ async function excluirAgendamento(id) {
 // HORÁRIOS (Lógica Inteligente)
 // ===============================
 
+// ===============================
+// FUNÇÕES AUXILIARES DE PRODUTO
+// ===============================
+
+function ehCantagalo(nomeProduto) {
+    const PRODUTOS_CTG = [
+        "CPIII-32-RS-SC-V",
+        "CPII-F-32-SC-V-MA",
+        "CPII-E-32-SC-V",
+        "CPII-F-32-SC-25-MA0",
+        "CPV-ARI-SC-40-V"
+    ];
+
+    return PRODUTOS_CTG.includes(nomeProduto);
+}
+
+
 async function renderizarOpcoesHorario() {
     if (!inputData.value) {
         inputHora.innerHTML = '<option value="">Selecione a data primeiro</option>';
         return;
     }
+    
+if (!selectProduto?.value) {
+    inputHora.innerHTML = '<option value="">Selecione o produto</option>';
+    return;
+}
 
     inputHora.innerHTML = '<option value="">Selecione o horário</option>';
     const agendamentos = await obterAgendamentos();
     const dataSelecionada = inputData.value;
     const dataObj = new Date(dataSelecionada + 'T12:00:00');
     const diaSemana = dataObj.getDay();
+    const produtoSelecionado = selectProduto?.value;
+    const souCantagalo = ehCantagalo(produtoSelecionado);
+
+// Horários exclusivos Cantagalo
+const HORARIOS_CANTAGALO = ["07:40", "09:40", "13:00", "15:00", "17:40"];
+
 
     const agora = new Date();
     const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
 
     let horariosDisponiveis = [];
 
+
+
+if (souCantagalo) {
+
+    // CANTAGALO só vê horários exclusivos
+    HORARIOS_CANTAGALO.forEach(hStr => {
+        const [h, m] = hStr.split(":").map(Number);
+        horariosDisponiveis.push(h * 60 + m);
+    });
+
+} else {
+
+    // CPIII e demais produtos veem grade normal
     if (diaSemana === 0) {
         for (let m = 360; m <= 710; m += 25) horariosDisponiveis.push(m);
         for (let m = 790; m <= 840; m += 25) horariosDisponiveis.push(m);
     } else {
-        let mAtuais = (diaSemana === 1) ? 420 : 0; 
+        let mAtuais = (diaSemana === 1) ? 420 : 0;
+
         while (mAtuais < 1440) {
             let h = Math.floor(mAtuais / 60);
+
             if (diaSemana === 6 && mAtuais > 960) break;
+
             let intervalo = 60;
 
             if (h >= 0 && h < 3) intervalo = 25;
@@ -191,10 +238,20 @@ async function renderizarOpcoesHorario() {
             else if (h >= 20) intervalo = 30;
             else if (h === 19) { mAtuais = 1200; continue; }
 
-            if (mAtuais < 1440) horariosDisponiveis.push(mAtuais);
+            // Remove horários exclusivos do Cantagalo
+            let hrStr = String(Math.floor(mAtuais / 60)).padStart(2, "0");
+            let minStr = String(mAtuais % 60).padStart(2, "0");
+            let timeStr = `${hrStr}:${minStr}`;
+
+            if (!HORARIOS_CANTAGALO.includes(timeStr)) {
+                horariosDisponiveis.push(mAtuais);
+            }
+
             mAtuais += intervalo;
         }
     }
+}
+
 
     horariosDisponiveis.forEach(m => {
         let hr = Math.floor(m / 60).toString().padStart(2, '0');
