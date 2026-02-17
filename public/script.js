@@ -238,18 +238,37 @@ async function renderizarOpcoesHorario() {
     else if (diaSemana === 6) {
         adicionarIntervalo(0, 16 * 60, 30);
     }
+// ==============================
+// EXCLUSIVIDADE CANTAGALO (Só semana)
+// ==============================
 
-    // ==============================
-    // EXCLUSIVIDADE CANTAGALO (Só semana)
-    // ==============================
+const HORARIOS_EXCLUSIVOS = [
+    7*60 + 40,
+    9*60 + 40,
+    13*60,
+    15*60,
+    17*60 + 40
+];
 
-    const HORARIOS_EXCLUSIVOS = [
-        7*60 + 40,
-        9*60 + 40,
-        13*60,
-        15*60,
-        17*60 + 40
-    ];
+if (diaSemana >= 1 && diaSemana <= 5) {
+
+    if (souCantagalo) {
+        // adiciona exclusivos
+        HORARIOS_EXCLUSIVOS.forEach(h => {
+            if (!horarios.includes(h)) {
+                horarios.push(h);
+            }
+        });
+    } else {
+        // remove faixa inteira da hora exclusiva
+        horarios = horarios.filter(m => {
+            return !HORARIOS_EXCLUSIVOS.some(ex => 
+                Math.abs(m - ex) < 30
+            );
+        });
+    }
+}
+
 
     if (diaSemana >= 1 && diaSemana <= 5) { // só dias úteis
 
