@@ -345,19 +345,19 @@ async function renderizarLista() {
         let produtoSimples = "GERAL";
         const prod = (item.produto || "").toUpperCase(); 
 
-        if(prod.includes("CPIII")) {
+        if(prod.includes("CPIII-32-RS-SC-V (UPV/ARARÁ/URIO)")) {
             produtoSimples = "UPV / ARARÁ / URio (CPIII)";
         } 
-        else if(prod.includes("CPII-F") || prod.includes("FMA")) {
+        else if(prod.includes("CPII-F-32-SC-V-MA (CANTAGALO)") || prod.includes("FMA")) {
             produtoSimples = "CANTAGALO (FMA)";
         }
-        else if(prod.includes("CPII-E") || prod.includes("E32")) {
+        else if(prod.includes("CPII-E-32-SC-V (CANTAGALO)") || prod.includes("E32")) {
             produtoSimples = "CANTAGALO (E32)";
         }
-        else if(prod.includes("SC-25") || prod.includes("M25")) {
+        else if(prod.includes("CPII-F-32-SC-25-MA (CANTAGALO)") || prod.includes("M25")) {
             produtoSimples = "CANTAGALO (M25)";
         }
-        else if(prod.includes("CPV")) {
+        else if(prod.includes("CPV-ARI-SC-40-V (CANTAGALO)")) {
             produtoSimples = "CANTAGALO (CPV)";
         }
         else if(prod.includes("CANTAGALO")) {
