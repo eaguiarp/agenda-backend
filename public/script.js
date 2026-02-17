@@ -239,7 +239,7 @@ async function renderizarOpcoesHorario() {
         adicionarIntervalo(0, 16 * 60, 30);
     }
 // ==============================
-// EXCLUSIVIDADE CANTAGALO (Só semana)
+// EXCLUSIVIDADE CANTAGALO
 // ==============================
 
 const HORARIOS_EXCLUSIVOS = [
@@ -250,40 +250,17 @@ const HORARIOS_EXCLUSIVOS = [
     17*60 + 40
 ];
 
-if (diaSemana >= 1 && diaSemana <= 5) {
+if (diaSemana >= 1 && diaSemana <= 5) { // só dias úteis
 
     if (souCantagalo) {
-        // adiciona exclusivos
-        HORARIOS_EXCLUSIVOS.forEach(h => {
-            if (!horarios.includes(h)) {
-                horarios.push(h);
-            }
-        });
+        // Cantagalo vê SOMENTE exclusivos
+        horarios = HORARIOS_EXCLUSIVOS;
     } else {
-        // remove faixa inteira da hora exclusiva
-        horarios = horarios.filter(m => {
-            return !HORARIOS_EXCLUSIVOS.some(ex => 
-                Math.abs(m - ex) < 30
-            );
-        });
+        // Outros não podem usar exclusivos
+        horarios = horarios.filter(h => !HORARIOS_EXCLUSIVOS.includes(h));
     }
 }
 
-
-    if (diaSemana >= 1 && diaSemana <= 5) { // só dias úteis
-
-        if (souCantagalo) {
-            // adiciona horários exclusivos caso não estejam na grade
-            HORARIOS_EXCLUSIVOS.forEach(h => {
-                if (!horarios.includes(h)) horarios.push(h);
-            });
-        } else {
-            // remove exclusivos se não for cantagalo
-            horarios = horarios.filter(h => !HORARIOS_EXCLUSIVOS.includes(h));
-        }
-    }
-
-    horarios.sort((a,b)=>a-b);
 
     // ==============================
     // FILTRAR OCUPADOS E PASSADO
