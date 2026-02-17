@@ -18,7 +18,11 @@ app.use((req, res, next) => {
     // Se for a raiz (/) ou o index.html, pede senha.
     if (req.path === '/' || req.path === '/index.html') {
         return basicAuth({
-            users: { 'admin': '1234' }, // <--- TROQUE SUA SENHA AQUI
+           users: { 
+    'eduardo': 'senhaMestre', 
+    'gabriel': 'logistica2026', 
+    'operacao': 'patio123' 
+},, // <--- TROQUE SUA SENHA AQUI
             challenge: true, // Faz aparecer a janelinha do navegador
             realm: 'Painel Logistico Itaborai'
         })(req, res, next);
