@@ -18,10 +18,15 @@ const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamen
 document.addEventListener("DOMContentLoaded", () => {
     if (inputData) inputData.setAttribute("min", hoje);
 
+inputHora.disabled = true;
+inputHora.innerHTML = '<option value="">Selecione data e produto</option>';
+
     inputData?.addEventListener("change", renderizarOpcoesHorario);
-    filtroData?.addEventListener("change", renderizarLista);
     selectProduto?.addEventListener("change", renderizarOpcoesHorario);
-    inputBuscaPlaca?.addEventListener("input", renderizarLista);
+    filtroData?.addEventListener("change", renderizarLista);
+    inputBuscaPlaca?.addEventListener("input", renderizarLista); 
+
+
 
     btnLimpar?.addEventListener("click", () => {
         filtroData.value = "";
@@ -38,11 +43,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const produto = selectProduto.value;
         const placa = inputPlaca.value.trim().toUpperCase();
 
-        if (!data || !hora || !placa) {
+        if (!data || !hora || !produto || !placa) {
             mostrarMensagem("Preencha todos os campos.", "erro");
             return;
         }
-        await criarAgendamento(data, hora, placa);
+       await criarAgendamento(data, hora, produto, placa);
     });
 });
 
@@ -50,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // REGRAS DE NEGÓCIO E FLUXO
 // ===============================
 
-async function criarAgendamento(data, hora, placa) {
+async function criarAgendamento(data, hora, produto, placa) {
     const agendamentos = await obterAgendamentos();
     const novo = { data, hora, produto, placa };
 
@@ -64,13 +69,19 @@ async function criarAgendamento(data, hora, placa) {
         return;
     }
 
-    if (await salvarAgendamento(novo)) {
-        form.reset();
-        await renderizarLista();
-        await renderizarOpcoesHorario();
-        mostrarMensagem("Agendamento salvo com sucesso.", "sucesso");
-    }
+if (await salvarAgendamento(novo)) {
+
+    form.reset();
+
+    inputHora.disabled = true;
+    inputHora.innerHTML = '<option value="">Selecione data e produto</option>';
+
+    await renderizarLista();
+
+    mostrarMensagem("Agendamento salvo com sucesso.", "sucesso");
 }
+}
+
 
 async function chamarVeiculo(id) {
     try {
@@ -151,9 +162,6 @@ async function excluirAgendamento(id) {
     } catch (erro) { mostrarMensagem("Erro ao excluir.", "erro"); }
 }
 
-// ===============================
-// HORÁRIOS (Lógica Inteligente)
-// ===============================
 
 // ===============================
 // FUNÇÕES AUXILIARES DE PRODUTO
@@ -164,24 +172,25 @@ function ehCantagalo(nomeProduto) {
         "CPIII-32-RS-SC-V",
         "CPII-F-32-SC-V-MA",
         "CPII-E-32-SC-V",
-        "CPII-F-32-SC-25-MA0",
+        "CPII-F-32-SC-25-MA",
         "CPV-ARI-SC-40-V"
     ];
 
     return PRODUTOS_CTG.includes(nomeProduto);
 }
 
-
 async function renderizarOpcoesHorario() {
-    if (!inputData.value) {
-        inputHora.innerHTML = '<option value="">Selecione a data primeiro</option>';
+
+    if (!inputData.value || !selectProduto?.value) {
+        inputHora.disabled = true;
+        inputHora.innerHTML = '<option value="">Selecione data e produto</option>';
         return;
     }
-    
-if (!selectProduto?.value) {
-    inputHora.innerHTML = '<option value="">Selecione o produto</option>';
-    return;
-}
+
+    inputHora.disabled = false;
+    inputHora.value = "";
+   
+
 
     inputHora.innerHTML = '<option value="">Selecione o horário</option>';
     const agendamentos = await obterAgendamentos();
