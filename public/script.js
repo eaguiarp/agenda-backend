@@ -169,7 +169,6 @@ async function excluirAgendamento(id) {
 
 function ehCantagalo(nomeProduto) {
     const PRODUTOS_CTG = [
-        "CPIII-32-RS-SC-V",
         "CPII-F-32-SC-V-MA",
         "CPII-E-32-SC-V",
         "CPII-F-32-SC-25-MA",
@@ -188,87 +187,102 @@ async function renderizarOpcoesHorario() {
     }
 
     inputHora.disabled = false;
-    inputHora.value = "";
-   
-
-
     inputHora.innerHTML = '<option value="">Selecione o horário</option>';
+
     const agendamentos = await obterAgendamentos();
     const dataSelecionada = inputData.value;
     const dataObj = new Date(dataSelecionada + 'T12:00:00');
-    const diaSemana = dataObj.getDay();
-    const produtoSelecionado = selectProduto?.value;
-    const souCantagalo = ehCantagalo(produtoSelecionado);
+    const diaSemana = dataObj.getDay(); // 0=Dom, 1=Seg...
+    const souCantagalo = ehCantagalo(selectProduto.value);
 
-// Horários exclusivos Cantagalo
-const HORARIOS_CANTAGALO = ["07:40", "09:40", "13:00", "15:00", "17:40"];
-
-
+    const hojeData = new Date().toISOString().split("T")[0];
     const agora = new Date();
     const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
 
-    let horariosDisponiveis = [];
+    let horarios = [];
 
+    // ==============================
+    // REGRAS POR DIA
+    // ==============================
 
-
-if (souCantagalo) {
-
-    // CANTAGALO só vê horários exclusivos
-    HORARIOS_CANTAGALO.forEach(hStr => {
-        const [h, m] = hStr.split(":").map(Number);
-        horariosDisponiveis.push(h * 60 + m);
-    });
-
-} else {
-
-    // CPIII e demais produtos veem grade normal
-    if (diaSemana === 0) {
-        for (let m = 360; m <= 710; m += 25) horariosDisponiveis.push(m);
-        for (let m = 790; m <= 840; m += 25) horariosDisponiveis.push(m);
-    } else {
-        let mAtuais = (diaSemana === 1) ? 420 : 0;
-
-        while (mAtuais < 1440) {
-            let h = Math.floor(mAtuais / 60);
-
-            if (diaSemana === 6 && mAtuais > 960) break;
-
-            let intervalo = 60;
-
-            if (h >= 0 && h < 3) intervalo = 25;
-            else if (h === 3) { if (mAtuais < 210) mAtuais = 210; intervalo = 90; }
-            else if (h >= 4 && h < 6) intervalo = 40;
-            else if (h === 6) { mAtuais = 420; continue; }
-            else if (h >= 7 && h < 11) intervalo = 40;
-            else if (h >= 11 && h < 13) intervalo = 60;
-            else if (h >= 13 && h < 16) intervalo = 40;
-            else if (h === 16) { mAtuais = 1020; continue; }
-            else if (h >= 17 && h < 19) intervalo = 40;
-            else if (h >= 20) intervalo = 30;
-            else if (h === 19) { mAtuais = 1200; continue; }
-
-            // Remove horários exclusivos do Cantagalo
-            let hrStr = String(Math.floor(mAtuais / 60)).padStart(2, "0");
-            let minStr = String(mAtuais % 60).padStart(2, "0");
-            let timeStr = `${hrStr}:${minStr}`;
-
-            if (!HORARIOS_CANTAGALO.includes(timeStr)) {
-                horariosDisponiveis.push(mAtuais);
-            }
-
-            mAtuais += intervalo;
+    function adicionarIntervalo(inicio, fim, intervaloMin) {
+        for (let m = inicio; m <= fim; m += intervaloMin) {
+            horarios.push(m);
         }
     }
-}
 
+    // DOMINGO (0) → 6h às 14h (30 min)
+    if (diaSemana === 0) {
+        adicionarIntervalo(6 * 60, 14 * 60, 30);
+    }
 
-    horariosDisponiveis.forEach(m => {
-        let hr = Math.floor(m / 60).toString().padStart(2, '0');
-        let min = (m % 60).toString().padStart(2, '0');
-        let horarioFormatado = `${hr}:${min}`;
+    // SEGUNDA (1) → começa 7h (30 min)
+    else if (diaSemana === 1) {
+        adicionarIntervalo(7 * 60, 23 * 60 + 30, 30);
+    }
 
-        const ocupado = agendamentos.some(a => a.data === dataSelecionada && a.hora === horarioFormatado && a.status !== "finalizado");
-        const passado = (dataSelecionada === hoje && m < minutosAgora);
+    // TERÇA A SEXTA (2 a 5) → 24h
+    else if (diaSemana >= 2 && diaSemana <= 5) {
+
+        // madrugada até 23:30
+        adicionarIntervalo(0, 23 * 60 + 30, 30);
+
+        // remover inventário 6h-7h
+        horarios = horarios.filter(m => !(m >= 6*60 && m < 7*60));
+
+        // remover inventário 16h-17h
+        horarios = horarios.filter(m => !(m >= 16*60 && m < 17*60));
+    }
+
+    // SÁBADO (6) → até 16h
+    else if (diaSemana === 6) {
+        adicionarIntervalo(0, 16 * 60, 30);
+    }
+
+    // ==============================
+    // EXCLUSIVIDADE CANTAGALO (Só semana)
+    // ==============================
+
+    const HORARIOS_EXCLUSIVOS = [
+        7*60 + 40,
+        9*60 + 40,
+        13*60,
+        15*60,
+        17*60 + 40
+    ];
+
+    if (diaSemana >= 1 && diaSemana <= 5) { // só dias úteis
+
+        if (souCantagalo) {
+            // adiciona horários exclusivos caso não estejam na grade
+            HORARIOS_EXCLUSIVOS.forEach(h => {
+                if (!horarios.includes(h)) horarios.push(h);
+            });
+        } else {
+            // remove exclusivos se não for cantagalo
+            horarios = horarios.filter(h => !HORARIOS_EXCLUSIVOS.includes(h));
+        }
+    }
+
+    horarios.sort((a,b)=>a-b);
+
+    // ==============================
+    // FILTRAR OCUPADOS E PASSADO
+    // ==============================
+
+    horarios.forEach(m => {
+
+        const hr = String(Math.floor(m / 60)).padStart(2, '0');
+        const min = String(m % 60).padStart(2, '0');
+        const horarioFormatado = `${hr}:${min}`;
+
+        const ocupado = agendamentos.some(a =>
+            a.data === dataSelecionada &&
+            a.hora === horarioFormatado &&
+            a.status !== "finalizado"
+        );
+
+        const passado = (dataSelecionada === hojeData && m < minutosAgora);
 
         if (!ocupado && !passado) {
             const option = document.createElement("option");
