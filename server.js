@@ -5,7 +5,7 @@ const cors = require("cors");
 const { Pool } = require("pg");
 const path = require("path");
 const basicAuth = require('express-basic-auth'); // <--- 1. Importação da Segurança
-const fetch = require("node-fetch");
+
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 const app = express();
