@@ -304,6 +304,8 @@ async function verificarLive() {
   const tvContainer = document.getElementById("tv-container");
 
   if (data.live) {
+    tvContainer.style.display = "block";
+
     if (currentVideoId !== data.videoId) {
       currentVideoId = data.videoId;
 
@@ -318,16 +320,14 @@ async function verificarLive() {
         </iframe>
       `;
     }
+
   } else {
-    tvContainer.innerHTML = "";
+    tvContainer.style.display = "none";
     currentVideoId = null;
   }
 }
 
-// Verifica a cada 10 segundos
 setInterval(verificarLive, 10000);
-
-// Executa ao carregar
 verificarLive();
 
 
