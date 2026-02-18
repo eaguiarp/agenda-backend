@@ -5,6 +5,8 @@ const cors = require("cors");
 const { Pool } = require("pg");
 const path = require("path");
 const basicAuth = require('express-basic-auth'); // <--- 1. Importação da Segurança
+const fetch = require("node-fetch");
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 const app = express();
 app.use(cors());
@@ -87,6 +89,7 @@ app.get("/agendamentos", async (req, res) => {
   }
 });
 
+
 // Criar (ATUALIZADO PARA SALVAR O PRODUTO)
 app.post("/agendamentos", async (req, res) => {
     try {
@@ -123,6 +126,31 @@ app.delete("/agendamentos/:id", async (req, res) => {
         res.json({ sucesso: true });
     } catch (error) { res.status(500).json({ erro: "Erro ao deletar" }); }
 });
+
+
+app.get("/bandnews-live", async (req, res) => {
+    try {
+        const channelId = "UCWijW6tW0iI5ghsAbWDFtTg"; // exemplo canal BandNews FM
+
+        const response = await fetch(
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${YOUTUBE_API_KEY}`
+        );
+
+        const data = await response.json();
+
+        if (data.items && data.items.length > 0) {
+            const videoId = data.items[0].id.videoId;
+            res.json({ videoId });
+        } else {
+            res.json({ message: "Nenhuma live ativa agora" });
+        }
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ erro: "Erro ao buscar live" });
+    }
+});
+
 
 // 🚀 Start
 const PORT = process.env.PORT || 3000;

@@ -115,6 +115,16 @@ async function iniciarDescarregamento(id) {
     }
 }
 
+fetch("/bandnews-live")
+  .then(res => res.json())
+  .then(data => {
+    if (data.videoId) {
+      const iframe = document.getElementById("bandnews-player");
+      iframe.src = `https://www.youtube.com/embed/${data.videoId}`;
+    }
+  });
+
+
 // ===============================
 // BACKEND (Comunicação API)
 // ===============================
