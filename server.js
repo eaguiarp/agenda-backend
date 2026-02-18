@@ -128,35 +128,36 @@ app.delete("/agendamentos/:id", async (req, res) => {
         res.json({ sucesso: true });
     } catch (error) { res.status(500).json({ erro: "Erro ao deletar" }); }
 });
-
 app.get("/bandnews-live", async (req, res) => {
   try {
-    const channelId = "UCWijW6tW0iI5ghsAbWDFtTg"; // Rádio BandNews FM
+    const channelId = "UCWijW6tW0iI5ghsAbWDFtTg";
     const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
-    if (!YOUTUBE_API_KEY) {
-      return res.status(500).json({ error: "API KEY não configurada" });
+    // 1️⃣ Buscar vídeos recentes
+    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=id&channelId=${channelId}&type=video&order=date&maxResults=5&key=${YOUTUBE_API_KEY}`;
+    const searchResponse = await fetch(searchUrl);
+    const searchData = await searchResponse.json();
+
+    if (!searchData.items) {
+      return res.json({ live: false, message: "Erro ao buscar vídeos" });
     }
 
-    // 1️⃣ Busca os vídeos mais recentes do canal
-    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&order=date&maxResults=5&key=${YOUTUBE_API_KEY}`;
+    // Pegar IDs
+    const videoIds = searchData.items.map(item => item.id.videoId).join(",");
 
-    const response = await fetch(searchUrl);
-    const data = await response.json();
+    // 2️⃣ Verificar detalhes dos vídeos
+    const videosUrl = `https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails,snippet&id=${videoIds}&key=${YOUTUBE_API_KEY}`;
+    const videosResponse = await fetch(videosUrl);
+    const videosData = await videosResponse.json();
 
-    if (!data.items) {
-      return res.status(500).json({ error: "Erro ao buscar vídeos do YouTube", details: data });
-    }
-
-    // 2️⃣ Procura algum vídeo marcado como live
-    const liveVideo = data.items.find(
-      item => item.snippet.liveBroadcastContent === "live"
+    const liveVideo = videosData.items.find(video => 
+      video.liveStreamingDetails && video.liveStreamingDetails.actualStartTime
     );
 
     if (liveVideo) {
       return res.json({
         live: true,
-        videoId: liveVideo.id.videoId,
+        videoId: liveVideo.id,
         title: liveVideo.snippet.title,
         thumbnail: liveVideo.snippet.thumbnails.high.url
       });
@@ -165,7 +166,7 @@ app.get("/bandnews-live", async (req, res) => {
     return res.json({ live: false, message: "Nenhuma live ativa agora" });
 
   } catch (error) {
-    console.error("Erro ao verificar live:", error);
+    console.error(error);
     res.status(500).json({ error: "Erro interno no servidor" });
   }
 });
