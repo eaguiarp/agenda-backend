@@ -104,7 +104,7 @@ async function iniciarCarregamento(id) {
         const resposta = await fetch(`${API_URL}/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: "carregando" })
+            body: JSON.stringify({ status: "descarregando" })
         });
         if (resposta.ok) {
             renderizarLista();
@@ -314,7 +314,7 @@ async function renderizarLista() {
     if(countTotal) countTotal.textContent = listaFiltrada.filter(a => a.data === hoje).length;
     
     if(countPendente) countPendente.textContent = listaFiltrada.filter(a => 
-        ["agendado", "chamando", "carregando"].includes(a.status)).length;
+        ["agendado", "chamando", "descarregando"].includes(a.status)).length;
 
     if (listaFiltrada.length === 0) {
         lista.innerHTML = "<li class='vazio'>Nenhum agendamento encontrado.</li>";
@@ -322,7 +322,7 @@ async function renderizarLista() {
     }
 
     // Ordenação Inteligente
-    const ordemStatus = { "chamando": 1, "carregando": 2, "agendado": 3, "finalizado": 4 };
+    const ordemStatus = { "chamando": 1, "descarregando": 2, "agendado": 3, "finalizado": 4 };
     listaFiltrada.sort((a, b) => {
         const pesoA = ordemStatus[a.status] || 99;
         const pesoB = ordemStatus[b.status] || 99;
@@ -337,7 +337,7 @@ async function renderizarLista() {
         // Cores visuais
         if (item.status === "finalizado") li.style.opacity = "0.6";
         if (item.status === "chamando") li.style.borderLeft = "5px solid #f1c40f"; 
-        if (item.status === "carregando") li.style.borderLeft = "5px solid #e67e22"; 
+        if (item.status === "descarregando") li.style.borderLeft = "5px solid #e67e22"; 
         if (item.status === "finalizado") li.style.borderLeft = "5px solid #2ecc71"; 
 
         // === LÓGICA FLEXÍVEL DE PRODUTO ===
@@ -375,9 +375,9 @@ for (const p of PRODUTOS_MAP) {
                     `<button class="btn-cha" onclick="chamarVeiculo('${item.id}')">CHAMAR</button>` : ''}
                 
                 ${item.status === 'chamando' ? 
-                    `<button class="btn-carr" onclick="iniciarCarregamento('${item.id}')">CARREGANDO</button>` : ''}
+                    `<button class="btn-carr" onclick="iniciarCarregamento('${item.id}')">DESCARREGANDO</button>` : ''}
                 
-                ${['chamando', 'carregando'].includes(item.status) ? 
+                ${['chamando', 'descarregando'].includes(item.status) ? 
                     `<button class="btn-fin" onclick="finalizarAgendamento('${item.id}')">FINALIZAR</button>` : ''}
                 
                 <button class="btn-exc" onclick="if(confirm('Excluir?')) excluirAgendamento('${item.id}')">EXCLUIR</button>
