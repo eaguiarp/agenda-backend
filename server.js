@@ -133,7 +133,7 @@ app.delete("/agendamentos/:id", async (req, res) => {
 app.get("/bandnews-live", async (req, res) => {
     try {
         const channelId = "UCWijW6tW0iI5ghsAbWDFtTg"; // exemplo canal BandNews FM
-YOUTUBE_API_KEY=AIzaSyDmr2hbvkvXY2Gmm3eV0xN5724ZsVlAq6o
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || "SUA_CHAVE_AQUI"; // Certifique-se de definir sua chave de API no .env
 
         const response = await fetch(
             `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${YOUTUBE_API_KEY}`
