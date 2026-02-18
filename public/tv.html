@@ -97,6 +97,10 @@
     let ultimoChamadoID = null;
     let contadorBips = 0;
 
+const YT_API_KEY = "AIzaSyDmr2hbvkvXY2Gmm3eV0xN5724ZsVlAq6o";
+const YT_CHANNEL_ID = "UCWijW6tW0iI5ghsAbWDFtTg"; // BandNews
+
+
     async function atualizarTV() {
         try {
             const res = await fetch(API_URL);
@@ -132,83 +136,16 @@
                     tocarSom();
                     anunciarVeiculo(chamando.placa); // Sua função de voz
                 }
-            } else {
-                divPrincipal.innerHTML = `<h2>Aguardando Chamada</h2><div style="color: #444; font-size: 2rem; margin-top:20px;">--</div>`;
-            }
+           } else {
+    divPrincipal.innerHTML = `<h2>Aguardando Chamada</h2>
+    <div style="color: #444; font-size: 2rem; margin-top:20px;">--</div>`;
+}
 
-            // ==========================================
-            // 2. BLOCO PRÓXIMO VEÍCULO
-            // ==========================================
-            // Pega o primeiro agendado da lista
-            const proximo = ativos.find(a => a.status === "agendado");
-            const divProximo = document.getElementById("painel-proximo");
-            
-            if (proximo) {
-                divProximo.innerHTML = `
-                    <h2>Próximo Veículo</h2>
-                    <div class="placa-media">${proximo.placa}</div>
-                    <div class="hora-media">${proximo.hora}</div>
-                `;
-            } else {
-                divProximo.innerHTML = `<h2>Próximo</h2><p>--</p>`;
-            }
-
-            // ==========================================
-            // 3. BLOCO LATERAL (A FILA) - O QUE ESTAVA FALTANDO
-            // ==========================================
-            // Pega os agendados, IGNORANDO o que já está no quadro "Próximo"
-            const fila = ativos.filter(a => a.status === "agendado" && a.id !== (proximo ? proximo.id : null)).slice(0, 5);
-            const divFila = document.getElementById("painel-fila");
-            divFila.innerHTML = "";
-            
-            if (fila.length > 0) {
-                fila.forEach(item => {
-                    divFila.innerHTML += `
-                        <div>
-                            <span>${item.placa}</span>
-                            <span>${item.hora}</span>
-                        </div>
-                    `;
-                });
-            } else {
-                divFila.innerHTML = "<div style='text-align:center; color:#555;'>Sem fila de espera</div>";
-            }
-
-            // ==========================================
-            // 4. BLOCO HISTÓRICO (DESCARREGANDO + FINALIZADOS)
-            // ==========================================
-            const divHist = document.getElementById("painel-historico");
-            divHist.innerHTML = "";
-            
-            // Mostra quem está descarregando (Laranja)
-            const descarregando = dados.filter(a => a.status === "descarregando");
-            descarregando.forEach(item => {
-                divHist.innerHTML += `
-                    <div class="item-historico">
-                        <span>${item.placa}</span>
-                        <span class="status-badge bg-descarregando">DESCARREGANDO</span>
-                    </div>
-                `;
-            });
-            
-            // Mostra últimos finalizados (Verde)
-            const ultimosFinalizados = dados.filter(a => a.status === "finalizado")
-                                            .sort((a, b) => new Date(b.id) - new Date(a.id)) // Ordena pelo ID (tempo reverso)
-                                            .slice(0, 3);
-
-            ultimosFinalizados.forEach(item => {
-                divHist.innerHTML += `
-                    <div class="item-historico">
-                        <span>${item.placa}</span>
-                        <span class="status-badge bg-finalizado">FINALIZADO</span>
-                    </div>
-                `;
-            });
-
-        } catch (e) { 
-            console.error("Erro TV", e); 
+        } catch (e) {
+            console.error("Erro TV", e);
         }
     }
+
 
     function tocarSom() {
         if (contadorBips < 3) {
