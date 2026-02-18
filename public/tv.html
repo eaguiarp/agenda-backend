@@ -48,12 +48,12 @@
         }
         .lista-fila div span:last-child { color: #f1c40f; font-weight: bold; }
 
-        /* HISTÓRICO (CARREGANDO) */
+        /* HISTÓRICO (DESCARREGANDO) */
         .item-historico {
             font-size: 1.1rem; color: #bbb; border-bottom: 1px solid #444; padding: 5px 0; display: flex; justify-content: space-between;
         }
         .status-badge { font-size: 0.8rem; padding: 2px 5px; border-radius: 4px; }
-        .bg-carregando { background: #e67e22; color: white; }
+        .bg-descarregando { background: #e67e22; color: white; }
         .bg-finalizado { background: #2ecc71; color: black; }
 
         /* ANIMAÇÃO CHAMANDO */
@@ -175,18 +175,18 @@
             }
 
             // ==========================================
-            // 4. BLOCO HISTÓRICO (CARREGANDO + FINALIZADOS)
+            // 4. BLOCO HISTÓRICO (DESCARREGANDO + FINALIZADOS)
             // ==========================================
             const divHist = document.getElementById("painel-historico");
             divHist.innerHTML = "";
             
-            // Mostra quem está carregando (Laranja)
-            const carregando = dados.filter(a => a.status === "carregando");
-            carregando.forEach(item => {
+            // Mostra quem está descarregando (Laranja)
+            const descarregando = dados.filter(a => a.status === "descarregando");
+            descarregando.forEach(item => {
                 divHist.innerHTML += `
                     <div class="item-historico">
                         <span>${item.placa}</span>
-                        <span class="status-badge bg-carregando">CARREGANDO</span>
+                        <span class="status-badge bg-descarregando">DESCARREGANDO</span>
                     </div>
                 `;
             });

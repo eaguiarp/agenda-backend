@@ -99,7 +99,7 @@ async function chamarVeiculo(id) {
     }
 }
 
-async function iniciarCarregamento(id) {
+async function iniciarDescarregamento(id) {
     try {
         const resposta = await fetch(`${API_URL}/${id}`, {
             method: "PUT",
@@ -108,7 +108,7 @@ async function iniciarCarregamento(id) {
         });
         if (resposta.ok) {
             renderizarLista();
-            mostrarMensagem("Veículo em processo de carga!", "sucesso");
+            mostrarMensagem("Veículo em processo de descarga!", "sucesso");
         }
     } catch (erro) {
         mostrarMensagem("Erro ao mudar status.", "erro");
@@ -375,7 +375,7 @@ for (const p of PRODUTOS_MAP) {
                     `<button class="btn-cha" onclick="chamarVeiculo('${item.id}')">CHAMAR</button>` : ''}
                 
                 ${item.status === 'chamando' ? 
-                    `<button class="btn-carr" onclick="iniciarCarregamento('${item.id}')">DESCARREGANDO</button>` : ''}
+                    `<button class="btn-carr" onclick="iniciarDescarregamento('${item.id}')">DESCARREGANDO</button>` : ''}
                 
                 ${['chamando', 'descarregando'].includes(item.status) ? 
                     `<button class="btn-fin" onclick="finalizarAgendamento('${item.id}')">FINALIZAR</button>` : ''}
