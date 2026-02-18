@@ -12,6 +12,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+console.log("YT:", process.env.YOUTUBE_API_KEY);
+
 // ========================================================
 // 🛡️ BLOCO DE SEGURANÇA (A PORTARIA)
 // ========================================================
