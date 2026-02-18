@@ -145,6 +145,9 @@ h2 {
     height: 100%;
     overflow: hidden;
     background: black; /* Fundo preto caso o vídeo não carregue */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #tv-band iframe {
@@ -316,41 +319,45 @@ setInterval(atualizarTV, 5000);
 atualizarTV();
 
 let currentVideoId = null;
-
 async function verificarLive() {
-  const response = await fetch("/bandnews-live");
-  const data = await response.json();
+    const tvContainer = document.getElementById("tv-band");
+    const painelPrincipal = document.getElementById("painel-principal");
 
-  const tvContainer = document.getElementById("tv-band");
-
-
-  if (data.live) {
-    tvContainer.style.display = "block";
-
-    if (currentVideoId !== data.videoId) {
-      currentVideoId = data.videoId;
-
-      tvContainer.innerHTML = `
-        <iframe
-          width="100%"
-          height="100%"
-          src="https://www.youtube.com/embed/${data.videoId}?autoplay=1"
-          frameborder="0"
-          allow="autoplay; encrypted-media"
-          allowfullscreen>
-        </iframe>
-      `;
+    // Se o painel principal tiver conteúdo (placa piscando), esconde a TV/Aviso
+    if (painelPrincipal.innerHTML.trim() !== "") {
+        tvContainer.style.display = "none";
+        currentVideoId = null; 
+        return;
     }
 
-  } else {
-    tvContainer.style.display = "none";
-    currentVideoId = null;
-  }
+    try {
+        const response = await fetch("/bandnews-live");
+        const data = await response.json();
+
+        tvContainer.style.display = "flex"; // Garante que o container apareça
+
+        if (data.live) {
+            if (currentVideoId !== data.videoId) {
+                currentVideoId = data.videoId;
+                tvContainer.innerHTML = `
+                    <iframe
+                        width="100%" height="100%"
+                        src="https://www.youtube.com/embed/${data.videoId}?autoplay=1&mute=1"
+                        frameborder="0" allow="autoplay; encrypted-media" allowfullscreen>
+                    </iframe>`;
+            }
+        } else {
+            // ESTADO: Sem live, mostra o aviso
+            currentVideoId = null;
+            tvContainer.innerHTML = `<h1 style="color: #444; font-size: 3rem;">AGUARDANDO CHAMADA...</h1>`;
+        }
+    } catch (e) {
+        console.error("Erro ao verificar live", e);
+        // Em caso de erro de conexão, também mostra o aviso
+        tvContainer.style.display = "flex";
+        tvContainer.innerHTML = `<h1 style="color: #444;">SISTEMA ATIVO</h1>`;
+    }
 }
-
-setInterval(verificarLive, 10000);
-verificarLive();
-
 
 </script>
 
