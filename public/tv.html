@@ -139,6 +139,22 @@ h2 {
     50% { opacity: 0.7; transform: scale(1.02); }
     100% { opacity: 1; }
 }
+
+#tv-band {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+#tv-band iframe {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 177.78vh; /* 16:9 baseado na altura */
+    height: 100vh;
+    transform: translate(-50%, -50%);
+}
+
 </style>
 </head>
 
