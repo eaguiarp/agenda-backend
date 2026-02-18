@@ -146,9 +146,11 @@ h2 {
 
 <div class="container">
 
-   <div class="area-principal" id="painel-principal">
-    <div id="tv-band" style="width:100%; height:100%;"></div>
+  <div class="area-principal">
+    <div id="tv-band" style="width:100%; height:100%; position:absolute;"></div>
+    <div id="painel-principal" style="position:absolute; width:100%; height:100%;"></div>
 </div>
+
 
     
     <div class="area-inferior">
@@ -211,7 +213,8 @@ async function atualizarTV() {
             }
         } else {
             if (ultimoChamadoID !== null) {
-        divPrincipal.innerHTML = "";
+       divPrincipal.innerHTML = "";
+
         ultimoChamadoID = null;
         carregarBand();
         }
@@ -301,7 +304,8 @@ async function verificarLive() {
   const response = await fetch("/bandnews-live");
   const data = await response.json();
 
-  const tvContainer = document.getElementById("tv-container");
+  const tvContainer = document.getElementById("tv-band");
+
 
   if (data.live) {
     tvContainer.style.display = "block";
