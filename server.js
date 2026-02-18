@@ -129,31 +129,46 @@ app.delete("/agendamentos/:id", async (req, res) => {
     } catch (error) { res.status(500).json({ erro: "Erro ao deletar" }); }
 });
 
-
 app.get("/bandnews-live", async (req, res) => {
-    try {
-        const channelId = "UCWijW6tW0iI5ghsAbWDFtTg"; // exemplo canal BandNews FM
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || "SUA_CHAVE_AQUI"; // Certifique-se de definir sua chave de API no .env
+  try {
+    const channelId = "UCWijW6tW0iI5ghsAbWDFtTg"; // Rádio BandNews FM
+    const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
-        const response = await fetch(
-            `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${YOUTUBE_API_KEY}`
-        );
-
-        const data = await response.json();
-
-        if (data.items && data.items.length > 0) {
-            const videoId = data.items[0].id.videoId;
-            res.json({ videoId });
-        } else {
-            res.json({ message: "Nenhuma live ativa agora" });
-        }
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ erro: "Erro ao buscar live" });
+    if (!YOUTUBE_API_KEY) {
+      return res.status(500).json({ error: "API KEY não configurada" });
     }
-});
 
+    // 1️⃣ Busca os vídeos mais recentes do canal
+    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&order=date&maxResults=5&key=${YOUTUBE_API_KEY}`;
+
+    const response = await fetch(searchUrl);
+    const data = await response.json();
+
+    if (!data.items) {
+      return res.status(500).json({ error: "Erro ao buscar vídeos do YouTube", details: data });
+    }
+
+    // 2️⃣ Procura algum vídeo marcado como live
+    const liveVideo = data.items.find(
+      item => item.snippet.liveBroadcastContent === "live"
+    );
+
+    if (liveVideo) {
+      return res.json({
+        live: true,
+        videoId: liveVideo.id.videoId,
+        title: liveVideo.snippet.title,
+        thumbnail: liveVideo.snippet.thumbnails.high.url
+      });
+    }
+
+    return res.json({ live: false, message: "Nenhuma live ativa agora" });
+
+  } catch (error) {
+    console.error("Erro ao verificar live:", error);
+    res.status(500).json({ error: "Erro interno no servidor" });
+  }
+});
 
 // 🚀 Start
 const PORT = process.env.PORT || 3000;
