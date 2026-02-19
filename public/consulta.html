@@ -84,58 +84,81 @@
 
     <div id="resultado"></div>
 
-    <script>
-        const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
+<button id="btn-notificar" style="background:#e67e22; margin-bottom:10px; width:100%; max-width:400px; padding:10px; border:none; border-radius:8px; color:white; cursor:pointer;">
+    🔔 RECEBER AVISO NO CELULAR
+</button>
+const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
+let monitoramentoAtivo = false;
 
-       document.getElementById('btn-buscar').addEventListener('click', async () => {
-            const placa = document.getElementById('placa-busca').value.trim().toUpperCase();
-            const resDiv = document.getElementById('resultado');
+// 1. Pedir permissão para notificações
+document.getElementById('btn-notificar').addEventListener('click', () => {
+    Notification.requestPermission().then(perm => {
+        if (perm === 'granted') {
+            alert("Ótimo! Você será avisado quando for chamado.");
+            document.getElementById('btn-notificar').style.display = 'none';
+        }
+    });
+});
 
-            if (placa.length < 3) {
-                alert("Digite a placa completa.");
-                return;
-            }
+document.getElementById('btn-buscar').addEventListener('click', async () => {
+    const placa = document.getElementById('placa-busca').value.trim().toUpperCase();
+    if (placa.length < 3) { alert("Digite a placa completa."); return; }
 
-            try {
-                const response = await fetch(API_URL);
-                const dados = await response.json();
-                
-                const hojeStr = new Date().toISOString().split("T")[0];
+    buscarEExibir(placa);
 
-                // Filtra agendamentos daquela placa que sejam de hoje em diante
-                const meusAgendamentos = dados.filter(a => 
-                    a.placa.toUpperCase() === placa && 
-                    a.data >= hojeStr
-                );
+    // Se ainda não estiver monitorando, começa a vigiar a cada 10 segundos
+    if (!monitoramentoAtivo) {
+        monitoramentoAtivo = true;
+        setInterval(() => buscarEExibir(placa), 10000);
+    }
+});
 
-                resDiv.style.display = "block";
-                resDiv.innerHTML = ""; // Limpa busca anterior
+async function buscarEExibir(placa) {
+    const resDiv = document.getElementById('resultado');
+    try {
+        const response = await fetch(API_URL);
+        const dados = await response.json();
+        const hojeStr = new Date().toISOString().split("T")[0];
 
-                if (meusAgendamentos.length > 0) {
-                    // Ordena por data e hora para o motorista ver o mais próximo primeiro
-                    meusAgendamentos.sort((a, b) => new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`));
+        const meusAgendamentos = dados.filter(a => 
+            a.placa.toUpperCase() === placa && a.data >= hojeStr
+        );
 
-                    let htmlBase = `<h2>Resultados para ${placa}</h2>`;
-                    
-                    meusAgendamentos.forEach(item => {
-                        const classeStatus = item.status === 'finalizado' ? 'finalizado' : 'agendado';
-                        htmlBase += `
-                            <div class="resultado-item ${classeStatus}" style="margin-bottom: 15px; padding: 15px; border-radius: 8px; border: 1px solid #ccc;">
-                                <p>Data: <strong>${item.data}</strong></p>
-                                <p>Horário: <span style="font-size: 1.5rem;">${item.hora}</span></p>
-                                <p>Status: <strong>${item.status.toUpperCase()}</strong></p>
-                            </div>
-                        `;
-                    });
-                    resDiv.innerHTML = htmlBase;
-                } else {
-                    resDiv.style.background = "#fff3e0";
-                    resDiv.innerHTML = "<h3>Nenhum agendamento futuro encontrado.</h3><p>Verifique a placa ou fale com a logística.</p>";
+        resDiv.style.display = "block";
+        if (meusAgendamentos.length > 0) {
+            meusAgendamentos.sort((a, b) => new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`));
+
+            let htmlBase = `<h2>Resultados para ${placa}</h2>`;
+            meusAgendamentos.forEach(item => {
+                // LÓGICA DE NOTIFICAÇÃO
+                if (item.status === "chamando") {
+                    dispararNotificacao(item.placa);
                 }
-            } catch (error) {
-                alert("Erro ao consultar servidor.");
-            }
+
+                const classeStatus = item.status === 'finalizado' ? 'finalizado' : (item.status === 'chamando' ? 'piscando' : 'agendado');
+                htmlBase += `
+                    <div class="resultado-item ${classeStatus}" style="margin-bottom: 15px; padding: 15px; border-radius: 8px; border: 2px solid #333;">
+                        <p>Horário: <span style="font-size: 1.5rem;">${item.hora}</span></p>
+                        <p>Status: <strong>${item.status.toUpperCase()}</strong></p>
+                    </div>
+                `;
+            });
+            resDiv.innerHTML = htmlBase;
+        }
+    } catch (error) { console.error("Erro na consulta", error); }
+}
+
+function dispararNotificacao(placa) {
+    if (Notification.permission === 'granted') {
+        const n = new Notification("ESTÁ NA SUA VEZ!", {
+            body: `Caminhão ${placa}, dirija-se à descarga!`,
+            icon: "https://cdn-icons-png.flaticon.com/512/71/71222.png", // Ícone de caminhão
+            vibrate: [200, 100, 200]
         });
-    </script>
+        
+        // Faz o celular vibrar se estiver no modo vibração
+        if (navigator.vibrate) { navigator.vibrate([500, 200, 500]); }
+    }
+}
 </body>
 </html>
