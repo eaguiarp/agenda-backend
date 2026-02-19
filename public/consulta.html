@@ -4,73 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consulta de Agendamento</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#5a6b5c">
     <style>
-    /* Reset básico para ocupar a tela toda */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    
-    body { 
-        display: flex;
-        flex-direction: column;
-        justify-content: center; /* Centraliza verticalmente */
-        align-items: center;     /* Centraliza horizontalmente */
-        min-height: 100vh;       /* Garante que o corpo tenha a altura da tela */
-        padding: 20px; 
-        font-family: sans-serif; 
-        background-color: #f8f9fa;
-    }
-
-    h1 { color: #5a6b5c; margin-bottom: 10px; }
-    p { color: #666; margin-bottom: 30px; }
-
-    .busca-container { 
-        width: 100%; 
-        max-width: 400px; 
-        background: white;
-        padding: 30px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* Um sombreado leve para dar profundidade */
-    }
-
-    input#placa-busca { 
-        width: 100%; 
-        padding: 15px; 
-        font-size: 1.8rem; 
-        text-align: center; 
-        text-transform: uppercase;
-        border: 2px solid #5a6b5c;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        color: #333;
-    }
-
-    button#btn-buscar { 
-        width: 100%; 
-        padding: 18px; 
-        font-size: 1.2rem; 
-        background: #5a6b5c; 
-        color: white; 
-        border: none; 
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: bold;
-        transition: background 0.3s;
-    }
-
-    button#btn-buscar:hover { background: #455246; }
-
-    #resultado { 
-        margin-top: 20px; 
-        width: 100%;
-        max-width: 400px;
-        padding: 20px; 
-        border-radius: 8px; 
-        display: none; 
-    }
-
-    .agendado { background: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; }
-    .finalizado { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
-</style>
+        /* Reset e Estilos */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            min-height: 100vh; padding: 20px; font-family: sans-serif; background-color: #f8f9fa;
+        }
+        h1 { color: #5a6b5c; margin-bottom: 10px; }
+        p { color: #666; margin-bottom: 30px; }
+        .busca-container { 
+            width: 100%; max-width: 400px; background: white; padding: 30px;
+            border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+        }
+        input#placa-busca { 
+            width: 100%; padding: 15px; font-size: 1.8rem; text-align: center; 
+            text-transform: uppercase; border: 2px solid #5a6b5c; border-radius: 8px; margin-bottom: 15px;
+        }
+        button#btn-buscar { 
+            width: 100%; padding: 18px; font-size: 1.2rem; background: #5a6b5c; 
+            color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;
+        }
+        #btn-notificar {
+            background:#e67e22; margin-top: 15px; width:100%; padding:10px; 
+            border:none; border-radius:8px; color:white; cursor:pointer; font-weight: bold;
+        }
+        #resultado { margin-top: 20px; width: 100%; max-width: 400px; display: none; }
+        .agendado { background: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; }
+        .finalizado { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
+        .piscando { 
+            animation: pulse 1s infinite; background: #f1c40f; color: black; border: 2px solid #000;
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+    </style>
 </head>
 <body>
 
@@ -80,85 +48,100 @@
     <div class="busca-container">
         <input type="text" id="placa-busca" placeholder="ABC1D23" maxlength="7">
         <button id="btn-buscar">VER MEU HORÁRIO</button>
+        <button id="btn-notificar">🔔 RECEBER AVISO NO CELULAR</button>
     </div>
 
     <div id="resultado"></div>
 
-<button id="btn-notificar" style="background:#e67e22; margin-bottom:10px; width:100%; max-width:400px; padding:10px; border:none; border-radius:8px; color:white; cursor:pointer;">
-    🔔 RECEBER AVISO NO CELULAR
-</button>
-const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
-let monitoramentoAtivo = false;
+    <script>
+        const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
+        let monitoramentoAtivo = false;
+        let jaNotificou = false; // TRAVA DE SEGURANÇA
 
-// 1. Pedir permissão para notificações
-document.getElementById('btn-notificar').addEventListener('click', () => {
-    Notification.requestPermission().then(perm => {
-        if (perm === 'granted') {
-            alert("Ótimo! Você será avisado quando for chamado.");
-            document.getElementById('btn-notificar').style.display = 'none';
-        }
-    });
-});
-
-document.getElementById('btn-buscar').addEventListener('click', async () => {
-    const placa = document.getElementById('placa-busca').value.trim().toUpperCase();
-    if (placa.length < 3) { alert("Digite a placa completa."); return; }
-
-    buscarEExibir(placa);
-
-    // Se ainda não estiver monitorando, começa a vigiar a cada 10 segundos
-    if (!monitoramentoAtivo) {
-        monitoramentoAtivo = true;
-        setInterval(() => buscarEExibir(placa), 10000);
-    }
-});
-
-async function buscarEExibir(placa) {
-    const resDiv = document.getElementById('resultado');
-    try {
-        const response = await fetch(API_URL);
-        const dados = await response.json();
-        const hojeStr = new Date().toISOString().split("T")[0];
-
-        const meusAgendamentos = dados.filter(a => 
-            a.placa.toUpperCase() === placa && a.data >= hojeStr
-        );
-
-        resDiv.style.display = "block";
-        if (meusAgendamentos.length > 0) {
-            meusAgendamentos.sort((a, b) => new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`));
-
-            let htmlBase = `<h2>Resultados para ${placa}</h2>`;
-            meusAgendamentos.forEach(item => {
-                // LÓGICA DE NOTIFICAÇÃO
-                if (item.status === "chamando") {
-                    dispararNotificacao(item.placa);
+        // 1. Pedir permissão
+        document.getElementById('btn-notificar').addEventListener('click', () => {
+            Notification.requestPermission().then(perm => {
+                if (perm === 'granted') {
+                    alert("Ótimo! Você será avisado quando for chamado.");
+                    document.getElementById('btn-notificar').style.display = 'none';
                 }
-
-                const classeStatus = item.status === 'finalizado' ? 'finalizado' : (item.status === 'chamando' ? 'piscando' : 'agendado');
-                htmlBase += `
-                    <div class="resultado-item ${classeStatus}" style="margin-bottom: 15px; padding: 15px; border-radius: 8px; border: 2px solid #333;">
-                        <p>Horário: <span style="font-size: 1.5rem;">${item.hora}</span></p>
-                        <p>Status: <strong>${item.status.toUpperCase()}</strong></p>
-                    </div>
-                `;
             });
-            resDiv.innerHTML = htmlBase;
-        }
-    } catch (error) { console.error("Erro na consulta", error); }
-}
-
-function dispararNotificacao(placa) {
-    if (Notification.permission === 'granted') {
-        const n = new Notification("ESTÁ NA SUA VEZ!", {
-            body: `Caminhão ${placa}, dirija-se à descarga!`,
-            icon: "https://cdn-icons-png.flaticon.com/512/71/71222.png", // Ícone de caminhão
-            vibrate: [200, 100, 200]
         });
-        
-        // Faz o celular vibrar se estiver no modo vibração
-        if (navigator.vibrate) { navigator.vibrate([500, 200, 500]); }
-    }
-}
+
+        // 2. Busca e Monitoramento
+        document.getElementById('btn-buscar').addEventListener('click', async () => {
+            const placa = document.getElementById('placa-busca').value.trim().toUpperCase();
+            if (placa.length < 3) { alert("Digite a placa completa."); return; }
+
+            buscarEExibir(placa);
+
+            if (!monitoramentoAtivo) {
+                monitoramentoAtivo = true;
+                setInterval(() => buscarEExibir(placa), 10000); // Verifica a cada 10s
+            }
+        });
+
+        async function buscarEExibir(placa) {
+            const resDiv = document.getElementById('resultado');
+            try {
+                const response = await fetch(API_URL);
+                const dados = await response.json();
+                const hojeStr = new Date().toISOString().split("T")[0];
+
+                const meusAgendamentos = dados.filter(a => 
+                    a.placa.toUpperCase() === placa && a.data >= hojeStr
+                );
+
+                resDiv.style.display = "block";
+                resDiv.innerHTML = ""; 
+
+                if (meusAgendamentos.length > 0) {
+                    meusAgendamentos.sort((a, b) => new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`));
+
+                    let htmlBase = `<h2>Resultados para ${placa}</h2>`;
+                    
+                    // Lógica da Notificação (Pega o primeiro da lista)
+                    const principal = meusAgendamentos[0];
+                    if (principal.status === "chamando") {
+                        if (!jaNotificou) {
+                            dispararNotificacao(principal.placa);
+                            jaNotificou = true;
+                        }
+                    } else {
+                        jaNotificou = false; // Libera para notificar se voltar a chamar
+                    }
+
+                    meusAgendamentos.forEach(item => {
+                        const classeStatus = item.status === 'finalizado' ? 'finalizado' : (item.status === 'chamando' ? 'piscando' : 'agendado');
+                        htmlBase += `
+                            <div class="resultado-item ${classeStatus}" style="margin-bottom: 15px; padding: 15px; border-radius: 8px;">
+                                <p>Horário: <span style="font-size: 1.5rem;">${item.hora}</span></p>
+                                <p>Status: <strong>${item.status.toUpperCase()}</strong></p>
+                            </div>
+                        `;
+                    });
+                    resDiv.innerHTML = htmlBase;
+                } else {
+                    resDiv.innerHTML = "<p>Nenhum agendamento encontrado.</p>";
+                }
+            } catch (error) { console.error("Erro na consulta", error); }
+        }
+
+        function dispararNotificacao(placa) {
+            if (Notification.permission === 'granted') {
+                new Notification("ESTÁ NA SUA VEZ!", {
+                    body: `Caminhão ${placa}, dirija-se à descarga!`,
+                    icon: "/icon-192.png",
+                    vibrate: [200, 100, 200]
+                });
+                if (navigator.vibrate) { navigator.vibrate([500, 200, 500]); }
+            }
+        }
+
+        // Registro do Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
+    </script>
 </body>
 </html>
