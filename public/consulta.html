@@ -126,22 +126,21 @@
                 }
             } catch (error) { console.error("Erro na consulta", error); }
         }
+function dispararNotificacao(placa) {
+    console.log("Tentando notificar placa: " + placa); // Para você ver no console se a função foi chamada
+    
+    // Tenta vibrar ANTES da notificação, para garantir que o comando saia
+    if ('vibrate' in navigator) {
+        navigator.vibrate([500, 200, 500]);
+    }
 
-      function dispararNotificacao(placa) {
     if (Notification.permission === 'granted') {
-        const n = new Notification("SUA VEZ CHEGOU!", {
-            body: `Placa ${placa}, dirija-se à área de descarga.`,
-            icon: "/icon-192.png",
-            vibrate: [500, 200, 500, 200, 500] // Vibra 3 vezes
+        new Notification("LOGÍSTICA: SUA VEZ CHEGOU!", {
+            body: `Caminhão ${placa}, siga para descarga.`,
+            vibrate: [500, 200, 500]
         });
-
-        // Força a vibração do hardware separadamente
-        if ('vibrate' in navigator) {
-            navigator.vibrate([500, 200, 500, 200, 500]);
-        }
     }
 }
-
         // Registro do Service Worker para PWA
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js');
