@@ -5,6 +5,7 @@ const CACHE_NAME = "agendacd-v1";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
+  "./consulta.html",
   "./style.css",
   "./script.js",
   "./manifest.json",
@@ -60,4 +61,29 @@ self.addEventListener("fetch", (event) => {
       return response || fetch(event.request);
     })
   );
+});
+
+// 4. Ouvir eventos de Push (Notificações vindas do servidor ou disparadas pelo sistema)
+self.addEventListener('push', (event) => {
+    const data = event.data ? event.data.json() : { title: 'AgendaCD', body: 'Você tem uma nova atualização!' };
+    
+    const options = {
+        body: data.body,
+        icon: './icon-192.png',
+        vibrate: [500, 200, 500],
+        badge: './icon-72.png', // Ícone pequeno que aparece na barra de status
+        data: { url: './consulta.html' } // Link para onde o motorista vai ao clicar
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(data.title, options)
+    );
+});
+
+// 5. O que acontece quando o motorista clica na notificação
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close(); // Fecha o balão
+    event.waitUntil(
+        clients.openWindow(event.notification.data.url) // Abre a página de consulta
+    );
 });
