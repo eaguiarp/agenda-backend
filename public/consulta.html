@@ -127,16 +127,20 @@
             } catch (error) { console.error("Erro na consulta", error); }
         }
 
-        function dispararNotificacao(placa) {
-            if (Notification.permission === 'granted') {
-                new Notification("ESTÁ NA SUA VEZ!", {
-                    body: `Caminhão ${placa}, dirija-se à descarga!`,
-                    icon: "/icon-192.png",
-                    vibrate: [200, 100, 200]
-                });
-                if (navigator.vibrate) { navigator.vibrate([500, 200, 500]); }
-            }
+      function dispararNotificacao(placa) {
+    if (Notification.permission === 'granted') {
+        const n = new Notification("SUA VEZ CHEGOU!", {
+            body: `Placa ${placa}, dirija-se à área de descarga.`,
+            icon: "/icon-192.png",
+            vibrate: [500, 200, 500, 200, 500] // Vibra 3 vezes
+        });
+
+        // Força a vibração do hardware separadamente
+        if ('vibrate' in navigator) {
+            navigator.vibrate([500, 200, 500, 200, 500]);
         }
+    }
+}
 
         // Registro do Service Worker para PWA
         if ('serviceWorker' in navigator) {
