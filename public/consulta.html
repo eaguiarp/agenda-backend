@@ -127,17 +127,19 @@
             } catch (error) { console.error("Erro na consulta", error); }
         }
 function dispararNotificacao(placa) {
-    console.log("Tentando notificar placa: " + placa); // Para você ver no console se a função foi chamada
-    
-    // Tenta vibrar ANTES da notificação, para garantir que o comando saia
     if ('vibrate' in navigator) {
-        navigator.vibrate([500, 200, 500]);
+        // Padrão: Vibra 1 segundo, pausa 0.2s, vibra 1 segundo, pausa 0.2s, vibra 2 segundos
+        // Isso é bem difícil de ignorar no bolso.
+        navigator.vibrate([1000, 200, 1000, 200, 2000]);
     }
 
     if (Notification.permission === 'granted') {
-        new Notification("LOGÍSTICA: SUA VEZ CHEGOU!", {
-            body: `Caminhão ${placa}, siga para descarga.`,
-            vibrate: [500, 200, 500]
+        new Notification("⚠️ SUA VEZ CHEGOU!", {
+            body: `Motorista da placa ${placa}, dirija-se à área de descarga.`,
+            icon: "/icon-192.png",
+            vibrate: [1000, 200, 1000, 200, 2000],
+            tag: 'chamada-motorista', // Evita que acumule várias notificações iguais
+            renotify: true // Faz vibrar de novo se a notificação for atualizada
         });
     }
 }
