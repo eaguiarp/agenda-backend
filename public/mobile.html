@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>CD Itaboraí — Agenda</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+ <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">  <style>
+    /* ── VARIÁVEIS ─────────────────────────────────── */
+    :root {
+      --bg:       #080808;
+      --surface:  #111;
+      --border:   #222;
+      --accent:   #f0b429;
+      --green:    #00e676;
+      --orange:   #ff6d00;
+      --red:      #ff1744;
+      --muted:    #444;
+      --text:     #ddd;
+      --fn-disp:  'Source Sans 3', sans-serif;
+      --fn-mono:  'JetBrains Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--fn-mono);
+      min-height: 100dvh;
+      overscroll-behavior: none;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+
+    /* ── TOPO ──────────────────────────────────────── */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-family: var(--fn-disp);
+      font-size: 1.15rem;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+    }
+
+    #relogio {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    /* ── SEÇÕES ────────────────────────────────────── */
+    .secao {
+      padding: 0 14px 20px;
+    }
+
+    .secao-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 14px 0 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .secao-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── A) CHAMANDO AGORA ─────────────────────────── */
+    #bloco-chamando {
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .chamando-card {
+      background: #130f00;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      padding: 20px 20px 16px;
+      position: relative;
+      animation: borda-pulsar 2s ease-in-out infinite;
+    }
+    @keyframes borda-pulsar {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(240,180,41,0); }
+      50%       { box-shadow: 0 0 18px 2px rgba(240,180,41,0.15); }
+    }
+
+    .chip-ao-vivo {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.6rem;
+      letter-spacing: 0.18em;
+      font-weight: 700;
+      color: var(--bg);
+      background: var(--accent);
+      padding: 3px 8px 3px 6px;
+      border-radius: 2px;
+      margin-bottom: 12px;
+    }
+    .chip-dot {
+      width: 6px; height: 6px;
+      background: var(--bg);
+      border-radius: 50%;
+      animation: piscar-dot 1s infinite;
+    }
+    @keyframes piscar-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .placa-chamando {
+      font-family: var(--fn-disp);
+      font-size: 4.6rem;
+      color: #fff;
+      line-height: 1;
+      letter-spacing: 0.06em;
+    }
+
+    .hora-chamando {
+      font-family: var(--fn-disp);
+      font-size: 2rem;
+      color: var(--accent);
+      margin-top: 2px;
+    }
+
+    .avisos {
+      margin-top: 14px;
+      border-top: 1px solid #2a2000;
+      padding-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .aviso-linha {
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      color: #a08020;
+    }
+    .aviso-linha.destaque {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+    }
+
+    .idle-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 28px 20px;
+      text-align: center;
+    }
+    .idle-card .idle-icon {
+      font-size: 2rem;
+      display: block;
+      margin-bottom: 10px;
+      opacity: 0.3;
+    }
+    .idle-card p {
+      font-size: 0.8rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+
+    /* ── B) FILA ───────────────────────────────────── */
+    .fila-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .fila-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* posição na fila */
+    .fila-pos {
+      font-family: var(--fn-disp);
+      font-size: 1.4rem;
+      color: var(--muted);
+      min-width: 28px;
+      text-align: center;
+    }
+
+    /* destaque visual para o primeiro da fila */
+    .fila-item.proximo {
+      border-color: #333;
+      background: #161616;
+    }
+    .fila-item.proximo .fila-pos {
+      color: var(--accent);
+    }
+    .fila-item.proximo::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--accent);
+    }
+
+    .fila-placa {
+      font-family: var(--fn-disp);
+      font-size: 1.7rem;
+      color: #fff;
+      letter-spacing: 0.05em;
+      flex: 1;
+    }
+
+    .fila-hora {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .fila-vazia {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      padding: 20px 0;
+    }
+
+    /* ── C) DESCARREGADOS / STATUS ─────────────────── */
+    .status-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .status-item {
+      background: var(--surface);
+      padding: 11px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-icon {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .icon-descarregando { background: var(--orange); box-shadow: 0 0 6px var(--orange); }
+    .icon-finalizado    { background: var(--green);  }
+
+    .status-placa {
+      font-family: var(--fn-disp);
+      font-size: 1.2rem;
+      color: #fff;
+      letter-spacing: 0.05em;
+      flex: 1;
+    }
+
+    .badge {
+      font-size: 0.55rem;
+      letter-spacing: 0.12em;
+      font-weight: 700;
+      padding: 3px 7px;
+      border-radius: 2px;
+    }
+    .badge-descarregando { background: var(--orange); color: #000; }
+    .badge-finalizado    { background: #112a16; color: var(--green); border: 1px solid #1e4a28; }
+
+    .status-hora {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .status-vazio {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      padding: 20px;
+    }
+
+    /* ── RODAPÉ ────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 12px 14px 20px;
+      font-size: 0.6rem;
+      color: #2a2a2a;
+      letter-spacing: 0.1em;
+    }
+
+    /* ── SCROLLBAR ─────────────────────────────────── */
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-thumb { background: var(--border); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span class="logo">CD · Itaboraí</span>
+    <span id="relogio">--:--</span>
+  </header>
+
+  <!-- A) CHAMANDO AGORA -->
+  <div class="secao">
+    <div class="secao-label">Chamando agora</div>
+    <div id="bloco-chamando">
+      <div class="idle-card">
+        <span class="idle-icon">📡</span>
+        <p>Aguardando chamada...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- B) PRÓXIMOS DA FILA -->
+  <div class="secao">
+    <div class="secao-label">Fila de espera</div>
+    <div id="bloco-fila" class="fila-lista">
+      <div class="fila-vazia">Carregando...</div>
+    </div>
+  </div>
+
+  <!-- C) STATUS PÁTIO -->
+  <div class="secao">
+    <div class="secao-label">Pátio / Descarregados</div>
+    <div id="bloco-status"></div>
+  </div>
+
+  <footer>ATUALIZA A CADA 5s &nbsp;·&nbsp; CD ITABORAÍ</footer>
+
+  <audio id="som-alerta"
+    src="https://agenda-backend-production-5b72.up.railway.app/msn-wizz-sound.ogg?v=2">
+  </audio>
+
+  <script>
+    // ─── CONFIG ──────────────────────────────────────────────
+    const API_URL   = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
+    const POLL_MS   = 5000;
+    const BIPS_MAX  = 3;
+    const BIP_DELAY = 2500;
+
+    // ─── ESTADO ──────────────────────────────────────────────
+    let ultimoChamadoID = null;
+    let contadorBips    = 0;
+
+    // ─── RELÓGIO ─────────────────────────────────────────────
+    function atualizarRelogio() {
+      const agora = new Date();
+      document.getElementById('relogio').textContent =
+        agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+    setInterval(atualizarRelogio, 1000);
+    atualizarRelogio();
+
+    // ─── RENDER: CHAMANDO ────────────────────────────────────
+    function renderChamando(chamando) {
+      const el = document.getElementById('bloco-chamando');
+
+      if (!chamando) {
+        el.innerHTML = `
+          <div class="idle-card">
+            <span class="idle-icon">📡</span>
+            <p>Aguardando chamada...</p>
+          </div>`;
+        return;
+      }
+
+      el.innerHTML = `
+        <div class="chamando-card">
+          <div class="chip-ao-vivo">
+            <span class="chip-dot"></span>CHAMANDO
+          </div>
+          <div class="placa-chamando">${chamando.placa}</div>
+          <div class="hora-chamando">${chamando.hora}</div>
+          <div class="avisos">
+            <div class="aviso-linha">Desligue o motor &bull; Calce as rodas &bull; Entregue as chaves</div>
+            <div class="aviso-linha destaque">⚠ Uso obrigatório de EPIs</div>
+          </div>
+        </div>`;
+    }
+
+    // ─── RENDER: FILA ────────────────────────────────────────
+    function renderFila(fila) {
+      const el = document.getElementById('bloco-fila');
+
+      if (!fila.length) {
+        el.innerHTML = `<div class="fila-vazia">Sem fila de espera</div>`;
+        return;
+      }
+
+      el.innerHTML = fila.map((item, i) => `
+        <div class="fila-item ${i === 0 ? 'proximo' : ''}">
+          <span class="fila-pos">${i + 1}</span>
+          <span class="fila-placa">${item.placa}</span>
+          <span class="fila-hora">${item.hora}</span>
+        </div>`).join('');
+    }
+
+    // ─── RENDER: STATUS PÁTIO ────────────────────────────────
+    function renderStatus(dados) {
+      const el = document.getElementById('bloco-status');
+
+      const descarregando = dados.filter(a => a.status === 'descarregando');
+      const finalizados   = dados
+        .filter(a => a.status === 'finalizado')
+        .sort((a, b) => b.id - a.id)
+        .slice(0, 5);
+
+      const todos = [...descarregando, ...finalizados];
+
+      if (!todos.length) {
+        el.innerHTML = `<div class="status-vazio">Pátio sem registros</div>`;
+        return;
+      }
+
+      el.innerHTML = `
+        <div class="status-lista">
+          ${todos.map(item => {
+            const desc = item.status === 'descarregando';
+            return `
+              <div class="status-item">
+                <span class="status-icon ${desc ? 'icon-descarregando' : 'icon-finalizado'}"></span>
+                <span class="status-placa">${item.placa}</span>
+                <span class="status-hora">${item.hora ?? ''}</span>
+                <span class="badge ${desc ? 'badge-descarregando' : 'badge-finalizado'}">
+                  ${desc ? 'DESCARREGANDO' : 'FINALIZADO'}
+                </span>
+              </div>`;
+          }).join('')}
+        </div>`;
+    }
+
+    // ─── SOM ─────────────────────────────────────────────────
+    function tocarSom() {
+      if (contadorBips >= BIPS_MAX) return;
+      const audio = document.getElementById('som-alerta');
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+      contadorBips++;
+      setTimeout(tocarSom, BIP_DELAY);
+    }
+
+    function anunciarVeiculo(placa) {
+      const falada = placa.split('').join(' ');
+      const utter  = new SpeechSynthesisUtterance(
+        `Atenção, motorista do veículo ${falada}. Dirija-se à área de descarga.`
+      );
+      utter.lang = 'pt-BR';
+      utter.rate = 0.9;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utter);
+    }
+
+    // ─── POLLING ─────────────────────────────────────────────
+    async function atualizar() {
+      try {
+        const res   = await fetch(API_URL);
+        const dados = await res.json();
+
+        const ativos = dados
+          .filter(a => a.status !== 'finalizado')
+          .sort((a, b) =>
+            new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`)
+          );
+
+        const chamando = ativos.find(a => a.status === 'chamando') ?? null;
+        const fila     = ativos.filter(a => a.status === 'agendado').slice(0, 8);
+
+        renderChamando(chamando);
+        renderFila(fila);
+        renderStatus(dados);
+
+        if (chamando && ultimoChamadoID !== chamando.id) {
+          ultimoChamadoID = chamando.id;
+          contadorBips    = 0;
+          tocarSom();
+          anunciarVeiculo(chamando.placa);
+        }
+
+      } catch (err) {
+        console.error('[Mobile] Erro:', err);
+      }
+    }
+
+    // ─── INIT ────────────────────────────────────────────────
+    document.body.addEventListener('click', () => {
+      const a = document.getElementById('som-alerta');
+      a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
+    }, { once: true });
+
+    setInterval(atualizar, POLL_MS);
+    atualizar();
+  </script>
+</body>
+</html>
