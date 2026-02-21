@@ -18,16 +18,7 @@ const FILES_TO_CACHE = [
 
 
 
-self.addEventListener("activate", event => {
-  event.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(
-        keys.filter(key => key !== CACHE_NAME)
-            .map(key => caches.delete(key))
-      );
-    })
-  );
-});
+
 
 // 1. Instalação: Baixa os arquivos da lista e salva no cache
 self.addEventListener("install", (event) => {
@@ -57,22 +48,27 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// 3. Interceptação (Fetch): A Mágica Acontece Aqui
 self.addEventListener("fetch", (event) => {
-  
-  // REGRA DE OURO: Nunca fazer cache da API de dados (/agendamentos)
-  // Se for uma chamada para a API, vai direto para a internet (Network Only)
+
+  // API de dados: sempre vai à rede
   if (event.request.url.includes("/agendamentos")) {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // Para o resto (CSS, HTML, JS, Imagens), tenta o Cache primeiro.
-  // Se não tiver no cache, busca na rede.
+  // App shell: tenta a REDE primeiro, cai no cache só se offline
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
+    fetch(event.request)
+      .then((networkResponse) => {
+        // Aproveita e atualiza o cache com a versão fresquinha
+        const responseClone = networkResponse.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+        return networkResponse;
+      })
+      .catch(() => {
+        // Sem internet: serve o cache como fallback
+        return caches.match(event.request);
+      })
   );
 });
 
