@@ -427,28 +427,29 @@ for (const p of PRODUTOS_MAP) {
     }
 }
         // === EXIBIÇÃO VISUAL ===
-        li.innerHTML = `
-            <div style="line-height: 1.6;">
-                <span style="font-size: 1.1rem;">${item.hora} - <strong>${item.placa}</strong></span>
-                <br>
-                <span style="color: #d35400; font-weight: bold; font-size: 0.85rem;">${produtoSimples}</span> 
-                <small style="color: #999; margin-left: 5px;">(${item.status.toUpperCase()})</small>
-            </div>
-            
-            <div class="acoes">
-                ${item.status === 'agendado' ? 
-                    `<button class="btn-cha" onclick="chamarVeiculo('${item.id}')">CHAMAR</button>` : ''}
-                
-                ${item.status === 'chamando' ? 
-                    `<button class="btn-carr" onclick="iniciarDescarregamento('${item.id}')">DESCARREGANDO</button>` : ''}
-                
-                ${['chamando', 'descarregando'].includes(item.status) ? 
-                    `<button class="btn-fin" onclick="finalizarAgendamento('${item.id}')">FINALIZAR</button>` : ''}
-                
-                ${item.status === 'agendado' ? `<button class="btn-aus" onclick="if(confirm('Mover para o final da fila?')) marcarAusente('${item.id}')">AUSENTE</button>` : ''}
+       li.innerHTML = `
+    <div style="line-height: 1.6; margin-bottom: 8px;">
+        <span style="font-size: 1.1rem;">${item.hora} - <strong>${item.placa}</strong></span>
+        <br>
+        <span style="color: #d35400; font-weight: bold; font-size: 0.85rem;">${produtoSimples}</span> 
+        <small style="color: #999; margin-left: 5px;">(${item.status.toUpperCase()})</small>
+    </div>
+    
+    <div class="acoes" style="display: flex; flex-wrap: wrap; gap: 6px;">
+        ${item.status === 'agendado' ? 
+            `<button class="btn-cha" onclick="chamarVeiculo('${item.id}')">CHAMAR</button>` : ''}
+        
+        ${item.status === 'chamando' ? 
+            `<button class="btn-carr" onclick="iniciarDescarregamento('${item.id}')">DESCARREGANDO</button>` : ''}
+        
+        ${['chamando', 'descarregando'].includes(item.status) ? 
+            `<button class="btn-fin" onclick="finalizarAgendamento('${item.id}')">FINALIZAR</button>` : ''}
+        
+        ${item.status === 'agendado' ? 
+            `<button class="btn-aus" onclick="if(confirm('Mover para o final da fila?')) marcarAusente('${item.id}')">AUSENTE</button>` : ''}
 
-                ${!['finalizado','cancelado'].includes(item.status) ? `<button class="btn-exc" onclick="if(confirm('Cancelar agendamento?')) cancelarAgendamento('${item.id}')">CANCELAR</button>` : ''}
-        `;
-        lista.appendChild(li);
-    });
+        ${!['finalizado','cancelado'].includes(item.status) ? 
+            `<button class="btn-exc" onclick="if(confirm('Cancelar agendamento?')) cancelarAgendamento('${item.id}')">CANCELAR</button>` : ''}
+    </div>
+`;
 }
