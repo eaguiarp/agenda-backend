@@ -17,24 +17,28 @@ console.log("YT:", process.env.YOUTUBE_API_KEY);
 // ========================================================
 // 🛡️ BLOCO DE SEGURANÇA (A PORTARIA)
 // ========================================================
-// Colocamos isso ANTES de servir os arquivos.
+const USUARIOS = {
+    'eduardo':   'senhaMestre',
+    'gabriel':   'logistica2026',
+    'operacao':  'patio123',
+    'tora':      'tora2026',
+    'transagil': 'trans2026'
+};
+
 app.use((req, res, next) => {
-    // Se for a raiz (/) ou o index.html, pede senha.
     if (req.path === '/' || req.path === '/index.html') {
         return basicAuth({
-           users: { 
-    'eduardo': 'senhaMestre', 
-    'gabriel': 'logistica2026', 
-    'operacao': 'patio123',
-    'tora': "tora2026",
-    'transagil': "trans2026" 
-}, // <--- TROQUE SUA SENHA AQUI
-            challenge: true, // Faz aparecer a janelinha do navegador
+            users: USUARIOS,
+            challenge: true,
             realm: 'Painel Logistico Itaborai'
         })(req, res, next);
     }
-    // Se for TV, Consulta ou API, deixa passar direto.
     next();
+});
+
+// Retorna o usuário atualmente logado
+app.get("/eu", basicAuth({ users: USUARIOS, challenge: true }), (req, res) => {
+    res.json({ usuario: req.auth.user });
 });
 
 // --- Servir os arquivos do Frontend (Pasta public) ---
@@ -95,12 +99,11 @@ app.get("/agendamentos", async (req, res) => {
 // Criar (ATUALIZADO PARA SALVAR O PRODUTO)
 app.post("/agendamentos", async (req, res) => {
     try {
-        // Agora recebemos 'produto' também
-        const { data, hora, placa, produto } = req.body; 
+        const { data, hora, placa, produto, alterado_por } = req.body; // ← adicione alterado_por
         
         const novoAgendamento = await pool.query(
-            "INSERT INTO agendamentos (data, hora, placa, produto, status) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-            [data, hora, placa, produto || 'Geral', "agendado"] // Se não vier produto, salva 'Geral'
+            "INSERT INTO agendamentos (data, hora, placa, produto, status, alterado_por) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+            [data, hora, placa, produto || 'Geral', "agendado", alterado_por || null]
         );
         res.json(novoAgendamento.rows[0]); 
     } catch (err) {
@@ -183,4 +186,45 @@ app.get("/mobile", (req, res) => {
 
 app.get("/tv", (req, res) => {
   res.sendFile(__dirname + "/public/tv.html");
+});
+
+app.get("/criar-banco", async (req, res) => {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS agendamentos (
+                id SERIAL PRIMARY KEY,
+                data VARCHAR(20) NOT NULL,
+                hora VARCHAR(10) NOT NULL,
+                placa VARCHAR(20) NOT NULL,
+                produto VARCHAR(50), 
+                status VARCHAR(20) DEFAULT 'agendado',
+                alterado_por VARCHAR(50)
+            );
+        `);
+
+        try { await pool.query("ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS produto VARCHAR(50);"); } 
+        catch (e) {}
+        
+        // Nova linha:
+        try { await pool.query("ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS alterado_por VARCHAR(50);"); } 
+        catch (e) {}
+
+        res.send("<h1>Sucesso! Tabela verificada e atualizada.</h1>");
+    } catch (error) {
+        res.status(500).send("Erro: " + error.message);
+    }
+});
+
+app.put("/agendamentos/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, alterado_por } = req.body;
+        await pool.query(
+            "UPDATE agendamentos SET status = $1, alterado_por = $2 WHERE id = $3",
+            [status, alterado_por || null, id]
+        );
+        res.json({ sucesso: true });
+    } catch (error) { 
+        res.status(500).json({ erro: "Erro ao atualizar" }); 
+    }
 });

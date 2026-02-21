@@ -1,6 +1,9 @@
 // ===============================
 // ELEMENTOS DO DOM E INICIALIZAÇÃO
 // ===============================
+
+
+
 const form = document.getElementById("form-agendamento");
 const inputData = document.getElementById("data");
 const inputHora = document.getElementById("hora");
@@ -16,19 +19,18 @@ const hoje = new Date().toISOString().split("T")[0];
 const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
 
 const STATUS_ENCERRADOS = ["finalizado", "cancelado", "reagendado_fila"];
+document.addEventListener("DOMContentLoaded", async () => {
+    await carregarUsuario();
 
-document.addEventListener("DOMContentLoaded", () => {
     if (inputData) inputData.setAttribute("min", hoje);
 
-inputHora.disabled = true;
-inputHora.innerHTML = '<option value="">Selecione data e produto</option>';
+    inputHora.disabled = true;
+    inputHora.innerHTML = '<option value="">Selecione data e produto</option>';
 
     inputData?.addEventListener("change", renderizarOpcoesHorario);
     selectProduto?.addEventListener("change", renderizarOpcoesHorario);
     filtroData?.addEventListener("change", renderizarLista);
-    inputBuscaPlaca?.addEventListener("input", renderizarLista); 
-
-  
+    inputBuscaPlaca?.addEventListener("input", renderizarLista);
 
     btnLimpar?.addEventListener("click", () => {
         filtroData.value = "";
@@ -44,15 +46,28 @@ inputHora.innerHTML = '<option value="">Selecione data e produto</option>';
         const hora = inputHora.value;
         const produto = selectProduto.value;
         const placa = inputPlaca.value.trim().toUpperCase();
-
         if (!data || !hora || !produto || !placa) {
             mostrarMensagem("Preencha todos os campos.", "erro");
             return;
         }
-       await criarAgendamento(data, hora, produto, placa);
+        await criarAgendamento(data, hora, produto, placa);
     });
 });
 
+// ===============================
+// USUÁRIO LOGADO
+// ===============================
+let usuarioLogado = null;
+
+async function carregarUsuario() {
+    try {
+        const res = await fetch("/eu");
+        const dados = await res.json();
+        usuarioLogado = dados.usuario;
+    } catch (e) {
+        console.error("Erro ao carregar usuário", e);
+    }
+}
   
 
 // ===============================
@@ -61,7 +76,7 @@ inputHora.innerHTML = '<option value="">Selecione data e produto</option>';
 
 async function criarAgendamento(data, hora, produto, placa) {
     const agendamentos = await obterAgendamentos();
-    const novo = { data, hora, produto, placa };
+      const novo = { data, hora, produto, placa, alterado_por: usuarioLogado };
     
 
     if (agendamentos.some(a => 
@@ -101,15 +116,11 @@ async function chamarVeiculo(id) {
         const resposta = await fetch(`${API_URL}/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: "chamando" })
+            body: JSON.stringify({ status: "chamando", alterado_por: usuarioLogado })
         });
-        if (resposta.ok) {
-            renderizarLista();
-            mostrarMensagem("Chamada enviada para a TV!", "sucesso");
-        }
-    } catch (erro) {
-        mostrarMensagem("Erro ao chamar.", "erro");
-    }
+        if (resposta.ok) { renderizarLista(); mostrarMensagem("Chamada enviada para a TV!", "sucesso"); }
+    } catch (erro) { mostrarMensagem("Erro ao chamar.", "erro"); }
+
 }
 
 async function iniciarDescarregamento(id) {
@@ -117,15 +128,11 @@ async function iniciarDescarregamento(id) {
         const resposta = await fetch(`${API_URL}/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: "descarregando" })
+            body: JSON.stringify({ status: "descarregando", alterado_por: usuarioLogado })
         });
-        if (resposta.ok) {
-            renderizarLista();
-            mostrarMensagem("Veículo em processo de descarga!", "sucesso");
-        }
-    } catch (erro) {
-        mostrarMensagem("Erro ao mudar status.", "erro");
-    }
+        if (resposta.ok) { renderizarLista(); mostrarMensagem("Veículo em processo de descarga!", "sucesso"); }
+    } catch (erro) { mostrarMensagem("Erro ao mudar status.", "erro"); }
+
 }
 
 
@@ -159,12 +166,9 @@ async function finalizarAgendamento(id) {
         const resposta = await fetch(`${API_URL}/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: "finalizado" })
+            body: JSON.stringify({ status: "finalizado", alterado_por: usuarioLogado })
         });
-        if (resposta.ok) {
-            renderizarLista();
-            mostrarMensagem("Carga finalizada!", "sucesso");
-        }
+        if (resposta.ok) { renderizarLista(); mostrarMensagem("Carga finalizada!", "sucesso"); }
     } catch (erro) { mostrarMensagem("Erro ao finalizar.", "erro"); }
 }
 
@@ -173,38 +177,25 @@ async function cancelarAgendamento(id) {
         const resposta = await fetch(`${API_URL}/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: "cancelado" })
+            body: JSON.stringify({ status: "cancelado", alterado_por: usuarioLogado })
         });
-
-        if (resposta.ok) {
-            renderizarLista();
-            mostrarMensagem("Agendamento cancelado.", "sucesso");
-        }
-
-    } catch (erro) {
-        mostrarMensagem("Erro ao cancelar.", "erro");
-    }
+        if (resposta.ok) { renderizarLista(); mostrarMensagem("Agendamento cancelado.", "sucesso"); }
+    } catch (erro) { mostrarMensagem("Erro ao cancelar.", "erro"); }
 }
-
+  
 async function marcarAusente(id) {
     try {
         const resposta = await fetch(`${API_URL}/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
-                status: "reagendado_fila",
+                status: "reagendado_fila", 
+                alterado_por: usuarioLogado,
                 observacao: "Veículo ausente no horário previsto para atendimento."
             })
         });
-
-        if (resposta.ok) {
-            renderizarLista();
-            mostrarMensagem("Veículo marcado como ausente.", "sucesso");
-        }
-
-    } catch (erro) {
-        mostrarMensagem("Erro ao marcar como ausente.", "erro");
-    }
+        if (resposta.ok) { renderizarLista(); mostrarMensagem("Veículo marcado como ausente.", "sucesso"); }
+    } catch (erro) { mostrarMensagem("Erro ao marcar como ausente.", "erro"); }
 }
 
 
@@ -344,6 +335,8 @@ if (diaSemana >= 1 && diaSemana <= 5) { // só dias úteis
 
 async function renderizarLista() {
     lista.innerHTML = "";
+
+    
     const agendamentos = await obterAgendamentos();
     
     const valorFiltroData = filtroData?.value;
@@ -354,6 +347,8 @@ async function renderizarLista() {
         const batePlaca = termoBusca ? (a.placa || "").includes(termoBusca) : true;
         return bateData && batePlaca;
     });
+    
+   
 
     // Atualiza contadores
     const countTotal = document.getElementById("count-total");
@@ -428,8 +423,7 @@ for (const p of PRODUTOS_MAP) {
         <span style="font-size: 1.1rem;">${item.hora} - <strong>${item.placa}</strong></span>
         <br>
         <span style="color: #d35400; font-weight: bold; font-size: 0.85rem;">${produtoSimples}</span> 
-        <small style="color: #999; margin-left: 5px;">(${item.status.toUpperCase()})</small>
-    </div>
+<small style="color: #999; margin-left: 5px;">(${item.status.toUpperCase()})</small>${item.alterado_por ? `<small style="color: #aaa; margin-left: 4px;">— ${item.alterado_por}</small>` : ''}    </div>
     
     <div class="acoes" style="display: flex; flex-wrap: wrap; gap: 6px;">
         ${item.status === 'agendado' ? 
