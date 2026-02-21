@@ -17,6 +17,31 @@ console.log("YT:", process.env.YOUTUBE_API_KEY);
 // ========================================================
 // 🛡️ BLOCO DE SEGURANÇA (A PORTARIA)
 // ========================================================
+
+app.use((req, res, next) => {
+    if (req.path === '/' || req.path === '/index.html') {
+        return basicAuth({
+            users: USUARIOS,
+            challenge: true,
+            realm: 'Painel Logistico Itaborai'
+        })(req, res, next);
+    }
+
+    // Relatório — apenas Eduardo e Gabriel
+    if (req.path === '/relatorio' || req.path === '/relatorio.html') {
+        return basicAuth({
+            users: {
+                'eduardo': USUARIOS['eduardo'],
+                'gabriel': USUARIOS['gabriel']
+            },
+            challenge: true,
+            realm: 'Relatorio CD Itaborai'
+        })(req, res, next);
+    }
+
+    next();
+});
+
 const USUARIOS = {
     'eduardo':   'senhaMestre',
     'gabriel':   'logistica2026',
