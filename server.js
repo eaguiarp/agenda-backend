@@ -180,3 +180,7 @@ app.listen(PORT, "0.0.0.0", () => {
 app.get("/mobile", (req, res) => {
   res.sendFile(__dirname + "/public/mobile.html");
 });
+
+app.get("/tv", (req, res) => {
+  res.sendFile(__dirname + "/public/tv.html");
+});
