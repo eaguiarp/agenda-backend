@@ -1,4 +1,4 @@
-const CACHE_NAME = "agendacd-v1";
+const CACHE_NAME = "agendacd-v2"; // Atualize a versão para forçar o cache a ser renovado
 
 // Lista de arquivos que DEVEM ser salvos para o app funcionar offline
 // Note que agora não tem mais "css/" nem "assets/" no caminho
@@ -15,6 +15,19 @@ const FILES_TO_CACHE = [
   "./icon-192.png",
   "./icon-512.png"
 ];
+
+
+
+self.addEventListener("activate", event => {
+  event.waitUntil(
+    caches.keys().then(keys => {
+      return Promise.all(
+        keys.filter(key => key !== CACHE_NAME)
+            .map(key => caches.delete(key))
+      );
+    })
+  );
+});
 
 // 1. Instalação: Baixa os arquivos da lista e salva no cache
 self.addEventListener("install", (event) => {

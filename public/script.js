@@ -15,6 +15,8 @@ const lista = document.getElementById("lista-agendamentos");
 const hoje = new Date().toISOString().split("T")[0];
 const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
 
+const STATUS_ENCERRADOS = ["finalizado", "cancelado", "reagendado_fila"];
+
 document.addEventListener("DOMContentLoaded", () => {
     if (inputData) inputData.setAttribute("min", hoje);
 
@@ -58,16 +60,25 @@ inputHora.innerHTML = '<option value="">Selecione data e produto</option>';
 async function criarAgendamento(data, hora, produto, placa) {
     const agendamentos = await obterAgendamentos();
     const novo = { data, hora, produto, placa };
+    
 
-    if (agendamentos.some(a => a.data === data && a.hora === hora && a.status !== "finalizado")) {
-        mostrarMensagem("Já existe agendamento nesse horário.", "erro");
-        return;
-    }
+    if (agendamentos.some(a => 
+    a.data === data &&
+    a.hora === hora &&
+    !STATUS_ENCERRADOS.includes(a.status)
+)) {
+    mostrarMensagem("Já existe agendamento nesse horário.", "erro");
+    return;
+}
 
-    if (agendamentos.some(a => a.data === data && a.placa === placa && a.status !== "finalizado")) {
-        mostrarMensagem("Essa placa já está agendada nesse dia.", "erro");
-        return;
-    }
+    if (agendamentos.some(a => 
+    a.data === data &&
+    a.placa === placa &&
+    !STATUS_ENCERRADOS.includes(a.status)
+)) {
+    mostrarMensagem("Essa placa já está agendada nesse dia.", "erro");
+    return;
+}
 
 if (await salvarAgendamento(novo)) {
 
@@ -164,12 +175,43 @@ async function finalizarAgendamento(id) {
     } catch (erro) { mostrarMensagem("Erro ao finalizar.", "erro"); }
 }
 
-async function excluirAgendamento(id) {
+async function cancelarAgendamento(id) {
     try {
-        await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-        renderizarLista();
-        mostrarMensagem("Agendamento excluído.", "sucesso");
-    } catch (erro) { mostrarMensagem("Erro ao excluir.", "erro"); }
+        const resposta = await fetch(`${API_URL}/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "cancelado" })
+        });
+
+        if (resposta.ok) {
+            renderizarLista();
+            mostrarMensagem("Agendamento cancelado.", "sucesso");
+        }
+
+    } catch (erro) {
+        mostrarMensagem("Erro ao cancelar.", "erro");
+    }
+}
+
+async function marcarAusente(id) {
+    try {
+        const resposta = await fetch(`${API_URL}/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+                status: "reagendado_fila",
+                observacao: "Veículo ausente no horário previsto para atendimento."
+            })
+        });
+
+        if (resposta.ok) {
+            renderizarLista();
+            mostrarMensagem("Veículo marcado como ausente.", "sucesso");
+        }
+
+    } catch (erro) {
+        mostrarMensagem("Erro ao marcar como ausente.", "erro");
+    }
 }
 
 
@@ -285,10 +327,10 @@ if (diaSemana >= 1 && diaSemana <= 5) { // só dias úteis
         const horarioFormatado = `${hr}:${min}`;
 
         const ocupado = agendamentos.some(a =>
-            a.data === dataSelecionada &&
-            a.hora === horarioFormatado &&
-            a.status !== "finalizado"
-        );
+        a.data === dataSelecionada &&
+        a.hora === horarioFormatado &&
+        !STATUS_ENCERRADOS.includes(a.status)
+);
 
         const passado = (dataSelecionada === hojeData && m < minutosAgora);
 
@@ -321,7 +363,7 @@ async function renderizarLista() {
     // Atualiza contadores
     const countTotal = document.getElementById("count-total");
     const countPendente = document.getElementById("count-pendente");
-    if(countTotal) countTotal.textContent = listaFiltrada.filter(a => a.data === hoje).length;
+    if (countTotal) {countTotal.textContent = agendamentos.filter(a => a.data === hoje).length;}
     
     if(countPendente) countPendente.textContent = listaFiltrada.filter(a => 
         ["agendado", "chamando", "descarregando"].includes(a.status)).length;
@@ -332,7 +374,14 @@ async function renderizarLista() {
     }
 
     // Ordenação Inteligente
-    const ordemStatus = { "chamando": 1, "descarregando": 2, "agendado": 3, "finalizado": 4 };
+    const ordemStatus = { 
+    "chamando": 1, 
+    "descarregando": 2, 
+    "agendado": 3, 
+    "reagendado_fila": 4,
+    "finalizado": 5, 
+    "cancelado": 6 
+};
     listaFiltrada.sort((a, b) => {
         const pesoA = ordemStatus[a.status] || 99;
         const pesoB = ordemStatus[b.status] || 99;
@@ -345,10 +394,11 @@ async function renderizarLista() {
         li.className = "item-agendamento";
         
         // Cores visuais
-        if (item.status === "finalizado") li.style.opacity = "0.6";
+        if (item.status === "finalizado") {li.style.opacity = "0.6"; li.style.borderLeft = "5px solid #2ecc71";}
         if (item.status === "chamando") li.style.borderLeft = "5px solid #f1c40f"; 
         if (item.status === "descarregando") li.style.borderLeft = "5px solid #e67e22"; 
-        if (item.status === "finalizado") li.style.borderLeft = "5px solid #2ecc71"; 
+        if (item.status === "reagendado_fila") { li.style.opacity = "0.8"; li.style.borderLeft = "5px solid #3498db";}
+        if (item.status === "cancelado") {li.style.opacity = "0.4"; li.style.borderLeft = "5px solid #95a5a6";      }
 
         // === LÓGICA FLEXÍVEL DE PRODUTO ===
        
@@ -390,8 +440,9 @@ for (const p of PRODUTOS_MAP) {
                 ${['chamando', 'descarregando'].includes(item.status) ? 
                     `<button class="btn-fin" onclick="finalizarAgendamento('${item.id}')">FINALIZAR</button>` : ''}
                 
-                <button class="btn-exc" onclick="if(confirm('Excluir?')) excluirAgendamento('${item.id}')">EXCLUIR</button>
-            </div>
+                ${item.status === 'agendado' ? `<button class="btn-aus" onclick="if(confirm('Mover para o final da fila?')) marcarAusente('${item.id}')">AUSENTE</button>` : ''}
+
+                ${!['finalizado','cancelado'].includes(item.status) ? `<button class="btn-exc" onclick="if(confirm('Cancelar agendamento?')) cancelarAgendamento('${item.id}')">CANCELAR</button>` : ''}
         `;
         lista.appendChild(li);
     });
