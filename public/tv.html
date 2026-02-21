@@ -25,7 +25,7 @@
 
   body {
   font-family: var(--font-display);
-  
+
   font-variant-numeric: tabular-nums;
 }
 .aguardando-wrapper {
@@ -73,7 +73,7 @@
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: var(--font-mono);
+      font-family: var(--font-display);
       height: 100vh;
       overflow: hidden;
       display: grid;
@@ -95,7 +95,7 @@
 
     /* ─── HEADER LABELS ────────────────────────────────────── */
     .label {
-      font-family: var(--font-mono);
+      font-family: var(--font-display);
       font-size: 0.65rem;
       letter-spacing: 0.2em;
       text-transform: uppercase;
@@ -219,7 +219,7 @@
     }
 
     .hora-proximo {
-      font-family: var(--font-mono);
+      font-family: var(--font-display);
       font-size: 1.5rem;
       color: var(--muted);
       margin-top: 4px;
@@ -295,7 +295,7 @@
     }
 
     .item-fila .hora-fila {
-      font-family: var(--font-mono);
+      font-family: var(--font-display);
       color: var(--accent);
       font-size: 1rem;
       font-weight: 700;
@@ -392,8 +392,11 @@
       } else {
         area.classList.remove('ativo');
         painel.innerHTML = `
-          <div class="label">Chamando Agora</div>
-          <div class="idle-msg">Aguardando chamada...</div>`;
+            <div class="label">Chamando Agora</div>
+            <div class="aguardando-wrapper">
+            <div class="radar"></div>
+            <span>Aguardando chamada...</span>
+            </div>`;
       }
     }
 
