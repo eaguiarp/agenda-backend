@@ -1,368 +1,472 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Painel Logístico - CD Itaboraí</title>
+  <meta charset="UTF-8">
+  <title>Painel Logístico - CD Itaboraí</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* ─── VARIÁVEIS ─────────────────────────────────────────── */
+    :root {
+      --bg:        #0a0a0a;
+      --surface:   #111111;
+      --surface2:  #181818;
+      --border:    #2a2a2a;
+      --accent:    #f0b429;
+      --green:     #00e676;
+      --orange:    #ff6d00;
+      --muted:     #555;
+      --text:      #e0e0e0;
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-mono:    'IBM Plex Mono', monospace;
+    }
 
-<style>
-body {
-    margin: 0;
-    padding: 0;
-    background: #121212;
-    color: white;
-    font-family: 'Segoe UI', sans-serif;
-    height: 100vh;
-    overflow: hidden;
-}
+    /* ─── RESET ────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-.container {
-    display: grid;
-    height: 100vh;
-    grid-template-columns: 60% 40%;
-    grid-template-rows: 60% 40%;
-    grid-template-areas:
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      height: 100vh;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 58% 42%;
+      grid-template-rows: 62% 38%;
+      grid-template-areas:
         "principal fila"
-        "inferior fila";
-}
+        "inferior  fila";
+    }
 
-.area-principal {
-    grid-area: principal;
-    border-right: 2px solid #333;
-    border-bottom: 2px solid #333;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
+    /* ─── SEPARADORES ──────────────────────────────────────── */
+    .area-principal,
+    .area-inferior {
+      border-right: 1px solid var(--border);
+    }
+    .area-principal {
+      border-bottom: 1px solid var(--border);
+    }
 
-.area-inferior {
-    grid-area: inferior;
-    display: flex;
-    border-right: 2px solid #333;
-}
+    /* ─── HEADER LABELS ────────────────────────────────────── */
+    .label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
 
-.area-fila {
-    grid-area: fila;
-    background: #1e1e1e;
-    padding: 20px;
-}
+    /* ═══════════════════════════════════════════════════════
+       ÁREA PRINCIPAL — CHAMANDO AGORA
+    ═══════════════════════════════════════════════════════ */
+    .area-principal {
+      grid-area: principal;
+      padding: 28px 36px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      position: relative;
+      overflow: hidden;
+    }
 
-.box-proximo, .box-historico {
-    width: 50%;
-    padding: 15px;
-}
+    /* linha decorativa esquerda */
+    .area-principal::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+      background: var(--accent);
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    .area-principal.ativo::before { opacity: 1; }
 
-.box-proximo {
-    border-right: 1px solid #333;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
+    /* painel de chamada */
+    #painel-principal {
+      width: 100%;
+    }
 
-.box-historico {
-    background: #0f2b15;
-}
+    .chamando-wrap {
+      background: #151203;
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 20px 28px;
+      animation: pulsar 1.6s ease-in-out infinite;
+    }
+    @keyframes pulsar {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(240,180,41,0); }
+      50%       { box-shadow: 0 0 0 10px rgba(240,180,41,0.08); }
+    }
 
-h2 {
-    margin: 0 0 10px 0;
-    color: #888;
-    text-transform: uppercase;
-    font-size: 1.2rem;
-    letter-spacing: 2px;
-}
+    .placa-gigante {
+      font-family: var(--font-display);
+      font-size: 7rem;
+      color: #fff;
+      line-height: 1;
+      letter-spacing: 0.04em;
+    }
 
-.placa-gigante {
-    font-size: 8rem;
-    font-weight: bold;
-}
+    .hora-chamando {
+      font-family: var(--font-display);
+      font-size: 2.6rem;
+      color: var(--accent);
+      margin-top: 4px;
+    }
 
-.hora-gigante {
-    font-size: 3rem;
-    color: #f1c40f;
-}
+    .aviso-epi {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .aviso-linha {
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      opacity: 0.85;
+    }
+    .aviso-linha.destaque {
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.18em;
+      opacity: 1;
+    }
 
-.placa-media {
-    font-size: 4rem;
-    font-weight: bold;
-}
+    .idle-msg {
+      color: var(--muted);
+      font-size: 1.4rem;
+      margin-top: 14px;
+    }
 
-.hora-media {
-    font-size: 2rem;
-    color: #aaa;
-}
+    /* rodapé */
+    .aviso-sonoro {
+      position: absolute;
+      bottom: 10px; left: 14px;
+      font-size: 0.7rem;
+      color: #333;
+    }
 
-.lista-fila div {
-    background: #333;
-    margin-bottom: 10px;
-    padding: 15px;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    font-size: 1.5rem;
-}
+    /* ═══════════════════════════════════════════════════════
+       ÁREA INFERIOR
+    ═══════════════════════════════════════════════════════ */
+    .area-inferior {
+      grid-area: inferior;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
 
-.item-historico {
-    font-size: 1rem;
-    border-bottom: 1px solid #444;
-    padding: 5px 0;
-    display: flex;
-    justify-content: space-between;
-}
+    /* BOX: Próximo Veículo */
+    .box-proximo {
+      padding: 20px 24px;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
 
-.status-badge {
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.8rem;
-}
+    .placa-proximo {
+      font-family: var(--font-display);
+      font-size: 3.8rem;
+      color: #fff;
+      line-height: 1;
+    }
 
-.bg-descarregando {
-    background: #e67e22;
-}
+    .hora-proximo {
+      font-family: var(--font-mono);
+      font-size: 1.5rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
 
-.bg-finalizado {
-    background: #2ecc71;
-    color: black;
-}
+    /* BOX: Status Pátio */
+    .box-status {
+      padding: 16px 18px;
+      background: #0d1a0f;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
 
-.piscando {
-    animation: piscar 0.8s infinite;
-    background-color: #f1c40f;
-    color: black;
-    padding: 20px;
-    border-radius: 10px;
-}
+    .item-status {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 0;
+      border-bottom: 1px solid #1c1c1c;
+      font-size: 0.95rem;
+    }
+    .item-status:last-child { border-bottom: none; }
 
-@keyframes piscar {
-    0% { opacity: 1; }
-    50% { opacity: 0.7; transform: scale(1.02); }
-    100% { opacity: 1; }
-}
-#tv-band {
-    position: relative; /* Muda de absolute para relative */
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: black; /* Fundo preto caso o vídeo não carregue */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+    .badge {
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      padding: 3px 7px;
+      border-radius: 2px;
+    }
+    .badge-descarregando { background: var(--orange); color: #000; }
+    .badge-finalizado    { background: var(--green);  color: #000; }
 
-#tv-band iframe {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%; /* Agora ele obedece ao tamanho do container pai */
-    height: 100%;
-    border: none;
-}
+    /* ═══════════════════════════════════════════════════════
+       ÁREA FILA
+    ═══════════════════════════════════════════════════════ */
+    .area-fila {
+      grid-area: fila;
+      background: var(--surface);
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
 
-</style>
+    .lista-fila {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .item-fila {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 1.4rem;
+      transition: background 0.2s;
+    }
+    .item-fila:hover { background: #202020; }
+
+    .item-fila .placa-fila {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      color: #fff;
+      letter-spacing: 0.05em;
+    }
+
+    .item-fila .hora-fila {
+      font-family: var(--font-mono);
+      color: var(--accent);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    /* linha vazia */
+    .fila-vazia {
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.85rem;
+      margin-top: 20px;
+      letter-spacing: 0.1em;
+    }
+
+    /* ─── SCROLLBAR ─────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
 </head>
-
 <body>
 
-<div class="container">
-
- <div class="area-principal">
-    <div id="tv-band"></div>
-    <div id="painel-principal"></div>
-</div>
-
-
-    
-    <div class="area-inferior">
-        <div class="box-proximo" id="painel-proximo">
-            <h2>Próximo Veículo</h2>
-        </div>
-
-        <div class="box-historico">
-            <h2>Status Pátio</h2>
-            <div id="painel-historico"></div>
-        </div>
+  <!-- PRINCIPAL -->
+  <div class="area-principal" id="area-principal">
+    <div id="painel-principal">
+      <div class="label">Chamando Agora</div>
+      <div class="idle-msg">Aguardando chamada...</div>
     </div>
+    <span class="aviso-sonoro">🔊 Clique na tela para ativar o som</span>
+  </div>
 
-    <div class="area-fila">
-        <h2>Próximos da Fila</h2>
-        <div class="lista-fila" id="painel-fila"></div>
+  <!-- INFERIOR -->
+  <div class="area-inferior">
+    <div class="box-proximo" id="painel-proximo">
+      <div class="label">Próximo Veículo</div>
+      <div class="idle-msg" style="font-size:1rem;">--</div>
     </div>
+    <div class="box-status">
+      <div class="label">Status Pátio</div>
+      <div id="painel-status"></div>
+    </div>
+  </div>
 
-</div>
+  <!-- FILA -->
+  <div class="area-fila">
+    <div class="label">Próximos da Fila</div>
+    <div class="lista-fila" id="painel-fila"></div>
+  </div>
 
-<audio id="som-alerta"
-src="https://agenda-backend-production-5b72.up.railway.app/msn-wizz-sound.ogg?v=2">
-</audio>
+  <audio id="som-alerta"
+    src="https://agenda-backend-production-5b72.up.railway.app/msn-wizz-sound.ogg?v=2">
+  </audio>
 
-<script>
-const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
-let ultimoChamadoID = null;
-let contadorBips = 0;
+  <script>
+    // ─── CONFIGURAÇÃO ────────────────────────────────────────
+    const API_URL     = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
+    const POLL_MS     = 5000;   // intervalo de atualização
+    const BIPS_MAX    = 3;      // quantas vezes o som toca por chamada
+    const BIP_DELAY   = 2500;   // ms entre bips
 
-async function atualizarTV() {
-    try {
-        const res = await fetch(API_URL);
+    // ─── ESTADO ─────────────────────────────────────────────
+    let ultimoChamadoID = null;
+    let contadorBips    = 0;
+
+    // ─── HELPERS ─────────────────────────────────────────────
+    /** Ordena agendamentos por data+hora */
+    const ordenarPorHora = (arr) =>
+      [...arr].sort((a, b) =>
+        new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`)
+      );
+
+    // ─── RENDERIZADORES ──────────────────────────────────────
+
+    function renderPrincipal(chamando) {
+      const area  = document.getElementById('area-principal');
+      const painel = document.getElementById('painel-principal');
+
+      if (chamando) {
+        area.classList.add('ativo');
+        painel.innerHTML = `
+          <div class="label">Chamando Agora</div>
+          <div class="chamando-wrap">
+            <div class="placa-gigante">${chamando.placa}</div>
+            <div class="hora-chamando">${chamando.hora}</div>
+            <div class="aviso-epi">
+              <div class="aviso-linha">Desligue o motor &bull; Calce as rodas &bull; Entregue as chaves</div>
+              <div class="aviso-linha destaque">&#9888;&#65039; Uso obrigatório de EPIs</div>
+            </div>
+          </div>`;
+      } else {
+        area.classList.remove('ativo');
+        painel.innerHTML = `
+          <div class="label">Chamando Agora</div>
+          <div class="idle-msg">Aguardando chamada...</div>`;
+      }
+    }
+
+    function renderProximo(proximo) {
+      const el = document.getElementById('painel-proximo');
+      el.innerHTML = proximo
+        ? `<div class="label">Próximo Veículo</div>
+           <div class="placa-proximo">${proximo.placa}</div>
+           <div class="hora-proximo">${proximo.hora}</div>`
+        : `<div class="label">Próximo Veículo</div>
+           <div class="idle-msg" style="font-size:1rem;">--</div>`;
+    }
+
+    function renderFila(fila) {
+      const el = document.getElementById('painel-fila');
+      if (!fila.length) {
+        el.innerHTML = `<div class="fila-vazia">Sem fila de espera</div>`;
+        return;
+      }
+      el.innerHTML = fila.map(item => `
+        <div class="item-fila">
+          <span class="placa-fila">${item.placa}</span>
+          <span class="hora-fila">${item.hora}</span>
+        </div>`).join('');
+    }
+
+    function renderStatus(dados) {
+      const el = document.getElementById('painel-status');
+
+      const descarregando = dados.filter(a => a.status === 'descarregando');
+      const finalizados   = dados
+        .filter(a => a.status === 'finalizado')
+        .sort((a, b) => b.id - a.id)
+        .slice(0, 3);
+
+      const linhas = [
+        ...descarregando.map(i => `
+          <div class="item-status">
+            <span>${i.placa}</span>
+            <span class="badge badge-descarregando">Descarregando</span>
+          </div>`),
+        ...finalizados.map(i => `
+          <div class="item-status">
+            <span>${i.placa}</span>
+            <span class="badge badge-finalizado">Finalizado</span>
+          </div>`)
+      ];
+
+      el.innerHTML = linhas.length
+        ? linhas.join('')
+        : `<div class="fila-vazia">Pátio vazio</div>`;
+    }
+
+    // ─── SOM & VOZ ───────────────────────────────────────────
+
+    function tocarSom() {
+      if (contadorBips >= BIPS_MAX) return;
+      const audio = document.getElementById('som-alerta');
+      audio.currentTime = 0;
+      audio.play().catch(() => {/* aguardando interação do usuário */});
+      contadorBips++;
+      setTimeout(tocarSom, BIP_DELAY);
+    }
+
+    function anunciarVeiculo(placa) {
+      const placaFalada = placa.split('').join(' ');
+      const texto = `Atenção, motorista do veículo ${placaFalada}. Dirija-se à área de descarga.`;
+      const fala  = new SpeechSynthesisUtterance(texto);
+      fala.lang   = 'pt-BR';
+      fala.rate   = 0.9;
+      fala.pitch  = 1;
+      fala.volume = 1;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(fala);
+    }
+
+    // ─── POLLING PRINCIPAL ───────────────────────────────────
+
+    async function atualizarTV() {
+      try {
+        const res   = await fetch(API_URL);
         const dados = await res.json();
 
-        const ativos = dados
-            .filter(a => a.status !== "finalizado")
-            .sort((a, b) =>
-                new Date(`${a.data} ${a.hora}`) -
-                new Date(`${b.data} ${b.hora}`)
-            );
+        // Agendamentos ativos ordenados por horário
+        const ativos = ordenarPorHora(
+          dados.filter(a => a.status !== 'finalizado')
+        );
 
-        // CHAMANDO
-        const chamando = ativos.find(a => a.status === "chamando");
-        const divPrincipal = document.getElementById("painel-principal");
+        const chamando = ativos.find(a => a.status === 'chamando') ?? null;
+        const proximo  = ativos.find(a => a.status === 'agendado') ?? null;
+        const fila     = ativos
+          .filter(a => a.status === 'agendado' && a.id !== proximo?.id)
+          .slice(0, 5);
 
-        if (chamando) {
-            divPrincipal.innerHTML = `
-                <h2>CHAMANDO AGORA</h2>
-                <div class="piscando">
-                    <div class="placa-gigante">${chamando.placa}</div>
-                    <div class="hora-gigante">${chamando.hora}</div>
-                </div>
-            `;
+        renderPrincipal(chamando);
+        renderProximo(proximo);
+        renderFila(fila);
+        renderStatus(dados);
 
-            if (ultimoChamadoID !== chamando.id) {
-                ultimoChamadoID = chamando.id;
-                contadorBips = 0;
-                tocarSom();
-                anunciarVeiculo(chamando.placa);
-            }
-        } else {
-            if (ultimoChamadoID !== null) {
-       divPrincipal.innerHTML = "";
-
-        ultimoChamadoID = null;
-        carregarBand();
-        }
+        // Dispara som/voz apenas em nova chamada
+        if (chamando && ultimoChamadoID !== chamando.id) {
+          ultimoChamadoID = chamando.id;
+          contadorBips    = 0;
+          tocarSom();
+          anunciarVeiculo(chamando.placa);
         }
 
-
-        // PRÓXIMO
-        const proximo = ativos.find(a => a.status === "agendado");
-        const divProximo = document.getElementById("painel-proximo");
-
-        if (proximo) {
-            divProximo.innerHTML = `
-                <h2>Próximo Veículo</h2>
-                <div class="placa-media">${proximo.placa}</div>
-                <div class="hora-media">${proximo.hora}</div>
-            `;
-        }
-
-        // FILA
-        const fila = ativos.filter(a => a.status === "agendado");
-        const divFila = document.getElementById("painel-fila");
-
-        divFila.innerHTML = fila.slice(0, 6).map(a => `
-            <div>
-                <span>${a.placa}</span>
-                <span>${a.hora}</span>
-            </div>
-        `).join("");
-
-        // HISTÓRICO
-        const historico = dados
-            .filter(a => a.status === "descarregando" || a.status === "finalizado")
-            .slice(-6)
-            .reverse();
-
-        const divHistorico = document.getElementById("painel-historico");
-
-        divHistorico.innerHTML = historico.map(a => `
-            <div class="item-historico">
-                <span>${a.placa}</span>
-                <span class="status-badge ${a.status === 'descarregando' ? 'bg-descarregando' : 'bg-finalizado'}">
-                    ${a.status}
-                </span>
-            </div>
-        `).join("");
-
-    } catch (e) {
-        console.error("Erro TV", e);
-    }
-}
-
-function tocarSom() {
-    if (contadorBips < 3) {
-        const audio = document.getElementById("som-alerta");
-        audio.currentTime = 0;
-        audio.play().catch(() => {});
-        contadorBips++;
-        setTimeout(tocarSom, 2500);
-    }
-}
-
-function anunciarVeiculo(placa) {
-    const placaFalada = placa.split('').join(' ');
-    const texto = `Atenção motorista do veículo ${placaFalada}. Dirija-se à área de descarga.`;
-
-    const fala = new SpeechSynthesisUtterance(texto);
-    fala.lang = "pt-BR";
-    fala.rate = 0.9;
-
-    speechSynthesis.cancel();
-    speechSynthesis.speak(fala);
-}
-
-document.body.addEventListener('click', () => {
-    const audio = document.getElementById("som-alerta");
-    audio.play();
-    audio.pause();
-    audio.currentTime = 0;
-});
-
-setInterval(atualizarTV, 5000);
-atualizarTV();
-
-let currentVideoId = null;
-async function verificarLive() {
-    const tvContainer = document.getElementById("tv-band");
-    const painelPrincipal = document.getElementById("painel-principal");
-
-    // Se o painel principal tiver conteúdo (placa piscando), esconde a TV/Aviso
-    if (painelPrincipal.innerHTML.trim() !== "") {
-        tvContainer.style.display = "none";
-        currentVideoId = null; 
-        return;
+      } catch (err) {
+        console.error('[Painel] Erro ao buscar dados:', err);
+      }
     }
 
-    try {
-        const response = await fetch("/bandnews-live");
-        const data = await response.json();
+    // ─── INIT ────────────────────────────────────────────────
 
-        tvContainer.style.display = "flex"; // Garante que o container apareça
+    // Libera contexto de áudio no primeiro clique
+    document.body.addEventListener('click', () => {
+      const audio = document.getElementById('som-alerta');
+      audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
+    }, { once: true });
 
-        if (data.live) {
-            if (currentVideoId !== data.videoId) {
-                currentVideoId = data.videoId;
-                tvContainer.innerHTML = `
-                    <iframe
-                        width="100%" height="100%"
-                        src="https://www.youtube.com/embed/${data.videoId}?autoplay=1&mute=1"
-                        frameborder="0" allow="autoplay; encrypted-media" allowfullscreen>
-                    </iframe>`;
-            }
-        } else {
-            // ESTADO: Sem live, mostra o aviso
-            currentVideoId = null;
-            tvContainer.innerHTML = `<h1 style="color: #444; font-size: 3rem;">AGUARDANDO CHAMADA...</h1>`;
-        }
-    } catch (e) {
-        console.error("Erro ao verificar live", e);
-        // Em caso de erro de conexão, também mostra o aviso
-        tvContainer.style.display = "flex";
-        tvContainer.innerHTML = `<h1 style="color: #444;">SISTEMA ATIVO</h1>`;
-    }
-}
-
-setInterval(verificarLive, 10000); // Roda a verificação a cada 10 segundos
-verificarLive();
-
-</script>
-
+    setInterval(atualizarTV, POLL_MS);
+    atualizarTV();
+  </script>
 </body>
 </html>
