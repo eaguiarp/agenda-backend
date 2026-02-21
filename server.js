@@ -73,6 +73,19 @@ app.get("/criar-banco", async (req, res) => {
         try {
             await pool.query("ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS produto VARCHAR(50);");
         } catch (e) { console.log("Coluna produto já existe ou erro ignorável."); }
+        try { await pool.query("ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS tipo_operacao VARCHAR(20) DEFAULT 'transferencia';"); } 
+        catch (e) {}
+        
+        try { await pool.query("ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS quantidade VARCHAR(20);"); } 
+        catch (e) {}
+        
+        try { await pool.query("ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS nota_fiscal VARCHAR(30);"); } 
+        catch (e) {}
+        
+        try { await pool.query("ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS transportadora VARCHAR(50);"); } 
+        catch (e) {}
+
+       
 
         res.send("<h1>Sucesso! Tabela verificada e atualizada.</h1>");
     } catch (error) {
