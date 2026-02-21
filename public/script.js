@@ -28,7 +28,7 @@ inputHora.innerHTML = '<option value="">Selecione data e produto</option>';
     filtroData?.addEventListener("change", renderizarLista);
     inputBuscaPlaca?.addEventListener("input", renderizarLista); 
 
-
+  
 
     btnLimpar?.addEventListener("click", () => {
         filtroData.value = "";
@@ -52,6 +52,8 @@ inputHora.innerHTML = '<option value="">Selecione data e produto</option>';
        await criarAgendamento(data, hora, produto, placa);
     });
 });
+
+  
 
 // ===============================
 // REGRAS DE NEGÓCIO E FLUXO
@@ -405,6 +407,8 @@ async function renderizarLista() {
         if (item.status === "reagendado_fila") { li.style.opacity = "0.8"; li.style.borderLeft = "5px solid #3498db";}
         if (item.status === "cancelado") {li.style.opacity = "0.4"; li.style.borderLeft = "5px solid #95a5a6";      }
 
+      
+
         // === LÓGICA FLEXÍVEL DE PRODUTO ===
        
        const PRODUTOS_MAP = [
@@ -427,6 +431,10 @@ for (const p of PRODUTOS_MAP) {
     }
 }
         // === EXIBIÇÃO VISUAL ===
+
+     
+
+
        li.innerHTML = `
     <div style="line-height: 1.6; margin-bottom: 8px;">
         <span style="font-size: 1.1rem;">${item.hora} - <strong>${item.placa}</strong></span>
@@ -450,6 +458,8 @@ for (const p of PRODUTOS_MAP) {
 
         ${!['finalizado','cancelado'].includes(item.status) ? 
             `<button class="btn-exc" onclick="if(confirm('Cancelar agendamento?')) cancelarAgendamento('${item.id}')">CANCELAR</button>` : ''}
-    </div>
+     </div>
 `;
+        lista.appendChild(li);
+    });
 }
