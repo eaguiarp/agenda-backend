@@ -268,6 +268,11 @@ async function renderizarOpcoesHorario() {
         adicionarIntervalo(6 * 60, 14 * 60, 30);
     }
 
+    // SABADO (6) → 7h às 16h (30 min)
+    if (diaSemana === 6) {
+        adicionarIntervalo(7 * 60, 16 * 60, 30);
+    }
+
     // SEGUNDA (1) → começa 7h (30 min)
     else if (diaSemana === 1) {
         adicionarIntervalo(7 * 60, 23 * 60 + 30, 30);
