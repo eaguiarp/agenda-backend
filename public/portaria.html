@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portaria — CD Itaboraí</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #f5f4f0;
+      --surface:   #ffffff;
+      --border:    #e0ddd6;
+      --accent:    #5a6b5c;
+      --text:      #1a1a1a;
+      --muted:     #888;
+      --green:     #2d6a3f;
+      --orange:    #c75c1a;
+      --yellow:    #8a6800;
+      --blue:      #1a4a7a;
+      --red:       #b52a2a;
+      --fn-body:   'DM Sans', sans-serif;
+      --fn-mono:   'DM Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--fn-body);
+      min-height: 100vh;
+      padding: 24px 20px 60px;
+    }
+
+    /* ── HEADER ─────────────────────────────── */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .page-header h1 { font-size: 1.3rem; font-weight: 700; color: var(--accent); }
+    .page-header p  { font-size: 0.75rem; color: var(--muted); font-family: var(--fn-mono); margin-top: 2px; }
+    #relogio { font-family: var(--fn-mono); font-size: 1.4rem; font-weight: 500; color: var(--text); }
+
+    /* ── ABAS ────────────────────────────────── */
+    .abas {
+      display: flex; gap: 4px; margin-bottom: 20px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; padding: 4px;
+    }
+    .aba {
+      flex: 1; padding: 10px; text-align: center; border-radius: 4px;
+      cursor: pointer; font-weight: 600; font-size: 0.85rem;
+      border: none; background: transparent; color: var(--muted); transition: all 0.15s;
+    }
+    .aba.ativa { background: var(--accent); color: white; }
+
+    /* ── PAINÉIS ─────────────────────────────── */
+    .painel { display: none; }
+    .painel.ativo { display: block; }
+
+    /* ── CARDS ───────────────────────────────── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; padding: 18px 20px; margin-bottom: 16px;
+    }
+    .card-titulo {
+      font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted); font-family: var(--fn-mono);
+      margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+    }
+
+    /* ── FORMULÁRIO ──────────────────────────── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 500px) { .form-grid { grid-template-columns: 1fr; } }
+
+    .campo { display: flex; flex-direction: column; gap: 5px; }
+    .campo.full { grid-column: 1 / -1; }
+    .campo label {
+      font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); font-family: var(--fn-mono);
+    }
+    .campo input, .campo select {
+      border: 1px solid var(--border); border-radius: 4px; padding: 9px 11px;
+      font-family: var(--fn-body); font-size: 0.9rem;
+      background: var(--bg); color: var(--text); width: 100%;
+    }
+    .campo input:focus, .campo select:focus { outline: none; border-color: var(--accent); }
+
+    .btn-registrar {
+      background: var(--accent); color: white; border: none;
+      padding: 11px 24px; border-radius: 4px; font-family: var(--fn-body);
+      font-weight: 700; font-size: 0.9rem; cursor: pointer;
+      margin-top: 6px; transition: opacity 0.15s; width: 100%;
+    }
+    .btn-registrar:hover { opacity: 0.85; }
+
+    /* ── ITENS DA LISTA ──────────────────────── */
+    .item-veiculo {
+      background: var(--surface); border: 1px solid var(--border);
+      border-left: 4px solid var(--border); border-radius: 4px;
+      padding: 14px 16px; margin-bottom: 10px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .item-veiculo.status-agendado      { border-left-color: #ccc; }
+    .item-veiculo.status-chamando      { border-left-color: #f1c40f; background: #fffef5; }
+    .item-veiculo.status-descarregando { border-left-color: #e67e22; background: #fdf8f5; }
+    .item-veiculo.status-finalizado    { border-left-color: #2ecc71; opacity: 0.6; }
+    .item-veiculo.status-cancelado     { border-left-color: #95a5a6; opacity: 0.4; }
+
+    .item-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .item-placa   { font-family: var(--fn-mono); font-size: 1.1rem; font-weight: 500; }
+    .item-hora    { font-family: var(--fn-mono); font-size: 0.82rem; color: var(--muted); }
+    .item-produto { font-size: 0.75rem; font-weight: 700; color: var(--orange); }
+
+    .badge {
+      display: inline-block; font-family: var(--fn-mono); font-size: 0.58rem;
+      letter-spacing: 0.1em; padding: 2px 7px; border-radius: 2px; font-weight: 500;
+    }
+    .badge-agendado      { background: #e8f0fb; color: var(--blue); }
+    .badge-chamando      { background: #fef9e0; color: var(--yellow); border: 1px solid #f1c40f; }
+    .badge-descarregando { background: #fdf0e6; color: var(--orange); }
+    .badge-finalizado    { background: #e6f4ec; color: var(--green); }
+    .badge-cancelado     { background: #f0f0f0; color: var(--muted); }
+
+    /* Campos extras inline */
+    .item-extras { display: flex; gap: 8px; flex-wrap: wrap; }
+    .mini-campo  { display: flex; flex-direction: column; gap: 3px; min-width: 90px; flex: 1; }
+    .mini-campo label {
+      font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--muted); font-family: var(--fn-mono);
+    }
+    .mini-campo input {
+      border: 1px solid var(--border); border-radius: 3px; padding: 5px 8px;
+      font-family: var(--fn-mono); font-size: 0.8rem;
+      background: var(--bg); color: var(--text); width: 100%;
+    }
+    .mini-campo input:focus { outline: none; border-color: var(--accent); }
+
+    /* Botões */
+    .item-acoes { display: flex; gap: 6px; flex-wrap: wrap; }
+    .btn-acao {
+      border: none; padding: 7px 12px; border-radius: 4px;
+      font-family: var(--fn-body); font-weight: 600; font-size: 0.72rem;
+      cursor: pointer; transition: opacity 0.15s; white-space: nowrap;
+    }
+    .btn-acao:hover    { opacity: 0.8; }
+    .btn-chamar        { background: #3498db; color: white; }
+    .btn-descarga      { background: #e67e22; color: white; }
+    .btn-finalizar     { background: #2ecc71; color: white; }
+    .btn-cancelar      { background: #f0f0f0; color: #666; }
+    .btn-salvar        { background: var(--accent); color: white; }
+
+    /* Permanência */
+    .permanencia       { font-family: var(--fn-mono); font-size: 0.75rem; color: var(--muted); margin-left: auto; }
+    .permanencia.alerta{ color: var(--red); font-weight: 700; }
+
+    /* Resumo (encerrado) */
+    .item-resumo { font-size: 0.75rem; color: var(--muted); font-family: var(--fn-mono); }
+
+    /* Vazio */
+    .lista-vazia {
+      text-align: center; padding: 32px; color: var(--muted);
+      font-size: 0.8rem; font-family: var(--fn-mono); letter-spacing: 0.08em;
+    }
+
+    /* Mensagem flutuante */
+    #mensagem {
+      position: fixed; top: 16px; right: 16px; padding: 12px 18px;
+      border-radius: 4px; font-size: 0.85rem; font-weight: 600;
+      display: none; z-index: 999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .msg-sucesso { background: #e6f4ec; color: var(--green); border: 1px solid #b8dfc4; }
+    .msg-erro    { background: #f4e6e6; color: var(--red);   border: 1px solid #dbb8b8; }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <div>
+      <h1>Portaria</h1>
+      <p>CD · ITABORAÍ — controle de entrada e saída</p>
+    </div>
+    <div id="relogio">--:--</div>
+  </div>
+
+  <div id="mensagem"></div>
+
+  <!-- ABAS -->
+  <div class="abas">
+    <button class="aba ativa" onclick="trocarAba('descarga')">⬇ Descarga · Transferência</button>
+    <button class="aba"       onclick="trocarAba('carga')">⬆ Carga · CIF / FOB</button>
+  </div>
+
+  <!-- ═══ PAINEL DESCARGA ═══ -->
+  <div class="painel ativo" id="painel-descarga">
+    <div class="card">
+      <div class="card-titulo">Veículos agendados para descarga</div>
+      <div id="lista-descarga"><div class="lista-vazia">Carregando...</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ PAINEL CARGA CIF/FOB ═══ -->
+  <div class="painel" id="painel-carga">
+
+    <div class="card">
+      <div class="card-titulo">Registrar entrada de veículo</div>
+      <div class="form-grid">
+
+        <div class="campo">
+          <label>Placa</label>
+          <input type="text" id="cif-placa" placeholder="ABC1D23" maxlength="7" autocomplete="off">
+        </div>
+
+        <div class="campo">
+          <label>Tipo de Operação</label>
+          <select id="cif-tipo">
+            <option value="CIF">CIF</option>
+            <option value="FOB">FOB</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label>Produto</label>
+          <select id="cif-produto">
+            <option value="CPIII-32-RS-SC-V">CPIII</option>
+            <option value="CPII-F-32-SC-V-MA">MAUA</option>
+            <option value="CPII-E-32-SC-V">E32</option>
+            <option value="CPII-F-32-SC-25-MA">M25KG</option>
+            <option value="CPV-ARI-SC-40-V">CPV</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label>Veículo / Transportadora</label>
+          <select id="cif-transp-tipo" onchange="toggleTransp()">
+            <option value="transportadora">Transportadora</option>
+            <option value="proprio">Próprio (FOB)</option>
+          </select>
+        </div>
+
+        <div class="campo" id="campo-transp-nome">
+          <label>Nome da Transportadora</label>
+          <input type="text" id="cif-transportadora" placeholder="Nome da transportadora">
+        </div>
+
+        <div class="campo">
+          <label>Nota Fiscal</label>
+          <input type="text" id="cif-nf" placeholder="Nº da NF">
+        </div>
+
+        <div class="campo">
+          <label>Quantidade (sacos)</label>
+          <input type="text" id="cif-quantidade" placeholder="Ex: 600 sc">
+        </div>
+
+        <div class="campo full">
+          <button class="btn-registrar" onclick="registrarCifFob()">+ Registrar entrada</button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-titulo">Veículos CIF/FOB no pátio</div>
+      <div id="lista-carga"><div class="lista-vazia">Carregando...</div></div>
+    </div>
+
+  </div>
+
+  <script>
+    const API_URL = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
+
+    const PRODUTOS_MAP = [
+      { match: ["CPIII-32-RS-SC-V"],   label: "CPIII"  },
+      { match: ["CPII-F-32-SC-V-MA"],  label: "MAUA"   },
+      { match: ["CPII-E-32-SC-V"],     label: "E32"    },
+      { match: ["CPII-F-32-SC-25-MA"], label: "M25KG"  },
+      { match: ["CPV-ARI-SC-40-V"],    label: "CPV"    },
+    ];
+
+    function simplificarProduto(produto) {
+      const p = (produto || "").toUpperCase();
+      for (const e of PRODUTOS_MAP) {
+        if (e.match.some(m => p.includes(m))) return e.label;
+      }
+      return produto || "—";
+    }
+
+    function horaAgora() {
+      return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function formatarData(data) {
+      if (!data) return "";
+      const [ano, mes, dia] = data.split("-");
+      return `${dia}/${mes}/${ano}`;
+    }
+
+    function calcularPermanencia(horaEntrada) {
+      if (!horaEntrada) return null;
+      const [h, m] = horaEntrada.split(":").map(Number);
+      const agora   = new Date();
+      const entrada = new Date();
+      entrada.setHours(h, m, 0);
+      const diff  = Math.floor((agora - entrada) / 60000);
+      if (diff < 0) return null;
+      const horas = Math.floor(diff / 60);
+      const mins  = diff % 60;
+      return { texto: horas > 0 ? `${horas}h ${mins}min` : `${mins}min`, alerta: diff > 120 };
+    }
+
+    function badgeStatus(status) {
+      const map = {
+        agendado:        ["badge-agendado",      "AGENDADO"],
+        chamando:        ["badge-chamando",       "CHAMANDO"],
+        descarregando:   ["badge-descarregando",  "DESCARREGANDO"],
+        finalizado:      ["badge-finalizado",     "FINALIZADO"],
+        cancelado:       ["badge-cancelado",      "CANCELADO"],
+        reagendado_fila: ["badge-agendado",       "REAGENDADO"],
+      };
+      const [cls, label] = map[status] || ["badge-agendado", (status || "").toUpperCase()];
+      return `<span class="badge ${cls}">${label}</span>`;
+    }
+
+    // ── ABAS ──────────────────────────────────
+    function trocarAba(aba) {
+      document.querySelectorAll(".aba").forEach((b, i) => {
+        b.classList.toggle("ativa",
+          (i === 0 && aba === "descarga") || (i === 1 && aba === "carga")
+        );
+      });
+      document.getElementById("painel-descarga").classList.toggle("ativo", aba === "descarga");
+      document.getElementById("painel-carga").classList.toggle("ativo",    aba === "carga");
+    }
+
+    // ── TOGGLE TRANSPORTADORA ─────────────────
+    function toggleTransp() {
+      const tipo  = document.getElementById("cif-transp-tipo").value;
+      const campo = document.getElementById("campo-transp-nome");
+      const input = document.getElementById("cif-transportadora");
+      if (tipo === "proprio") {
+        campo.style.display = "none";
+        input.value = "Próprio";
+      } else {
+        campo.style.display = "flex";
+        input.value = "";
+      }
+    }
+
+    // ── MENSAGEM ──────────────────────────────
+    function mostrarMensagem(texto, tipo) {
+      const el = document.getElementById("mensagem");
+      el.textContent   = texto;
+      el.className     = tipo === "sucesso" ? "msg-sucesso" : "msg-erro";
+      el.style.display = "block";
+      setTimeout(() => { el.style.display = "none"; }, 3000);
+    }
+
+    // ── API ───────────────────────────────────
+    async function obterAgendamentos() {
+      const res = await fetch(API_URL);
+      return await res.json();
+    }
+
+    async function atualizarRegistro(id, campos) {
+      const res = await fetch(`${API_URL}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(campos)
+      });
+      return res.ok;
+    }
+
+    // ── RENDERIZAR DESCARGA ───────────────────
+    async function renderizarDescarga() {
+      const dados = await obterAgendamentos();
+      const el    = document.getElementById("lista-descarga");
+
+      const transferencias = dados
+        .filter(a => !["CIF","FOB"].includes((a.tipo_operacao || "").toUpperCase()))
+        .sort((a, b) => {
+          const ordem = { chamando:1, descarregando:2, agendado:3, reagendado_fila:4, finalizado:5, cancelado:6 };
+          const pa = ordem[a.status] || 9;
+          const pb = ordem[b.status] || 9;
+          if (pa !== pb) return pa - pb;
+          return new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`);
+        });
+
+      if (!transferencias.length) {
+        el.innerHTML = `<div class="lista-vazia">Nenhum veículo agendado.</div>`;
+        return;
+      }
+
+      el.innerHTML = transferencias.map(item => {
+        const encerrado = ["finalizado","cancelado"].includes(item.status);
+        const perm      = calcularPermanencia(item.hora_entrada);
+        const permHTML  = perm
+          ? `<span class="permanencia ${perm.alerta ? 'alerta' : ''}">⏱ ${perm.texto}</span>`
+          : "";
+
+        return `
+          <div class="item-veiculo status-${item.status}">
+
+            <div class="item-info">
+              <span class="item-placa">${item.placa}</span>
+              <span class="item-hora">Agendado: ${item.hora} · ${formatarData(item.data)}</span>
+              <span class="item-produto">${simplificarProduto(item.produto)}</span>
+              ${badgeStatus(item.status)}
+              ${permHTML}
+            </div>
+
+            ${encerrado ? `
+              <div class="item-resumo">
+                ${item.hora_entrada   ? `Entrada: ${item.hora_entrada}` : ''}
+                ${item.hora_saida     ? ` · Saída: ${item.hora_saida}` : ''}
+                ${item.transportadora ? ` · ${item.transportadora}` : ''}
+                ${item.nota_fiscal    ? ` · NF: ${item.nota_fiscal}` : ''}
+                ${item.quantidade     ? ` · ${item.quantidade}` : ''}
+              </div>
+            ` : `
+              <div class="item-extras">
+                <div class="mini-campo">
+                  <label>H. Entrada</label>
+                  <input type="time" id="ent-${item.id}" value="${item.hora_entrada || ''}">
+                </div>
+                <div class="mini-campo">
+                  <label>H. Saída</label>
+                  <input type="time" id="sai-${item.id}" value="${item.hora_saida || ''}">
+                </div>
+                <div class="mini-campo" style="min-width:130px;">
+                  <label>Transportadora</label>
+                  <input type="text" id="tr-${item.id}" value="${item.transportadora || ''}" placeholder="Transportadora">
+                </div>
+                <div class="mini-campo">
+                  <label>NF</label>
+                  <input type="text" id="nf-${item.id}" value="${item.nota_fiscal || ''}" placeholder="Nº NF">
+                </div>
+                <div class="mini-campo">
+                  <label>Qtd (sacos)</label>
+                  <input type="text" id="qt-${item.id}" value="${item.quantidade || ''}" placeholder="Ex: 600 sc">
+                </div>
+              </div>
+            `}
+
+            <div class="item-acoes">
+              ${item.status === 'agendado' ?
+                `<button class="btn-acao btn-chamar" onclick="acao('${item.id}','chamar')">CHAMAR</button>` : ''}
+              ${item.status === 'chamando' ?
+                `<button class="btn-acao btn-descarga" onclick="acao('${item.id}','descarregando')">DESCARREGANDO</button>` : ''}
+              ${['chamando','descarregando'].includes(item.status) ?
+                `<button class="btn-acao btn-finalizar" onclick="acao('${item.id}','finalizar')">FINALIZAR</button>` : ''}
+              ${!encerrado ?
+                `<button class="btn-acao btn-salvar" onclick="salvarExtras('${item.id}')">SALVAR</button>` : ''}
+              ${!encerrado ?
+                `<button class="btn-acao btn-cancelar" onclick="if(confirm('Cancelar agendamento?')) acao('${item.id}','cancelar')">CANCELAR</button>` : ''}
+            </div>
+
+          </div>`;
+      }).join("");
+    }
+
+    // ── RENDERIZAR CARGA CIF/FOB ──────────────
+    async function renderizarCarga() {
+      const dados = await obterAgendamentos();
+      const el    = document.getElementById("lista-carga");
+
+      const cifFob = dados
+        .filter(a =>
+          ["CIF","FOB"].includes((a.tipo_operacao || "").toUpperCase()) &&
+          !["cancelado","finalizado"].includes(a.status)
+        )
+        .sort((a, b) => new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`));
+
+      if (!cifFob.length) {
+        el.innerHTML = `<div class="lista-vazia">Nenhum veículo CIF/FOB no pátio.</div>`;
+        return;
+      }
+
+      el.innerHTML = cifFob.map(item => {
+        const perm     = calcularPermanencia(item.hora_entrada || item.hora);
+        const permHTML = perm
+          ? `<span class="permanencia ${perm.alerta ? 'alerta' : ''}">⏱ ${perm.texto}</span>`
+          : "";
+
+        return `
+          <div class="item-veiculo status-${item.status}">
+            <div class="item-info">
+              <span class="item-placa">${item.placa}</span>
+              <span class="item-hora">Entrada: ${item.hora_entrada || item.hora}</span>
+              <span class="item-produto">${simplificarProduto(item.produto)}</span>
+              <span class="badge" style="background:#e8f0fb;color:#1a4a7a;">${item.tipo_operacao}</span>
+              ${permHTML}
+            </div>
+            <div class="item-resumo">
+              ${item.transportadora ? `${item.transportadora}` : ''}
+              ${item.nota_fiscal    ? ` · NF: ${item.nota_fiscal}` : ''}
+              ${item.quantidade     ? ` · ${item.quantidade}` : ''}
+            </div>
+            <div class="item-acoes">
+              ${item.status === 'agendado' ?
+                `<button class="btn-acao btn-chamar" onclick="acao('${item.id}','chamar')">CHAMAR TV</button>` : ''}
+              ${item.status === 'chamando' ?
+                `<button class="btn-acao btn-descarga" onclick="acao('${item.id}','descarregando')">CARREGANDO</button>` : ''}
+              ${['chamando','descarregando','agendado'].includes(item.status) ?
+                `<button class="btn-acao btn-finalizar" onclick="acao('${item.id}','finalizar')">FINALIZAR</button>` : ''}
+              <button class="btn-acao btn-cancelar" onclick="if(confirm('Cancelar?')) acao('${item.id}','cancelar')">CANCELAR</button>
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    // ── AÇÕES STATUS ──────────────────────────
+    async function acao(id, tipo) {
+      const campos = {};
+      const agora  = horaAgora();
+
+      if (tipo === 'chamar')        { campos.status = 'chamando';      campos.hora_entrada = agora; }
+      if (tipo === 'descarregando') { campos.status = 'descarregando'; }
+      if (tipo === 'finalizar')     { campos.status = 'finalizado';    campos.hora_saida   = agora; }
+      if (tipo === 'cancelar')      { campos.status = 'cancelado'; }
+
+      if (await atualizarRegistro(id, campos)) {
+        mostrarMensagem("Atualizado!", "sucesso");
+        renderizarDescarga();
+        renderizarCarga();
+      } else {
+        mostrarMensagem("Erro ao atualizar.", "erro");
+      }
+    }
+
+    // ── SALVAR EXTRAS (DESCARGA) ──────────────
+    async function salvarExtras(id) {
+      const campos = {};
+      const entrada        = document.getElementById(`ent-${id}`)?.value;
+      const saida          = document.getElementById(`sai-${id}`)?.value;
+      const transportadora = document.getElementById(`tr-${id}`)?.value;
+      const nf             = document.getElementById(`nf-${id}`)?.value;
+      const quantidade     = document.getElementById(`qt-${id}`)?.value;
+
+      if (entrada)        campos.hora_entrada   = entrada;
+      if (saida)          campos.hora_saida     = saida;
+      if (transportadora) campos.transportadora = transportadora;
+      if (nf)             campos.nota_fiscal    = nf;
+      if (quantidade)     campos.quantidade     = quantidade;
+
+      if (Object.keys(campos).length === 0) {
+        mostrarMensagem("Nenhum dado para salvar.", "erro");
+        return;
+      }
+
+      if (await atualizarRegistro(id, campos)) {
+        mostrarMensagem("Dados salvos!", "sucesso");
+        renderizarDescarga();
+      } else {
+        mostrarMensagem("Erro ao salvar.", "erro");
+      }
+    }
+
+    // ── REGISTRAR CIF/FOB ─────────────────────
+    async function registrarCifFob() {
+      const placa          = document.getElementById("cif-placa").value.trim().toUpperCase();
+      const tipo           = document.getElementById("cif-tipo").value;
+      const produto        = document.getElementById("cif-produto").value;
+      const transportadora = document.getElementById("cif-transportadora").value.trim();
+      const nf             = document.getElementById("cif-nf").value.trim();
+      const quantidade     = document.getElementById("cif-quantidade").value.trim();
+
+      if (!placa) { mostrarMensagem("Informe a placa.", "erro"); return; }
+
+      const agora = horaAgora();
+      const hoje  = new Date().toISOString().split("T")[0];
+
+      const payload = {
+        data:           hoje,
+        hora:           agora,
+        hora_entrada:   agora,
+        placa,
+        produto,
+        tipo_operacao:  tipo,
+        transportadora: transportadora || null,
+        nota_fiscal:    nf             || null,
+        quantidade:     quantidade     || null,
+        status:         "agendado"
+      };
+
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          mostrarMensagem("Veículo registrado!", "sucesso");
+          ["cif-placa","cif-transportadora","cif-nf","cif-quantidade"]
+            .forEach(id => { document.getElementById(id).value = ""; });
+          document.getElementById("cif-transp-tipo").value = "transportadora";
+          document.getElementById("campo-transp-nome").style.display = "flex";
+          renderizarCarga();
+        } else {
+          mostrarMensagem("Erro ao registrar.", "erro");
+        }
+      } catch (e) {
+        mostrarMensagem("Erro de conexão.", "erro");
+      }
+    }
+
+    // ── RELÓGIO ───────────────────────────────
+    function atualizarRelogio() {
+      document.getElementById("relogio").textContent =
+        new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    // ── POLLING ───────────────────────────────
+    function atualizarTudo() {
+      renderizarDescarga();
+      renderizarCarga();
+    }
+
+    setInterval(atualizarRelogio, 1000);
+    setInterval(atualizarTudo, 10000);
+
+    atualizarRelogio();
+    atualizarTudo();
+  </script>
+</body>
+</html>
