@@ -463,7 +463,7 @@
       el.innerHTML = proximo
         ? `<div class="label">Próximo Veículo</div>
            <div class="placa-proximo">${proximo.placa}</div>
-           <div class="hora-proximo">${proximo.hora} · ${proximo.data}</div>`
+           <div class="hora-proximo">${proximo.hora} · ${formatarData(proximo.data)}</div>`
         : `<div class="label">Próximo Veículo</div>
            <div class="idle-msg" style="font-size:2rem;">--</div>`;
     }
