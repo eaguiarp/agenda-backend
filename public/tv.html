@@ -428,7 +428,7 @@
       );
 
     // ─── RENDERIZADORES ──────────────────────────────────────
-
+      function formatarData(data) { if (!data) return '';  const [ano, mes, dia] = data.split('-');  return `${dia}/${mes}`;}
 
     
     function renderPrincipal(chamando) {
@@ -463,7 +463,7 @@
       el.innerHTML = proximo
         ? `<div class="label">Próximo Veículo</div>
            <div class="placa-proximo">${proximo.placa}</div>
-           <div class="hora-proximo">${proximo.hora}</div>`
+           <div class="hora-proximo">${proximo.hora} · ${proximo.data}</div>`
         : `<div class="label">Próximo Veículo</div>
            <div class="idle-msg" style="font-size:1rem;">--</div>`;
     }
@@ -478,7 +478,7 @@
   <div class="item-fila ${index === 0 ? 'primeiro' : ''}">
     <span class="numero-fila">${index + 2}</span>
     <span class="placa-fila">${item.placa}</span>
-    <span class="hora-fila">${item.hora}</span>
+    <span class="hora-fila">${item.hora} · ${formatarData(item.data)}</span>
   </div>`).join('');
     }
 
