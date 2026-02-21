@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <title>Painel Logístico - CD Itaboraí</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&family=IBM+Plex+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <style> 
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style> 
   /* ─── VARIÁVEIS ─────────────────────────────────────────── */
     :root {
       --bg:        #0a0a0a;
@@ -17,9 +17,55 @@
       --orange:    #ff6d00;
       --muted:     #555;
       --text:      #e0e0e0;
-      --font-display: 'Roboto Condensed', sans-serif;
-      --font-mono:    'IBM Plex Mono', monospace;
+      --font-display: 'Source Sans 3', sans-serif;
+    
+     
     }
+/*// radar ____________ //*/
+
+  body {
+  font-family: var(--font-display);
+  
+  font-variant-numeric: tabular-nums;
+}
+.aguardando-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  opacity: 0.85;
+}
+
+.radar {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #00ff99;
+  position: relative;
+}
+
+.radar::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #00ff99;
+  top: 0;
+  left: 0;
+  animation: pulse 2s infinite ease-out;
+  opacity: 0.6;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
 
     /* ─── RESET ────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -272,11 +318,15 @@
 </head>
 <body>
 
+  
   <!-- PRINCIPAL -->
   <div class="area-principal" id="area-principal">
     <div id="painel-principal">
       <div class="label">Chamando Agora</div>
-      <div class="idle-msg">Aguardando chamada...</div>
+      <div class="aguardando-wrapper">
+      <div class="radar"></div>
+      <span>Aguardando chamada...</span>
+</div>
     </div>
     <span class="aviso-sonoro">🔊 Clique na tela para ativar o som</span>
   </div>
@@ -398,6 +448,7 @@
     }
 
     // ─── SOM & VOZ ───────────────────────────────────────────
+
 
     function tocarSom() {
       if (contadorBips >= BIPS_MAX) return;
