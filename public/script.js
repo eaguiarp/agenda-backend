@@ -128,15 +128,6 @@ async function iniciarDescarregamento(id) {
     }
 }
 
-fetch("/bandnews-live")
-  .then(res => res.json())
-  .then(data => {
-    if (data.videoId) {
-      const iframe = document.getElementById("bandnews-player");
-      iframe.src = `https://www.youtube.com/embed/${data.videoId}`;
-    }
-  });
-
 
 // ===============================
 // BACKEND (Comunicação API)
@@ -293,10 +284,7 @@ async function renderizarOpcoesHorario() {
         horarios = horarios.filter(m => !(m >= 16*60 && m < 17*60));
     }
 
-    // SÁBADO (6) → até 16h
-    else if (diaSemana === 6) {
-        adicionarIntervalo(0, 16 * 60, 30);
-    }
+    
 // ==============================
 // EXCLUSIVIDADE CANTAGALO
 // ==============================
