@@ -81,8 +81,3 @@ body {
     opacity: 0.6;
 }
 
- .acoes button {
-    flex: 1 1 auto;   /* cresce e encolhe conforme o espaço */
-    min-width: 80px;  /* mas nunca menor que isso */
-    white-space: nowrap;
-}
