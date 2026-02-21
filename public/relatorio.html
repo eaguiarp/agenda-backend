@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatório — CD Itaboraí</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- SheetJS para exportar Excel no navegador -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg:       #f5f4f0;
+      --surface:  #ffffff;
+      --border:   #e0ddd6;
+      --accent:   #5a6b5c;
+      --accent2:  #8fa B91;
+      --text:     #1a1a1a;
+      --muted:    #888;
+      --green:    #2d6a3f;
+      --orange:   #c75c1a;
+      --red:      #b52a2a;
+      --blue:     #1a4a7a;
+      --fn-body:  'DM Sans', sans-serif;
+      --fn-mono:  'DM Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--fn-body);
+      min-height: 100vh;
+      padding: 32px 24px 60px;
+    }
+
+    /* ── HEADER ─────────────────────────────── */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .page-header h1 {
+      font-family: var(--fn-body);
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.01em;
+    }
+
+    .page-header p {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 3px;
+      font-family: var(--fn-mono);
+    }
+
+    .btn-exportar {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-family: var(--fn-body);
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+    .btn-exportar:hover { opacity: 0.85; }
+    .btn-exportar:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── FILTROS ─────────────────────────────── */
+    .filtros {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: flex-end;
+    }
+
+    .filtro-grupo {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 140px;
+    }
+
+    .filtro-grupo label {
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-family: var(--fn-mono);
+    }
+
+    .filtro-grupo input,
+    .filtro-grupo select {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-family: var(--fn-body);
+      font-size: 0.85rem;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .btn-filtrar {
+      background: var(--text);
+      color: white;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 4px;
+      font-family: var(--fn-body);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      align-self: flex-end;
+    }
+    .btn-filtrar:hover { opacity: 0.8; }
+
+    .btn-limpar {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: 4px;
+      font-family: var(--fn-body);
+      font-size: 0.85rem;
+      cursor: pointer;
+      align-self: flex-end;
+    }
+    .btn-limpar:hover { color: var(--text); border-color: #bbb; }
+
+    /* ── CONTADORES ──────────────────────────── */
+    .contadores {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .contador-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .contador-card .num {
+      font-family: var(--fn-mono);
+      font-size: 1.4rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .contador-card .desc {
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* ── TABELA ──────────────────────────────── */
+    .tabela-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    thead {
+      background: #f0ede6;
+    }
+
+    thead th {
+      padding: 11px 14px;
+      text-align: left;
+      font-family: var(--fn-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+      white-space: nowrap;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #f0ede6;
+      transition: background 0.1s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #faf9f6; }
+
+    tbody td {
+      padding: 10px 14px;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .td-mono {
+      font-family: var(--fn-mono);
+      font-size: 0.8rem;
+    }
+
+    .td-vazio {
+      color: #ccc;
+      font-style: italic;
+      font-size: 0.75rem;
+    }
+
+    /* badges de status */
+    .badge {
+      display: inline-block;
+      font-family: var(--fn-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      font-weight: 500;
+      padding: 2px 7px;
+      border-radius: 2px;
+    }
+    .badge-finalizado    { background: #e6f4ec; color: var(--green); }
+    .badge-agendado      { background: #e8f0fb; color: var(--blue); }
+    .badge-chamando      { background: #fef9e0; color: #8a6800; border: 1px solid #f1c40f; }
+    .badge-descarregando { background: #fdf0e6; color: var(--orange); }
+    .badge-cancelado     { background: #f4e6e6; color: var(--red); }
+    .badge-reagendado    { background: #e8f0fb; color: var(--blue); }
+    .badge-futuro        { background: #f0ede6; color: #aaa; font-style: italic; }
+
+    /* linha vazia */
+    .vazio {
+      text-align: center;
+      padding: 40px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-family: var(--fn-mono);
+    }
+
+    /* loading */
+    .carregando {
+      text-align: center;
+      padding: 40px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-family: var(--fn-mono);
+      letter-spacing: 0.1em;
+    }
+
+    /* ── RESPONSIVO ──────────────────────────── */
+    @media (max-width: 600px) {
+      body { padding: 20px 14px 40px; }
+      .page-header { flex-direction: column; gap: 14px; }
+      .btn-exportar { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <div>
+      <h1>Relatório de Agendamentos</h1>
+      <p>CD · ITABORAÍ — exportação de dados</p>
+    </div>
+    <button class="btn-exportar" id="btn-exportar" disabled>
+      ↓ Exportar Excel
+    </button>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filtros">
+    <div class="filtro-grupo">
+      <label>Data início</label>
+      <input type="date" id="filtro-inicio">
+    </div>
+    <div class="filtro-grupo">
+      <label>Data fim</label>
+      <input type="date" id="filtro-fim">
+    </div>
+    <div class="filtro-grupo">
+      <label>Status</label>
+      <select id="filtro-status">
+        <option value="">Todos</option>
+        <option value="agendado">Agendado</option>
+        <option value="chamando">Chamando</option>
+        <option value="descarregando">Descarregando</option>
+        <option value="finalizado">Finalizado</option>
+        <option value="cancelado">Cancelado</option>
+        <option value="reagendado_fila">Reagendado</option>
+      </select>
+    </div>
+    <div class="filtro-grupo">
+      <label>Usuário</label>
+      <select id="filtro-usuario">
+        <option value="">Todos</option>
+      </select>
+    </div>
+    <div class="filtro-grupo">
+      <label>Placa</label>
+      <input type="text" id="filtro-placa" placeholder="Ex: ABC1D23">
+    </div>
+    <button class="btn-filtrar" id="btn-filtrar">Filtrar</button>
+    <button class="btn-limpar" id="btn-limpar">Limpar</button>
+  </div>
+
+  <!-- CONTADORES -->
+  <div class="contadores">
+    <div class="contador-card">
+      <span class="num" id="cnt-total">—</span>
+      <span class="desc">Total</span>
+    </div>
+    <div class="contador-card">
+      <span class="num" id="cnt-finalizado">—</span>
+      <span class="desc">Finalizados</span>
+    </div>
+    <div class="contador-card">
+      <span class="num" id="cnt-cancelado">—</span>
+      <span class="desc">Cancelados</span>
+    </div>
+    <div class="contador-card">
+      <span class="num" id="cnt-pendente">—</span>
+      <span class="desc">Pendentes</span>
+    </div>
+  </div>
+
+  <!-- TABELA -->
+  <div class="tabela-wrap">
+    <table id="tabela-relatorio">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Hora</th>
+          <th>Placa</th>
+          <th>Produto</th>
+          <th>Status</th>
+          <th>Tipo Operação</th>
+          <th>Qtd</th>
+          <th>Nota Fiscal</th>
+          <th>Transportadora</th>
+          <th>Usuário</th>
+        </tr>
+      </thead>
+      <tbody id="tabela-body">
+        <tr><td colspan="10" class="carregando">carregando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const API_URL = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
+
+    const PRODUTOS_MAP = [
+      { match: ["CPIII-32-RS-SC-V", "UPV/ARARÁ/URIO"], label: "CPIII" },
+      { match: ["CPII-F-32-SC-V-MA", "FMA"],           label: "MAUA" },
+      { match: ["CPII-E-32-SC-V", "E32"],              label: "E32" },
+      { match: ["CPII-F-32-SC-25-MA", "M25"],          label: "M25KG" },
+      { match: ["CPV-ARI-SC-40-V"],                    label: "CPV" },
+    ];
+
+    function simplificarProduto(produto) {
+      const p = (produto || "").toUpperCase();
+      for (const entry of PRODUTOS_MAP) {
+        if (entry.match.some(m => p.includes(m))) return entry.label;
+      }
+      return produto || "—";
+    }
+
+    function formatarData(data) {
+      if (!data) return "—";
+      const [ano, mes, dia] = data.split("-");
+      return `${dia}/${mes}/${ano}`;
+    }
+
+    function badgeStatus(status) {
+      const map = {
+        finalizado:    ["badge-finalizado",    "FINALIZADO"],
+        agendado:      ["badge-agendado",      "AGENDADO"],
+        chamando:      ["badge-chamando",      "CHAMANDO"],
+        descarregando: ["badge-descarregando", "DESCARREGANDO"],
+        cancelado:     ["badge-cancelado",     "CANCELADO"],
+        reagendado_fila: ["badge-reagendado",  "REAGENDADO"],
+      };
+      const [cls, label] = map[status] || ["badge-agendado", status.toUpperCase()];
+      return `<span class="badge ${cls}">${label}</span>`;
+    }
+
+    function tdVazio(val) {
+      return val
+        ? `<td class="td-mono">${val}</td>`
+        : `<td class="td-vazio">—</td>`;
+    }
+
+    // ── ESTADO ────────────────────────────────
+    let todosAgendamentos = [];
+    let dadosFiltrados    = [];
+
+    // ── CARREGAR ──────────────────────────────
+    async function carregar() {
+      try {
+        const res = await fetch(API_URL);
+        todosAgendamentos = await res.json();
+
+        // Popular select de usuários
+        const usuarios = [...new Set(
+          todosAgendamentos
+            .map(a => a.alterado_por)
+            .filter(Boolean)
+        )].sort();
+
+        const selUsuario = document.getElementById("filtro-usuario");
+        usuarios.forEach(u => {
+          const opt = document.createElement("option");
+          opt.value = u;
+          opt.textContent = u;
+          selUsuario.appendChild(opt);
+        });
+
+        aplicarFiltros();
+      } catch (e) {
+        document.getElementById("tabela-body").innerHTML =
+          `<tr><td colspan="10" class="vazio">Erro ao carregar dados.</td></tr>`;
+      }
+    }
+
+    // ── FILTROS ───────────────────────────────
+    function aplicarFiltros() {
+      const inicio  = document.getElementById("filtro-inicio").value;
+      const fim     = document.getElementById("filtro-fim").value;
+      const status  = document.getElementById("filtro-status").value;
+      const usuario = document.getElementById("filtro-usuario").value;
+      const placa   = document.getElementById("filtro-placa").value.trim().toUpperCase();
+
+      dadosFiltrados = todosAgendamentos.filter(a => {
+        if (inicio && a.data < inicio) return false;
+        if (fim    && a.data > fim)    return false;
+        if (status && a.status !== status) return false;
+        if (usuario && a.alterado_por !== usuario) return false;
+        if (placa  && !(a.placa || "").toUpperCase().includes(placa)) return false;
+        return true;
+      });
+
+      // Ordena por data+hora
+      dadosFiltrados.sort((a, b) =>
+        new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`)
+      );
+
+      renderizarTabela();
+      atualizarContadores();
+    }
+
+    // ── RENDERIZAR ────────────────────────────
+    function renderizarTabela() {
+      const tbody = document.getElementById("tabela-body");
+      const btnExp = document.getElementById("btn-exportar");
+
+      if (!dadosFiltrados.length) {
+        tbody.innerHTML = `<tr><td colspan="10" class="vazio">Nenhum registro encontrado.</td></tr>`;
+        btnExp.disabled = true;
+        return;
+      }
+
+      btnExp.disabled = false;
+
+      tbody.innerHTML = dadosFiltrados.map(item => `
+        <tr>
+          <td class="td-mono">${formatarData(item.data)}</td>
+          <td class="td-mono">${item.hora || "—"}</td>
+          <td><strong>${item.placa || "—"}</strong></td>
+          <td>${simplificarProduto(item.produto)}</td>
+          <td>${badgeStatus(item.status)}</td>
+          ${tdVazio(item.tipo_operacao ? item.tipo_operacao.toUpperCase() : null)}
+          ${tdVazio(item.quantidade)}
+          ${tdVazio(item.nota_fiscal)}
+          ${tdVazio(item.transportadora)}
+          <td class="td-mono">${item.alterado_por || "<span class='td-vazio'>—</span>"}</td>
+        </tr>
+      `).join("");
+    }
+
+    function atualizarContadores() {
+      document.getElementById("cnt-total").textContent     = dadosFiltrados.length;
+      document.getElementById("cnt-finalizado").textContent = dadosFiltrados.filter(a => a.status === "finalizado").length;
+      document.getElementById("cnt-cancelado").textContent  = dadosFiltrados.filter(a => a.status === "cancelado").length;
+      document.getElementById("cnt-pendente").textContent   = dadosFiltrados.filter(a =>
+        ["agendado", "chamando", "descarregando"].includes(a.status)).length;
+    }
+
+    // ── EXPORTAR EXCEL ────────────────────────
+    function exportarExcel() {
+      const linhas = dadosFiltrados.map(item => ({
+        "Data":           formatarData(item.data),
+        "Hora":           item.hora || "",
+        "Placa":          item.placa || "",
+        "Produto":        simplificarProduto(item.produto),
+        "Status":         (item.status || "").toUpperCase(),
+        "Tipo Operação":  item.tipo_operacao ? item.tipo_operacao.toUpperCase() : "",
+        "Quantidade":     item.quantidade || "",
+        "Nota Fiscal":    item.nota_fiscal || "",
+        "Transportadora": item.transportadora || "",
+        "Usuário":        item.alterado_por || "",
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(linhas);
+
+      // Largura das colunas
+      ws["!cols"] = [
+        { wch: 12 }, { wch: 8 }, { wch: 12 }, { wch: 10 },
+        { wch: 14 }, { wch: 16 }, { wch: 10 }, { wch: 14 },
+        { wch: 18 }, { wch: 12 },
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Agendamentos");
+
+      const hoje = new Date().toISOString().split("T")[0];
+      XLSX.writeFile(wb, `relatorio-cd-itaborai-${hoje}.xlsx`);
+    }
+
+    // ── EVENTOS ───────────────────────────────
+    document.getElementById("btn-filtrar").addEventListener("click", aplicarFiltros);
+    document.getElementById("btn-exportar").addEventListener("click", exportarExcel);
+
+    document.getElementById("btn-limpar").addEventListener("click", () => {
+      document.getElementById("filtro-inicio").value = "";
+      document.getElementById("filtro-fim").value    = "";
+      document.getElementById("filtro-status").value = "";
+      document.getElementById("filtro-usuario").value = "";
+      document.getElementById("filtro-placa").value  = "";
+      aplicarFiltros();
+    });
+
+    // Enter nos inputs dispara filtro
+    ["filtro-inicio","filtro-fim","filtro-status","filtro-usuario","filtro-placa"]
+      .forEach(id => {
+        document.getElementById(id).addEventListener("keydown", e => {
+          if (e.key === "Enter") aplicarFiltros();
+        });
+      });
+
+    // ── INIT ──────────────────────────────────
+    carregar();
+  </script>
+</body>
+</html>
