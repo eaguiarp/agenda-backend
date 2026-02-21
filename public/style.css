@@ -91,3 +91,5 @@ body {
         min-width: 70px;
     }
 }
+
+.btn-ausente { background: #3498db; color: white; }

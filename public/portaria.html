@@ -457,7 +457,8 @@
               ${!encerrado ?
                 `<button class="btn-acao btn-salvar" onclick="salvarExtras('${item.id}')">SALVAR</button>` : ''}
               ${!encerrado ?
-                `<button class="btn-acao btn-cancelar" onclick="if(confirm('Cancelar agendamento?')) acao('${item.id}','cancelar')">CANCELAR</button>` : ''}
+                `<button class="btn-acao btn-cancelar" onclick="if(confirm('Cancelar agendamento?')) acao('${item.id}','cancelar')">CANCELAR</button>
+                 <button class="btn-acao btn-ausente"  onclick="if(confirm('Marcar como ausente?')) acao('${item.id}','ausente')">AUSENTE</button>` : ''}
             </div>
 
           </div>`;
@@ -523,7 +524,8 @@
       if (tipo === 'descarregando') { campos.status = 'descarregando'; }
       if (tipo === 'finalizar')     { campos.status = 'finalizado';    campos.hora_saida   = agora; }
       if (tipo === 'cancelar')      { campos.status = 'cancelado'; }
-
+      if (tipo === 'ausente') { campos.status = 'reagendado_fila'; }
+      
       if (await atualizarRegistro(id, campos)) {
         mostrarMensagem("Atualizado!", "sucesso");
         renderizarDescarga();
