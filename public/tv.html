@@ -6,6 +6,58 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
 <style> 
+
+
+  /* ─── TITULO ─────────────────────────────────────────── */
+.topo {
+  position: absolute;
+  top: 14px;
+  left: 36px;
+  right: 36px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+
+.titulo-cd {
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-size: 1.1rem;
+}
+
+.relogio {
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-size: 1rem;
+}
+
+/* ─── DECORAÇÃO FILA ─────────────────────────────────────────── */
+
+.item-fila {
+  position: relative;
+  gap: 18px;
+}
+
+.numero-fila {
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.2rem;
+  width: 30px;
+}
+
+.item-fila.primeiro {
+  border-left: 4px solid var(--accent);
+  background: #1a1606;
+}
+
+.item-fila.primeiro .numero-fila {
+  color: var(--accent);
+}
+
   /* ─── VARIÁVEIS ─────────────────────────────────────────── */
     :root {
       --bg:        #0a0a0a;
@@ -318,6 +370,10 @@
 </head>
 <body>
 
+    <div class="topo">
+    <div class="titulo-cd">CD - Itaboraí</div>
+    <div class="relogio" id="relogio"></div>
+    </div>
   
   <!-- PRINCIPAL -->
   <div class="area-principal" id="area-principal">
@@ -373,6 +429,8 @@
 
     // ─── RENDERIZADORES ──────────────────────────────────────
 
+
+    
     function renderPrincipal(chamando) {
       const area  = document.getElementById('area-principal');
       const painel = document.getElementById('painel-principal');
@@ -416,11 +474,12 @@
         el.innerHTML = `<div class="fila-vazia">Sem fila de espera</div>`;
         return;
       }
-      el.innerHTML = fila.map(item => `
-        <div class="item-fila">
-          <span class="placa-fila">${item.placa}</span>
-          <span class="hora-fila">${item.hora}</span>
-        </div>`).join('');
+     el.innerHTML = fila.map((item, index) => `
+  <div class="item-fila ${index === 0 ? 'primeiro' : ''}">
+    <span class="numero-fila">${index + 1}</span>
+    <span class="placa-fila">${item.placa}</span>
+    <span class="hora-fila">${item.hora}</span>
+  </div>`).join('');
     }
 
     function renderStatus(dados) {
@@ -520,6 +579,19 @@
 
     setInterval(atualizarTV, POLL_MS);
     atualizarTV();
+
+function atualizarRelogio() {
+  const agora = new Date();
+  const hora = agora.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+  document.getElementById("relogio").textContent = hora;
+}
+
+setInterval(atualizarRelogio, 1000);
+atualizarRelogio();
+
   </script>
 </body>
 </html>
