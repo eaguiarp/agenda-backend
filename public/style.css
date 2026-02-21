@@ -1,7 +1,7 @@
 /* Configurações Gerais */
 body {
     font-family: 'Segoe UI', Arial, sans-serif;
-    padding: 20px;
+    padding: 10px;
     background-color: #f4f7f6;
     color: #333;
 }
@@ -32,13 +32,13 @@ body {
 .item-agendamento {
     background: white;
     margin-bottom: 10px;
-    padding: 15px;
+    padding: 10px 8px;  
     border-radius: 8px;
     list-style: none;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     display: flex;
     flex-direction: column;
-    border-left: 5px solid #ccc; /* Linha padrão cinza */
+    border-left: 5px solid #ccc;
 }
 
 /* Destaque para quando o veículo for chamado (Amarelo) */
@@ -81,3 +81,13 @@ body {
     opacity: 0.6;
 }
 
+.acoes button {
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .acoes button {
+        flex: 1 1 auto;
+        min-width: 70px;
+    }
+}
