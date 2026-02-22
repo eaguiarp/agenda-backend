@@ -3,26 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Relatório — CD Itaboraí</title>
+  <title>Relatório & Dashboard — CD Itaboraí</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-  <!-- SheetJS para exportar Excel no navegador -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     :root {
-      --bg:       #f5f4f0;
-      --surface:  #ffffff;
-      --border:   #e0ddd6;
-      --accent:   #5a6b5c;
-      --accent2:  #8fa B91;
-      --text:     #1a1a1a;
-      --muted:    #888;
-      --green:    #2d6a3f;
-      --orange:   #c75c1a;
-      --red:      #b52a2a;
-      --blue:     #1a4a7a;
-      --fn-body:  'DM Sans', sans-serif;
-      --fn-mono:  'DM Mono', monospace;
+      --bg:      #f5f4f0;
+      --surface: #ffffff;
+      --border:  #e0ddd6;
+      --accent:  #5a6b5c;
+      --text:    #1a1a1a;
+      --muted:   #888;
+      --green:   #2d6a3f;
+      --orange:  #c75c1a;
+      --red:     #b52a2a;
+      --blue:    #1a4a7a;
+      --yellow:  #8a6800;
+      --fn-body: 'DM Sans', sans-serif;
+      --fn-mono: 'DM Mono', monospace;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -32,248 +31,209 @@
       color: var(--text);
       font-family: var(--fn-body);
       min-height: 100vh;
-      padding: 32px 24px 60px;
+      padding: 28px 24px 60px;
     }
 
     /* ── HEADER ─────────────────────────────── */
     .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 28px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--border);
     }
-
-    .page-header h1 {
-      font-family: var(--fn-body);
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--accent);
-      letter-spacing: -0.01em;
-    }
-
-    .page-header p {
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-top: 3px;
-      font-family: var(--fn-mono);
-    }
+    .page-header h1 { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+    .page-header p  { font-size: 0.75rem; color: var(--muted); font-family: var(--fn-mono); margin-top: 3px; }
 
     .btn-exportar {
-      background: var(--accent);
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 4px;
-      font-family: var(--fn-body);
-      font-weight: 700;
-      font-size: 0.85rem;
-      cursor: pointer;
-      letter-spacing: 0.04em;
-      transition: opacity 0.15s;
-      white-space: nowrap;
+      background: var(--accent); color: white; border: none;
+      padding: 10px 20px; border-radius: 4px; font-family: var(--fn-body);
+      font-weight: 700; font-size: 0.85rem; cursor: pointer;
+      letter-spacing: 0.04em; transition: opacity 0.15s; white-space: nowrap;
     }
     .btn-exportar:hover { opacity: 0.85; }
     .btn-exportar:disabled { opacity: 0.4; cursor: not-allowed; }
 
+    /* ── ABAS ────────────────────────────────── */
+    .abas {
+      display: flex; gap: 4px; margin-bottom: 24px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; padding: 4px;
+    }
+    .aba {
+      flex: 1; padding: 10px; text-align: center; border-radius: 4px;
+      cursor: pointer; font-weight: 600; font-size: 0.85rem;
+      border: none; background: transparent; color: var(--muted); transition: all 0.15s;
+    }
+    .aba.ativa { background: var(--accent); color: white; }
+
+    .painel { display: none; }
+    .painel.ativo { display: block; }
+
+    /* ── CARDS ───────────────────────────────── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; padding: 18px 20px; margin-bottom: 16px;
+    }
+    .card-titulo {
+      font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--muted); font-family: var(--fn-mono);
+      margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    /* ── KPI GRID ────────────────────────────── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px; margin-bottom: 16px;
+    }
+    .kpi {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .kpi.destaque { border-left: 3px solid var(--accent); }
+    .kpi.alerta   { border-left: 3px solid var(--red);   background: #fdf5f5; }
+    .kpi.ok       { border-left: 3px solid var(--green); background: #f5fdf7; }
+
+    .kpi-valor {
+      font-family: var(--fn-mono); font-size: 1.6rem; font-weight: 500;
+      color: var(--text); line-height: 1;
+    }
+    .kpi-label {
+      font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+    }
+
+    /* ── GRÁFICO DE BARRAS ───────────────────── */
+    .barras { display: flex; flex-direction: column; gap: 8px; }
+    .barra-item { display: flex; align-items: center; gap: 10px; }
+    .barra-label { font-size: 0.75rem; font-family: var(--fn-mono); min-width: 100px; color: var(--text); }
+    .barra-track { flex: 1; background: #f0ede6; border-radius: 2px; height: 22px; overflow: hidden; }
+    .barra-fill  {
+      height: 100%; background: var(--accent); border-radius: 2px;
+      transition: width 0.6s ease; display: flex; align-items: center; padding-left: 8px;
+      min-width: 40px;
+    }
+    .barra-fill span { font-size: 0.65rem; font-family: var(--fn-mono); color: white; white-space: nowrap; }
+    .barra-fill.laranja { background: var(--orange); }
+    .barra-fill.azul    { background: #3498db; }
+    .barra-fill.verde   { background: var(--green); }
+
+    /* ── GRID DE DOIS ────────────────────────── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    @media (max-width: 680px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ── PERÍODO ─────────────────────────────── */
+    .periodo-selector { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+    .btn-periodo {
+      padding: 6px 14px; border: 1px solid var(--border); border-radius: 4px;
+      font-family: var(--fn-mono); font-size: 0.75rem; cursor: pointer;
+      background: var(--surface); color: var(--muted); transition: all 0.15s;
+    }
+    .btn-periodo.ativo { background: var(--accent); color: white; border-color: var(--accent); }
+
+    /* ── CONCILIAÇÃO ─────────────────────────── */
+    .conciliacao-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .produto-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 5px; padding: 14px 16px;
+    }
+    .produto-card-titulo {
+      font-family: var(--fn-mono); font-size: 0.72rem; font-weight: 500;
+      letter-spacing: 0.1em; color: var(--accent); margin-bottom: 12px; text-transform: uppercase;
+    }
+    .linha-conc {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.82rem;
+    }
+    .linha-conc:last-child { border-bottom: none; }
+    .linha-conc .desc { color: var(--muted); font-size: 0.74rem; }
+    .linha-conc .val  { font-family: var(--fn-mono); font-weight: 500; }
+    .linha-conc .val.positivo { color: var(--green); }
+    .linha-conc .val.negativo { color: var(--red); }
+    .linha-conc.total {
+      margin-top: 4px; padding-top: 10px;
+      border-top: 2px solid var(--border); border-bottom: none; font-weight: 700;
+    }
+    .input-inv {
+      border: 1px solid var(--border); border-radius: 3px;
+      padding: 4px 8px; font-family: var(--fn-mono); font-size: 0.85rem;
+      background: white; color: var(--text); width: 110px; text-align: right;
+    }
+    .input-inv:focus { outline: none; border-color: var(--accent); }
+    .div-ok     { color: var(--green); font-weight: 700; font-family: var(--fn-mono); }
+    .div-alerta { color: var(--red);   font-weight: 700; font-family: var(--fn-mono); }
+
     /* ── FILTROS ─────────────────────────────── */
     .filtros {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 18px 20px;
-      margin-bottom: 20px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-      align-items: flex-end;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; padding: 16px 18px; margin-bottom: 14px;
+      display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
     }
-
-    .filtro-grupo {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      min-width: 140px;
-    }
-
+    .filtro-grupo { display: flex; flex-direction: column; gap: 4px; min-width: 130px; }
     .filtro-grupo label {
-      font-size: 0.65rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      font-family: var(--fn-mono);
+      font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); font-family: var(--fn-mono);
     }
-
-    .filtro-grupo input,
-    .filtro-grupo select {
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 8px 10px;
-      font-family: var(--fn-body);
-      font-size: 0.85rem;
-      background: var(--bg);
-      color: var(--text);
+    .filtro-grupo input, .filtro-grupo select {
+      border: 1px solid var(--border); border-radius: 4px; padding: 7px 10px;
+      font-family: var(--fn-body); font-size: 0.85rem; background: var(--bg); color: var(--text);
     }
-
     .btn-filtrar {
-      background: var(--text);
-      color: white;
-      border: none;
-      padding: 8px 18px;
-      border-radius: 4px;
-      font-family: var(--fn-body);
-      font-weight: 600;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: opacity 0.15s;
-      align-self: flex-end;
+      background: var(--text); color: white; border: none;
+      padding: 7px 16px; border-radius: 4px; font-family: var(--fn-body);
+      font-weight: 600; font-size: 0.85rem; cursor: pointer; align-self: flex-end;
     }
-    .btn-filtrar:hover { opacity: 0.8; }
-
     .btn-limpar {
-      background: transparent;
-      color: var(--muted);
-      border: 1px solid var(--border);
-      padding: 8px 14px;
-      border-radius: 4px;
-      font-family: var(--fn-body);
-      font-size: 0.85rem;
-      cursor: pointer;
-      align-self: flex-end;
+      background: transparent; color: var(--muted); border: 1px solid var(--border);
+      padding: 7px 12px; border-radius: 4px; font-family: var(--fn-body);
+      font-size: 0.85rem; cursor: pointer; align-self: flex-end;
     }
-    .btn-limpar:hover { color: var(--text); border-color: #bbb; }
 
     /* ── CONTADORES ──────────────────────────── */
-    .contadores {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-    }
-
+    .contadores { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
     .contador-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 10px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 4px; padding: 9px 14px; display: flex; flex-direction: column; gap: 2px;
     }
-
-    .contador-card .num {
-      font-family: var(--fn-mono);
-      font-size: 1.4rem;
-      font-weight: 500;
-      color: var(--text);
-    }
-
-    .contador-card .desc {
-      font-size: 0.65rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
+    .contador-card .num { font-family: var(--fn-mono); font-size: 1.3rem; font-weight: 500; }
+    .contador-card .desc { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 
     /* ── TABELA ──────────────────────────────── */
     .tabela-wrap {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      overflow: hidden;
-      overflow-x: auto;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; overflow: hidden; overflow-x: auto;
     }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-    }
-
-    thead {
-      background: #f0ede6;
-    }
-
+    table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    thead { background: #f0ede6; }
     thead th {
-      padding: 11px 14px;
-      text-align: left;
-      font-family: var(--fn-mono);
-      font-size: 0.6rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--muted);
-      font-weight: 500;
-      white-space: nowrap;
-      border-bottom: 1px solid var(--border);
+      padding: 10px 13px; text-align: left; font-family: var(--fn-mono);
+      font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted); font-weight: 500; white-space: nowrap; border-bottom: 1px solid var(--border);
     }
-
-    tbody tr {
-      border-bottom: 1px solid #f0ede6;
-      transition: background 0.1s;
-    }
+    tbody tr { border-bottom: 1px solid #f0ede6; transition: background 0.1s; }
     tbody tr:last-child { border-bottom: none; }
     tbody tr:hover { background: #faf9f6; }
+    tbody td { padding: 9px 13px; white-space: nowrap; }
+    .td-mono  { font-family: var(--fn-mono); font-size: 0.78rem; }
+    .td-vazio { color: #ccc; font-style: italic; font-size: 0.73rem; }
 
-    tbody td {
-      padding: 10px 14px;
-      color: var(--text);
-      white-space: nowrap;
-    }
-
-    .td-mono {
-      font-family: var(--fn-mono);
-      font-size: 0.8rem;
-    }
-
-    .td-vazio {
-      color: #ccc;
-      font-style: italic;
-      font-size: 0.75rem;
-    }
-
-    /* badges de status */
     .badge {
-      display: inline-block;
-      font-family: var(--fn-mono);
-      font-size: 0.6rem;
-      letter-spacing: 0.1em;
-      font-weight: 500;
-      padding: 2px 7px;
-      border-radius: 2px;
+      display: inline-block; font-family: var(--fn-mono); font-size: 0.58rem;
+      letter-spacing: 0.1em; font-weight: 500; padding: 2px 7px; border-radius: 2px;
     }
     .badge-finalizado    { background: #e6f4ec; color: var(--green); }
     .badge-agendado      { background: #e8f0fb; color: var(--blue); }
-    .badge-chamando      { background: #fef9e0; color: #8a6800; border: 1px solid #f1c40f; }
+    .badge-chamando      { background: #fef9e0; color: var(--yellow); border: 1px solid #f1c40f; }
     .badge-descarregando { background: #fdf0e6; color: var(--orange); }
     .badge-cancelado     { background: #f4e6e6; color: var(--red); }
     .badge-reagendado    { background: #e8f0fb; color: var(--blue); }
-    .badge-futuro        { background: #f0ede6; color: #aaa; font-style: italic; }
 
-    /* linha vazia */
     .vazio {
-      text-align: center;
-      padding: 40px;
-      color: var(--muted);
-      font-size: 0.85rem;
-      font-family: var(--fn-mono);
-    }
-
-    /* loading */
-    .carregando {
-      text-align: center;
-      padding: 40px;
-      color: var(--muted);
-      font-size: 0.8rem;
-      font-family: var(--fn-mono);
-      letter-spacing: 0.1em;
-    }
-
-    /* ── RESPONSIVO ──────────────────────────── */
-    @media (max-width: 600px) {
-      body { padding: 20px 14px 40px; }
-      .page-header { flex-direction: column; gap: 14px; }
-      .btn-exportar { width: 100%; text-align: center; }
+      text-align: center; padding: 36px; color: var(--muted);
+      font-size: 0.82rem; font-family: var(--fn-mono);
     }
   </style>
 </head>
@@ -281,108 +241,195 @@
 
   <div class="page-header">
     <div>
-      <h1>Relatório de Agendamentos</h1>
-      <p>CD · ITABORAÍ — exportação de dados</p>
+      <h1>Relatório & Dashboard</h1>
+      <p>CD · ITABORAÍ — indicadores, conciliação e exportação</p>
     </div>
-    <button class="btn-exportar" id="btn-exportar" disabled>
-      ↓ Exportar Excel
-    </button>
+    <button class="btn-exportar" id="btn-exportar" style="display:none">↓ Exportar Excel</button>
   </div>
 
-  <!-- FILTROS -->
-  <div class="filtros">
-    <div class="filtro-grupo">
-      <label>Data início</label>
-      <input type="date" id="filtro-inicio">
-    </div>
-    <div class="filtro-grupo">
-      <label>Data fim</label>
-      <input type="date" id="filtro-fim">
-    </div>
-    <div class="filtro-grupo">
-      <label>Status</label>
-      <select id="filtro-status">
-        <option value="">Todos</option>
-        <option value="agendado">Agendado</option>
-        <option value="chamando">Chamando</option>
-        <option value="descarregando">Descarregando</option>
-        <option value="finalizado">Finalizado</option>
-        <option value="cancelado">Cancelado</option>
-        <option value="reagendado_fila">Reagendado</option>
-      </select>
-    </div>
-    <div class="filtro-grupo">
-      <label>Usuário</label>
-      <select id="filtro-usuario">
-        <option value="">Todos</option>
-      </select>
-    </div>
-    <div class="filtro-grupo">
-      <label>Placa</label>
-      <input type="text" id="filtro-placa" placeholder="Ex: ABC1D23">
-    </div>
-    <button class="btn-filtrar" id="btn-filtrar">Filtrar</button>
-    <button class="btn-limpar" id="btn-limpar">Limpar</button>
+  <div class="abas">
+    <button class="aba ativa" onclick="trocarAba('dashboard')">📊 Dashboard</button>
+    <button class="aba"       onclick="trocarAba('conciliacao')">⚖️ Conciliação</button>
+    <button class="aba"       onclick="trocarAba('relatorio')">📋 Relatório</button>
   </div>
 
-  <!-- CONTADORES -->
-  <div class="contadores">
-    <div class="contador-card">
-      <span class="num" id="cnt-total">—</span>
-      <span class="desc">Total</span>
+  <!-- ═══ DASHBOARD ═══ -->
+  <div class="painel ativo" id="painel-dashboard">
+
+    <div class="periodo-selector">
+      <button class="btn-periodo ativo" onclick="setPeriodo('hoje')">Hoje</button>
+      <button class="btn-periodo"       onclick="setPeriodo('semana')">Esta semana</button>
+      <button class="btn-periodo"       onclick="setPeriodo('mes')">Este mês</button>
     </div>
-    <div class="contador-card">
-      <span class="num" id="cnt-finalizado">—</span>
-      <span class="desc">Finalizados</span>
+
+    <div class="kpi-grid">
+      <div class="kpi destaque">
+        <div class="kpi-valor" id="kpi-tempo-medio">--</div>
+        <div class="kpi-label">Tempo médio permanência</div>
+      </div>
+      <div class="kpi" id="kpi-acima-card">
+        <div class="kpi-valor" id="kpi-acima">--</div>
+        <div class="kpi-label">Acima de 45min agora</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-valor" id="kpi-total">--</div>
+        <div class="kpi-label">Veículos no período</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-valor" id="kpi-finalizados">--</div>
+        <div class="kpi-label">Finalizados</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-valor" id="kpi-pontualidade">--</div>
+        <div class="kpi-label">Chegaram antes do horário</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-valor" id="kpi-ausentes">--</div>
+        <div class="kpi-label">Ausentes / Reagendados</div>
+      </div>
     </div>
-    <div class="contador-card">
-      <span class="num" id="cnt-cancelado">—</span>
-      <span class="desc">Cancelados</span>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-titulo">Tempo médio por transportadora</div>
+        <div class="barras" id="barras-transportadora"><div class="vazio" style="padding:12px">Carregando...</div></div>
+      </div>
+      <div class="card">
+        <div class="card-titulo">Tempo médio por produto</div>
+        <div class="barras" id="barras-produto"><div class="vazio" style="padding:12px">Carregando...</div></div>
+      </div>
     </div>
-    <div class="contador-card">
-      <span class="num" id="cnt-pendente">—</span>
-      <span class="desc">Pendentes</span>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-titulo">Volume por faixa de horário</div>
+        <div class="barras" id="barras-horario"><div class="vazio" style="padding:12px">Carregando...</div></div>
+      </div>
+      <div class="card">
+        <div class="card-titulo">Volume por dia da semana</div>
+        <div class="barras" id="barras-diasemana"><div class="vazio" style="padding:12px">Carregando...</div></div>
+      </div>
     </div>
+
   </div>
 
-  <!-- TABELA -->
-  <div class="tabela-wrap">
-    <table id="tabela-relatorio">
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th>Hora</th>
-          <th>Placa</th>
-          <th>Produto</th>
-          <th>Status</th>
-          <th>Tipo Operação</th>
-          <th>Qtd</th>
-          <th>Nota Fiscal</th>
-          <th>Transportadora</th>
-          <th>Usuário</th>
-        </tr>
-      </thead>
-      <tbody id="tabela-body">
-        <tr><td colspan="10" class="carregando">carregando...</td></tr>
-      </tbody>
-    </table>
+  <!-- ═══ CONCILIAÇÃO ═══ -->
+  <div class="painel" id="painel-conciliacao">
+
+    <div class="card">
+      <div class="card-titulo">Selecionar período</div>
+      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
+        <div class="filtro-grupo">
+          <label>Data</label>
+          <input type="date" id="conc-data">
+        </div>
+        <div class="filtro-grupo">
+          <label>Turno</label>
+          <select id="conc-turno">
+            <option value="manha">Manhã (06h → 16h)</option>
+            <option value="tarde">Tarde/Noite (16h → 06h)</option>
+          </select>
+        </div>
+        <button class="btn-filtrar" onclick="calcularConciliacao()">Calcular</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-titulo">
+        Conciliação por produto
+        <span style="font-size:0.6rem;color:var(--muted);">Informe inventário de abertura e fechamento em sacos</span>
+      </div>
+      <div class="conciliacao-grid" id="conciliacao-grid">
+        <div class="vazio">Selecione data e turno e clique em Calcular</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ RELATÓRIO ═══ -->
+  <div class="painel" id="painel-relatorio">
+
+    <div class="filtros">
+      <div class="filtro-grupo">
+        <label>Data início</label>
+        <input type="date" id="filtro-inicio">
+      </div>
+      <div class="filtro-grupo">
+        <label>Data fim</label>
+        <input type="date" id="filtro-fim">
+      </div>
+      <div class="filtro-grupo">
+        <label>Status</label>
+        <select id="filtro-status">
+          <option value="">Todos</option>
+          <option value="agendado">Agendado</option>
+          <option value="chamando">Chamando</option>
+          <option value="descarregando">Descarregando</option>
+          <option value="finalizado">Finalizado</option>
+          <option value="cancelado">Cancelado</option>
+          <option value="reagendado_fila">Reagendado</option>
+        </select>
+      </div>
+      <div class="filtro-grupo">
+        <label>Usuário</label>
+        <select id="filtro-usuario"><option value="">Todos</option></select>
+      </div>
+      <div class="filtro-grupo">
+        <label>Placa</label>
+        <input type="text" id="filtro-placa" placeholder="ABC1D23">
+      </div>
+      <button class="btn-filtrar" onclick="aplicarFiltros()">Filtrar</button>
+      <button class="btn-limpar"  onclick="limparFiltros()">Limpar</button>
+    </div>
+
+    <div class="contadores">
+      <div class="contador-card"><span class="num" id="cnt-total">—</span><span class="desc">Total</span></div>
+      <div class="contador-card"><span class="num" id="cnt-finalizado">—</span><span class="desc">Finalizados</span></div>
+      <div class="contador-card"><span class="num" id="cnt-cancelado">—</span><span class="desc">Cancelados</span></div>
+      <div class="contador-card"><span class="num" id="cnt-pendente">—</span><span class="desc">Pendentes</span></div>
+    </div>
+
+    <div class="tabela-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th><th>Hora Ag.</th><th>H. Entrada</th><th>H. Saída</th><th>Perm.</th>
+            <th>Placa</th><th>Produto</th><th>Status</th><th>Tipo Op.</th>
+            <th>Qtd (sc)</th><th>NF</th><th>Transportadora</th><th>Usuário</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-body">
+          <tr><td colspan="13" class="vazio">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
   </div>
 
   <script>
     const API_URL = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
 
+    const PRODUTOS      = ['CPIII','MAUA','E32','M25KG','CPV'];
+    const DIAS_SEMANA   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    const TRANSPORTADORAS = ['Transagil','Tora','Targets'];
+
     const PRODUTOS_MAP = [
-      { match: ["CPIII-32-RS-SC-V", "UPV/ARARÁ/URIO"], label: "CPIII" },
-      { match: ["CPII-F-32-SC-V-MA", "FMA"],           label: "MAUA" },
-      { match: ["CPII-E-32-SC-V", "E32"],              label: "E32" },
-      { match: ["CPII-F-32-SC-25-MA", "M25"],          label: "M25KG" },
-      { match: ["CPV-ARI-SC-40-V"],                    label: "CPV" },
+      { match: ["CPIII-32-RS-SC-V"],   label: "CPIII"  },
+      { match: ["CPII-F-32-SC-V-MA"],  label: "MAUA"   },
+      { match: ["CPII-E-32-SC-V"],     label: "E32"    },
+      { match: ["CPII-F-32-SC-25-MA"], label: "M25KG"  },
+      { match: ["CPV-ARI-SC-40-V"],    label: "CPV"    },
     ];
 
+    let todosAgendamentos = [];
+    let dadosFiltrados    = [];
+    let periodoAtivo      = 'hoje';
+
+    // ── HELPERS ───────────────────────────────
     function simplificarProduto(produto) {
       const p = (produto || "").toUpperCase();
-      for (const entry of PRODUTOS_MAP) {
-        if (entry.match.some(m => p.includes(m))) return entry.label;
+      for (const e of PRODUTOS_MAP) {
+        if (e.match.some(m => p.includes(m))) return e.label;
       }
       return produto || "—";
     }
@@ -393,58 +440,267 @@
       return `${dia}/${mes}/${ano}`;
     }
 
+    function calcularMinutos(entrada, saida) {
+      if (!entrada || !saida) return null;
+      const [h1, m1] = entrada.split(":").map(Number);
+      const [h2, m2] = saida.split(":").map(Number);
+      let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+      if (diff < 0) diff += 1440;
+      return diff;
+    }
+
+    function formatarTempo(min) {
+      if (min === null || min === undefined) return "—";
+      const h = Math.floor(min / 60), m = min % 60;
+      return h > 0 ? `${h}h ${m}min` : `${m}min`;
+    }
+
+    function minutosDesde(horaEntrada) {
+      if (!horaEntrada) return null;
+      const [h, m] = horaEntrada.split(":").map(Number);
+      const agora = new Date(), ent = new Date();
+      ent.setHours(h, m, 0);
+      const d = Math.floor((agora - ent) / 60000);
+      return d < 0 ? null : d;
+    }
+
+    function parseSacos(val) {
+      if (!val) return 0;
+      return parseInt((val + "").replace(/[^\d]/g, "")) || 0;
+    }
+
+    function getIntervalo(periodo) {
+      const hoje = new Date(), hojeStr = hoje.toISOString().split("T")[0];
+      if (periodo === 'hoje') return { inicio: hojeStr, fim: hojeStr };
+      if (periodo === 'semana') {
+        const ini = new Date(hoje); ini.setDate(hoje.getDate() - hoje.getDay());
+        return { inicio: ini.toISOString().split("T")[0], fim: hojeStr };
+      }
+      const ini = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      return { inicio: ini.toISOString().split("T")[0], fim: hojeStr };
+    }
+
+    function filtrarPeriodo(dados) {
+      const { inicio, fim } = getIntervalo(periodoAtivo);
+      return dados.filter(a => a.data >= inicio && a.data <= fim);
+    }
+
     function badgeStatus(status) {
       const map = {
-        finalizado:    ["badge-finalizado",    "FINALIZADO"],
-        agendado:      ["badge-agendado",      "AGENDADO"],
-        chamando:      ["badge-chamando",      "CHAMANDO"],
-        descarregando: ["badge-descarregando", "DESCARREGANDO"],
-        cancelado:     ["badge-cancelado",     "CANCELADO"],
-        reagendado_fila: ["badge-reagendado",  "REAGENDADO"],
+        finalizado:      ["badge-finalizado",    "FINALIZADO"],
+        agendado:        ["badge-agendado",       "AGENDADO"],
+        chamando:        ["badge-chamando",       "CHAMANDO"],
+        descarregando:   ["badge-descarregando",  "DESCARREGANDO"],
+        cancelado:       ["badge-cancelado",      "CANCELADO"],
+        reagendado_fila: ["badge-reagendado",     "REAGENDADO"],
       };
-      const [cls, label] = map[status] || ["badge-agendado", status.toUpperCase()];
+      const [cls, label] = map[status] || ["badge-agendado", (status||"").toUpperCase()];
       return `<span class="badge ${cls}">${label}</span>`;
     }
 
-    function tdVazio(val) {
-      return val
-        ? `<td class="td-mono">${val}</td>`
-        : `<td class="td-vazio">—</td>`;
+    function mediaArr(arr) {
+      return arr.length ? Math.round(arr.reduce((s,v)=>s+v,0)/arr.length) : null;
     }
 
-    // ── ESTADO ────────────────────────────────
-    let todosAgendamentos = [];
-    let dadosFiltrados    = [];
+    function renderBarras(elId, itens, cor) {
+      const el  = document.getElementById(elId);
+      const max = Math.max(...itens.map(i => i.val), 1);
+      if (!itens.filter(i => i.val > 0).length) {
+        el.innerHTML = `<div class="vazio" style="padding:12px">Sem dados suficientes</div>`;
+        return;
+      }
+      el.innerHTML = itens.map(({ label, val, sub }) => {
+        if (!val) return '';
+        const pct = Math.round(val / max * 100);
+        return `<div class="barra-item">
+          <span class="barra-label">${label}</span>
+          <div class="barra-track">
+            <div class="barra-fill ${cor}" style="width:${Math.max(pct,8)}%">
+              <span>${sub}</span>
+            </div>
+          </div>
+        </div>`;
+      }).join("");
+    }
 
-    // ── CARREGAR ──────────────────────────────
-    async function carregar() {
-      try {
-        const res = await fetch(API_URL);
-        todosAgendamentos = await res.json();
+    // ── ABAS ──────────────────────────────────
+    function trocarAba(aba) {
+      const abas = ['dashboard','conciliacao','relatorio'];
+      document.querySelectorAll(".aba").forEach((b,i) => b.classList.toggle("ativa", abas[i]===aba));
+      abas.forEach(id => document.getElementById(`painel-${id}`).classList.toggle("ativo", id===aba));
+      document.getElementById("btn-exportar").style.display = aba==='relatorio' ? 'block' : 'none';
+    }
 
-        // Popular select de usuários
-        const usuarios = [...new Set(
-          todosAgendamentos
-            .map(a => a.alterado_por)
-            .filter(Boolean)
-        )].sort();
+    // ── PERÍODO ───────────────────────────────
+    function setPeriodo(p) {
+      periodoAtivo = p;
+      document.querySelectorAll(".btn-periodo").forEach((b,i) =>
+        b.classList.toggle("ativo", ['hoje','semana','mes'][i]===p));
+      renderizarDashboard();
+    }
 
-        const selUsuario = document.getElementById("filtro-usuario");
-        usuarios.forEach(u => {
-          const opt = document.createElement("option");
-          opt.value = u;
-          opt.textContent = u;
-          selUsuario.appendChild(opt);
-        });
+    // ── DASHBOARD ─────────────────────────────
+    function renderizarDashboard() {
+      const dados      = filtrarPeriodo(todosAgendamentos);
+      const finalizados = dados.filter(a => a.status === 'finalizado');
 
-        aplicarFiltros();
-      } catch (e) {
-        document.getElementById("tabela-body").innerHTML =
-          `<tr><td colspan="10" class="vazio">Erro ao carregar dados.</td></tr>`;
+      // Tempo médio
+      const tempos = finalizados
+        .map(a => calcularMinutos(a.hora_entrada, a.hora_saida))
+        .filter(t => t !== null && t > 0 && t < 480);
+      document.getElementById("kpi-tempo-medio").textContent = formatarTempo(mediaArr(tempos));
+
+      // Acima de 45min
+      const ativos = todosAgendamentos.filter(a => ['chamando','descarregando'].includes(a.status));
+      const acima  = ativos.filter(a => { const m = minutosDesde(a.hora_entrada||a.hora); return m!==null && m>45; });
+      document.getElementById("kpi-acima").textContent = acima.length;
+      document.getElementById("kpi-acima-card").className = `kpi ${acima.length > 0 ? 'alerta' : 'ok'}`;
+
+      document.getElementById("kpi-total").textContent      = dados.length;
+      document.getElementById("kpi-finalizados").textContent = finalizados.length;
+
+      // Pontualidade
+      const comEntrada = dados.filter(a => a.hora_entrada && a.hora);
+      const antecipados = comEntrada.filter(a => a.hora_entrada <= a.hora);
+      const pct = comEntrada.length ? Math.round(antecipados.length/comEntrada.length*100) : 0;
+      document.getElementById("kpi-pontualidade").textContent = `${pct}%`;
+
+      document.getElementById("kpi-ausentes").textContent =
+        dados.filter(a => a.status==='reagendado_fila').length;
+
+      // Barras: transportadora
+      const porTransp = {};
+      TRANSPORTADORAS.forEach(t => { porTransp[t] = []; });
+      finalizados.forEach(a => {
+        const t = (a.transportadora||"").trim();
+        const m = calcularMinutos(a.hora_entrada, a.hora_saida);
+        if (m && m>0 && m<480) { if (porTransp[t]) porTransp[t].push(m); else porTransp[t]=[m]; }
+      });
+      renderBarras("barras-transportadora",
+        Object.entries(porTransp).map(([label, arr]) => ({
+          label, val: mediaArr(arr)||0,
+          sub: arr.length ? `${formatarTempo(mediaArr(arr))} (${arr.length}x)` : ''
+        })), "");
+
+      // Barras: produto
+      const porProduto = {};
+      PRODUTOS.forEach(p => { porProduto[p] = []; });
+      finalizados.forEach(a => {
+        const prod = simplificarProduto(a.produto);
+        const m    = calcularMinutos(a.hora_entrada, a.hora_saida);
+        if (m && m>0 && m<480) { if (porProduto[prod]) porProduto[prod].push(m); else porProduto[prod]=[m]; }
+      });
+      renderBarras("barras-produto",
+        Object.entries(porProduto).map(([label, arr]) => ({
+          label, val: mediaArr(arr)||0,
+          sub: arr.length ? `${formatarTempo(mediaArr(arr))} (${arr.length}x)` : ''
+        })), "laranja");
+
+      // Barras: faixa horária
+      const faixas = [
+        {label:'00h–06h', min:0,  max:6},  {label:'06h–10h', min:6,  max:10},
+        {label:'10h–14h', min:10, max:14}, {label:'14h–18h', min:14, max:18},
+        {label:'18h–22h', min:18, max:22}, {label:'22h–00h', min:22, max:24},
+      ];
+      const contFaixas = faixas.map(f => {
+        const qtd = dados.filter(a => { if (!a.hora) return false; const h=parseInt(a.hora.split(":")[0]); return h>=f.min && h<f.max; }).length;
+        return { label: f.label, val: qtd, sub: `${qtd} veíc.` };
+      });
+      renderBarras("barras-horario", contFaixas, "azul");
+
+      // Barras: dia da semana
+      const porDia = Array(7).fill(0);
+      dados.forEach(a => { if (a.data) { const d=new Date(a.data+'T12:00:00').getDay(); porDia[d]++; } });
+      renderBarras("barras-diasemana",
+        DIAS_SEMANA.map((label,i) => ({ label, val: porDia[i], sub: `${porDia[i]} veíc.` })),
+        "verde");
+    }
+
+    // ── CONCILIAÇÃO ───────────────────────────
+    function calcularConciliacao() {
+      const data  = document.getElementById("conc-data").value;
+      const turno = document.getElementById("conc-turno").value;
+      if (!data) { alert("Selecione uma data."); return; }
+
+      // Filtrar agendamentos do turno
+      const dataObj  = new Date(data);
+      const proxDia  = new Date(dataObj); proxDia.setDate(dataObj.getDate()+1);
+      const proxDiaStr = proxDia.toISOString().split("T")[0];
+
+      const doTurno = todosAgendamentos.filter(a => {
+        if (!a.hora) return false;
+        const h = parseInt(a.hora.split(":")[0]);
+        if (turno === 'manha') return a.data === data && h >= 6 && h < 16;
+        // tarde/noite: 16h–06h do dia seguinte
+        if (a.data === data)      return h >= 16;
+        if (a.data === proxDiaStr) return h < 6;
+        return false;
+      }).filter(a => a.status === 'finalizado');
+
+      const grid = document.getElementById("conciliacao-grid");
+
+      grid.innerHTML = PRODUTOS.map(produto => {
+        const entradas = doTurno.filter(a =>
+          simplificarProduto(a.produto) === produto &&
+          !["CIF","FOB"].includes((a.tipo_operacao||"").toUpperCase())
+        );
+        const saidas = doTurno.filter(a =>
+          simplificarProduto(a.produto) === produto &&
+          ["CIF","FOB"].includes((a.tipo_operacao||"").toUpperCase())
+        );
+        const totalEnt = entradas.reduce((s,a) => s+parseSacos(a.quantidade), 0);
+        const totalSai = saidas.reduce((s,a)   => s+parseSacos(a.quantidade), 0);
+
+        return `<div class="produto-card">
+          <div class="produto-card-titulo">${produto}</div>
+          <div class="linha-conc">
+            <span class="desc">Inventário abertura (sc)</span>
+            <input class="input-inv" type="number" id="inv-ab-${produto}" placeholder="0"
+              oninput="recalcular('${produto}',${totalEnt},${totalSai})">
+          </div>
+          <div class="linha-conc">
+            <span class="desc">+ Entradas (${entradas.length} veíc.)</span>
+            <span class="val positivo">+${totalEnt} sc</span>
+          </div>
+          <div class="linha-conc">
+            <span class="desc">− Saídas (${saidas.length} veíc.)</span>
+            <span class="val negativo">−${totalSai} sc</span>
+          </div>
+          <div class="linha-conc total">
+            <span>Saldo calculado</span>
+            <span class="val" id="saldo-${produto}">—</span>
+          </div>
+          <div class="linha-conc">
+            <span class="desc">Inventário fechamento (sc)</span>
+            <input class="input-inv" type="number" id="inv-fe-${produto}" placeholder="0"
+              oninput="recalcular('${produto}',${totalEnt},${totalSai})">
+          </div>
+          <div class="linha-conc total">
+            <span>Divergência</span>
+            <span id="div-${produto}" class="val">—</span>
+          </div>
+        </div>`;
+      }).join("");
+    }
+
+    function recalcular(produto, entradas, saidas) {
+      const abertura   = parseInt(document.getElementById(`inv-ab-${produto}`)?.value) || 0;
+      const fechamento = parseInt(document.getElementById(`inv-fe-${produto}`)?.value) || 0;
+      const saldo = abertura + entradas - saidas;
+
+      document.getElementById(`saldo-${produto}`).textContent = `${saldo} sc`;
+
+      const divEl = document.getElementById(`div-${produto}`);
+      if (fechamento > 0) {
+        const diff = fechamento - saldo;
+        divEl.textContent = diff === 0 ? "✓ OK" : `${diff > 0 ? '+' : ''}${diff} sc`;
+        divEl.className   = `val ${diff === 0 ? 'div-ok' : 'div-alerta'}`;
+      } else {
+        divEl.textContent = "—"; divEl.className = "val";
       }
     }
 
-    // ── FILTROS ───────────────────────────────
+    // ── RELATÓRIO ─────────────────────────────
     function aplicarFiltros() {
       const inicio  = document.getElementById("filtro-inicio").value;
       const fim     = document.getElementById("filtro-fim").value;
@@ -457,109 +713,102 @@
         if (fim    && a.data > fim)    return false;
         if (status && a.status !== status) return false;
         if (usuario && a.alterado_por !== usuario) return false;
-        if (placa  && !(a.placa || "").toUpperCase().includes(placa)) return false;
+        if (placa  && !(a.placa||"").toUpperCase().includes(placa)) return false;
         return true;
-      });
-
-      // Ordena por data+hora
-      dadosFiltrados.sort((a, b) =>
-        new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`)
-      );
+      }).sort((a,b) => new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`));
 
       renderizarTabela();
       atualizarContadores();
     }
 
-    // ── RENDERIZAR ────────────────────────────
+    function limparFiltros() {
+      ["filtro-inicio","filtro-fim","filtro-placa"].forEach(id => document.getElementById(id).value="");
+      document.getElementById("filtro-status").value  = "";
+      document.getElementById("filtro-usuario").value = "";
+      aplicarFiltros();
+    }
+
     function renderizarTabela() {
-      const tbody = document.getElementById("tabela-body");
+      const tbody  = document.getElementById("tabela-body");
       const btnExp = document.getElementById("btn-exportar");
-
       if (!dadosFiltrados.length) {
-        tbody.innerHTML = `<tr><td colspan="10" class="vazio">Nenhum registro encontrado.</td></tr>`;
-        btnExp.disabled = true;
-        return;
+        tbody.innerHTML = `<tr><td colspan="13" class="vazio">Nenhum registro encontrado.</td></tr>`;
+        btnExp.disabled = true; return;
       }
-
       btnExp.disabled = false;
-
-      tbody.innerHTML = dadosFiltrados.map(item => `
-        <tr>
+      tbody.innerHTML = dadosFiltrados.map(item => {
+        const perm = calcularMinutos(item.hora_entrada, item.hora_saida);
+        const v = (val) => val ? `<span class="td-mono">${val}</span>` : `<span class="td-vazio">—</span>`;
+        return `<tr>
           <td class="td-mono">${formatarData(item.data)}</td>
-          <td class="td-mono">${item.hora || "—"}</td>
-          <td><strong>${item.placa || "—"}</strong></td>
+          <td class="td-mono">${item.hora||"—"}</td>
+          <td class="td-mono">${item.hora_entrada||"<span class='td-vazio'>—</span>"}</td>
+          <td class="td-mono">${item.hora_saida||"<span class='td-vazio'>—</span>"}</td>
+          <td class="td-mono">${formatarTempo(perm)}</td>
+          <td><strong>${item.placa||"—"}</strong></td>
           <td>${simplificarProduto(item.produto)}</td>
           <td>${badgeStatus(item.status)}</td>
-          ${tdVazio(item.tipo_operacao ? item.tipo_operacao.toUpperCase() : null)}
-          ${tdVazio(item.quantidade)}
-          ${tdVazio(item.nota_fiscal)}
-          ${tdVazio(item.transportadora)}
-          <td class="td-mono">${item.alterado_por || "<span class='td-vazio'>—</span>"}</td>
-        </tr>
-      `).join("");
+          <td class="td-mono">${item.tipo_operacao ? item.tipo_operacao.toUpperCase() : "<span class='td-vazio'>—</span>"}</td>
+          <td>${v(item.quantidade)}</td>
+          <td>${v(item.nota_fiscal)}</td>
+          <td>${v(item.transportadora)}</td>
+          <td class="td-mono">${item.alterado_por||"<span class='td-vazio'>—</span>"}</td>
+        </tr>`;
+      }).join("");
     }
 
     function atualizarContadores() {
-      document.getElementById("cnt-total").textContent     = dadosFiltrados.length;
-      document.getElementById("cnt-finalizado").textContent = dadosFiltrados.filter(a => a.status === "finalizado").length;
-      document.getElementById("cnt-cancelado").textContent  = dadosFiltrados.filter(a => a.status === "cancelado").length;
-      document.getElementById("cnt-pendente").textContent   = dadosFiltrados.filter(a =>
-        ["agendado", "chamando", "descarregando"].includes(a.status)).length;
+      document.getElementById("cnt-total").textContent      = dadosFiltrados.length;
+      document.getElementById("cnt-finalizado").textContent = dadosFiltrados.filter(a=>a.status==="finalizado").length;
+      document.getElementById("cnt-cancelado").textContent  = dadosFiltrados.filter(a=>a.status==="cancelado").length;
+      document.getElementById("cnt-pendente").textContent   = dadosFiltrados.filter(a=>
+        ["agendado","chamando","descarregando"].includes(a.status)).length;
     }
 
-    // ── EXPORTAR EXCEL ────────────────────────
+    // ── EXPORTAR ──────────────────────────────
     function exportarExcel() {
       const linhas = dadosFiltrados.map(item => ({
         "Data":           formatarData(item.data),
-        "Hora":           item.hora || "",
-        "Placa":          item.placa || "",
+        "Hora Ag.":       item.hora||"",
+        "H. Entrada":     item.hora_entrada||"",
+        "H. Saída":       item.hora_saida||"",
+        "Permanência":    formatarTempo(calcularMinutos(item.hora_entrada,item.hora_saida)),
+        "Placa":          item.placa||"",
         "Produto":        simplificarProduto(item.produto),
-        "Status":         (item.status || "").toUpperCase(),
+        "Status":         (item.status||"").toUpperCase(),
         "Tipo Operação":  item.tipo_operacao ? item.tipo_operacao.toUpperCase() : "",
-        "Quantidade":     item.quantidade || "",
-        "Nota Fiscal":    item.nota_fiscal || "",
-        "Transportadora": item.transportadora || "",
-        "Usuário":        item.alterado_por || "",
+        "Qtd (sacos)":    item.quantidade||"",
+        "Nota Fiscal":    item.nota_fiscal||"",
+        "Transportadora": item.transportadora||"",
+        "Usuário":        item.alterado_por||"",
       }));
-
       const ws = XLSX.utils.json_to_sheet(linhas);
-
-      // Largura das colunas
-      ws["!cols"] = [
-        { wch: 12 }, { wch: 8 }, { wch: 12 }, { wch: 10 },
-        { wch: 14 }, { wch: 16 }, { wch: 10 }, { wch: 14 },
-        { wch: 18 }, { wch: 12 },
-      ];
-
+      ws["!cols"] = [{wch:12},{wch:10},{wch:10},{wch:10},{wch:12},{wch:12},{wch:10},
+                     {wch:14},{wch:14},{wch:10},{wch:14},{wch:18},{wch:12}];
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Agendamentos");
-
-      const hoje = new Date().toISOString().split("T")[0];
-      XLSX.writeFile(wb, `relatorio-cd-itaborai-${hoje}.xlsx`);
+      XLSX.writeFile(wb, `relatorio-cd-itaborai-${new Date().toISOString().split("T")[0]}.xlsx`);
     }
 
-    // ── EVENTOS ───────────────────────────────
-    document.getElementById("btn-filtrar").addEventListener("click", aplicarFiltros);
-    document.getElementById("btn-exportar").addEventListener("click", exportarExcel);
-
-    document.getElementById("btn-limpar").addEventListener("click", () => {
-      document.getElementById("filtro-inicio").value = "";
-      document.getElementById("filtro-fim").value    = "";
-      document.getElementById("filtro-status").value = "";
-      document.getElementById("filtro-usuario").value = "";
-      document.getElementById("filtro-placa").value  = "";
-      aplicarFiltros();
-    });
-
-    // Enter nos inputs dispara filtro
-    ["filtro-inicio","filtro-fim","filtro-status","filtro-usuario","filtro-placa"]
-      .forEach(id => {
-        document.getElementById(id).addEventListener("keydown", e => {
-          if (e.key === "Enter") aplicarFiltros();
-        });
-      });
-
     // ── INIT ──────────────────────────────────
+    async function carregar() {
+      try {
+        const res = await fetch(API_URL);
+        todosAgendamentos = await res.json();
+
+        const usuarios = [...new Set(todosAgendamentos.map(a=>a.alterado_por).filter(Boolean))].sort();
+        const sel = document.getElementById("filtro-usuario");
+        usuarios.forEach(u => { const o=document.createElement("option"); o.value=u; o.textContent=u; sel.appendChild(o); });
+
+        document.getElementById("conc-data").value = new Date().toISOString().split("T")[0];
+        dadosFiltrados = [...todosAgendamentos];
+
+        renderizarDashboard();
+        aplicarFiltros();
+      } catch(e) { console.error("Erro ao carregar:", e); }
+    }
+
+    document.getElementById("btn-exportar").addEventListener("click", exportarExcel);
     carregar();
   </script>
 </body>
