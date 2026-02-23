@@ -588,15 +588,22 @@ if ("serviceWorker" in navigator && !location.pathname.includes("tv.html")) {
 
     // ─── POLLING PRINCIPAL ───────────────────────────────────
 
-    async function atualizarTV() {
-      try {
-        const res   = await fetch(API_URL);
-        const dados = await res.json();
+   async function atualizarTV() {
+  try {
+    const API_URL = "/agendamentos";
 
-        // Agendamentos ativos ordenados por horário
-        const ativos = ordenarPorHora(
-          dados.filter(a => a.status !== 'finalizado')
-        );
+   const res = await fetch(API_URL);
+
+if (!res.ok) {
+  throw new Error("Erro na resposta da API");
+}
+
+
+    const dados = await res.json();
+
+    const ativos = ordenarPorHora(
+      dados.filter(a => a.status !== 'finalizado')
+    );
 
         const chamando = ativos.find(a => a.status === 'chamando') ?? null;
         const proximo  = ativos.find(a => a.status === 'agendado') ?? null;
