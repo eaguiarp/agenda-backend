@@ -100,16 +100,16 @@ app.get("/criar-banco", async (req, res) => {
         `);
 
         const colunas = [
-            "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS produto VARCHAR(50)",
-            "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS alterado_por VARCHAR(50)",
-            "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS tipo_operacao VARCHAR(20) DEFAULT 'transferencia'",
-            "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS quantidade VARCHAR(20)",
-            "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS nota_fiscal VARCHAR(30)",
-            "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS transportadora VARCHAR(50)",
-            "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS hora_entrada VARCHAR(10)",
-            "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS hora_saida VARCHAR(10)"
-        ];
-
+    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS produto VARCHAR(50)",
+    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS alterado_por VARCHAR(50)",
+    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS tipo_operacao VARCHAR(20) DEFAULT 'transferencia'",
+    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS quantidade VARCHAR(20)",
+    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS nota_fiscal VARCHAR(30)",
+    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS transportadora VARCHAR(50)",
+    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS hora_entrada VARCHAR(10)",
+    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS hora_saida VARCHAR(10)",
+    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS motorista VARCHAR(100)"  
+];
         for (const sql of colunas) {
             try { await pool.query(sql); } catch (e) {}
         }
@@ -138,18 +138,18 @@ app.get("/agendamentos", async (req, res) => {
 // Criar agendamento
 app.post("/agendamentos", async (req, res) => {
     try {
-        const {
-            data, hora, placa, produto, alterado_por,
-            tipo_operacao, quantidade, nota_fiscal,
-            transportadora, hora_entrada, hora_saida, status
-        } = req.body;
+      const {data, hora, placa, produto, alterado_por,
+    tipo_operacao, quantidade, nota_fiscal,
+    transportadora, hora_entrada, hora_saida, status,
+    motorista
+} = req.body;
 
         const result = await pool.query(`
             INSERT INTO agendamentos
                 (data, hora, placa, produto, status, alterado_por,
                  tipo_operacao, quantidade, nota_fiscal, transportadora,
-                 hora_entrada, hora_saida)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+                 hora_entrada, hora_saida, motorista)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
             RETURNING *`,
             [
                 data, hora, placa,
@@ -161,7 +161,8 @@ app.post("/agendamentos", async (req, res) => {
                 nota_fiscal   || null,
                 transportadora|| null,
                 hora_entrada  || null,
-                hora_saida    || null
+                hora_saida    || null,
+                motorista     || null
             ]
         );
         res.json(result.rows[0]);
