@@ -36,6 +36,8 @@
 }
 
 /* ─── DECORAÇÃO FILA ─────────────────────────────────────────── */
+
+
 .placa-mercosul {
   background: white;
   border-radius: 8px;
@@ -43,12 +45,13 @@
   display: inline-block;
   overflow: hidden;
   box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  max-width: 100%;  /* não estoura o container */
 }
 
 .placa-topo {
   background: #1a3a8f;
   color: white;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.25em;
   text-align: center;
@@ -59,12 +62,14 @@
 .placa-numero {
   color: #111;
   font-family: 'Roboto Condensed', sans-serif;
-  font-size: 5.8rem;
+  font-size: clamp(3rem, 8vw, 6.7rem); /* se ajusta ao tamanho da tela */
   font-weight: 700;
   letter-spacing: 0.12em;
   padding: 6px 24px 10px;
   line-height: 1;
+  white-space: nowrap;
 }
+
 .item-fila {
   position: relative;
   gap: 18px;
@@ -215,13 +220,16 @@
       width: 100%;
     }
 
-    .chamando-wrap {
-      background: #151203;
-      border: 1px solid var(--accent);
-      border-radius: 4px;
-      padding: 20px 28px;
-      animation: pulsar 1.6s ease-in-out infinite;
-    }
+   .chamando-wrap {
+  background: #151203;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 20px 28px;
+  animation: pulsar 1.6s ease-in-out infinite;
+  display: flex;
+  flex-direction: column;
+  align-items: center;  /* ← centraliza a placa */
+}
     @keyframes pulsar {
       0%, 100% { box-shadow: 0 0 0 0 rgba(240,180,41,0); }
       50%       { box-shadow: 0 0 0 10px rgba(240,180,41,0.08); }
