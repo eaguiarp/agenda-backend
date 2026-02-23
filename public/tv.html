@@ -23,6 +23,7 @@
   background: linear-gradient(to bottom, #111, #0a0a0a);
   border-bottom: 1px solid var(--border);
   z-index: 10;
+  backdrop-filter: blur(4px);
 }
 
 .titulo-cd {
@@ -34,7 +35,8 @@
 }
 
 .relogio {
-  color: #888;
+  font-family: var(--font-display);
+  color: #888;             
   font-size: 0.95rem;
   letter-spacing: 0.08em;
 }
@@ -88,8 +90,8 @@
 }
 
 .item-fila.primeiro {
+  background: linear-gradient(to right, #2a1f05, #151515);
   border-left: 4px solid var(--accent);
-  background: #1a1606;
 }
 
 .item-fila.primeiro .numero-fila {
