@@ -35,12 +35,8 @@
 
     /* ── HEADER ─────────────────────────────── */
     .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
     }
     .page-header h1 { font-size: 1.3rem; font-weight: 700; color: var(--accent); }
     .page-header p  { font-size: 0.75rem; color: var(--muted); font-family: var(--fn-mono); margin-top: 2px; }
@@ -99,6 +95,46 @@
     }
     .btn-registrar:hover { opacity: 0.85; }
 
+    /* ── PRODUTOS DINÂMICOS ──────────────────── */
+    .produtos-lista { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+
+    .produto-linha {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 8px;
+      align-items: end;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px 12px;
+    }
+
+    @media (max-width: 600px) {
+      .produto-linha { grid-template-columns: 1fr 1fr; }
+      .produto-linha .btn-remover { grid-column: 1 / -1; }
+    }
+
+    .produto-linha .campo label {
+      font-size: 0.6rem;
+    }
+
+    .btn-add-produto {
+      background: transparent; color: var(--accent);
+      border: 1px dashed var(--accent); border-radius: 4px;
+      padding: 8px 14px; font-family: var(--fn-body);
+      font-weight: 600; font-size: 0.82rem; cursor: pointer;
+      transition: all 0.15s; width: 100%; margin-bottom: 4px;
+    }
+    .btn-add-produto:hover { background: #f0f5f0; }
+
+    .btn-remover {
+      background: #f4e6e6; color: var(--red); border: none;
+      border-radius: 4px; padding: 8px 10px; cursor: pointer;
+      font-size: 0.8rem; font-weight: 700; transition: opacity 0.15s;
+      white-space: nowrap; align-self: flex-end;
+    }
+    .btn-remover:hover { opacity: 0.7; }
+
     /* ── ITENS DA LISTA ──────────────────────── */
     .item-veiculo {
       background: var(--surface); border: 1px solid var(--border);
@@ -116,6 +152,7 @@
     .item-placa   { font-family: var(--fn-mono); font-size: 1.1rem; font-weight: 500; }
     .item-hora    { font-family: var(--fn-mono); font-size: 0.82rem; color: var(--muted); }
     .item-produto { font-size: 0.75rem; font-weight: 700; color: var(--orange); }
+    .item-motorista { font-size: 0.78rem; color: var(--blue); font-family: var(--fn-mono); }
 
     .badge {
       display: inline-block; font-family: var(--fn-mono); font-size: 0.58rem;
@@ -153,6 +190,7 @@
     .btn-descarga      { background: #e67e22; color: white; }
     .btn-finalizar     { background: #2ecc71; color: white; }
     .btn-cancelar      { background: #f0f0f0; color: #666; }
+    .btn-ausente       { background: #3498db; color: white; }
     .btn-salvar        { background: var(--accent); color: white; }
 
     /* Permanência */
@@ -177,7 +215,6 @@
     .msg-sucesso { background: #e6f4ec; color: var(--green); border: 1px solid #b8dfc4; }
     .msg-erro    { background: #f4e6e6; color: var(--red);   border: 1px solid #dbb8b8; }
   </style>
-
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 </head>
 <body>
@@ -219,21 +256,15 @@
         </div>
 
         <div class="campo">
+          <label>Motorista</label>
+          <input type="text" id="cif-motorista" placeholder="Nome do motorista">
+        </div>
+
+        <div class="campo">
           <label>Tipo de Operação</label>
           <select id="cif-tipo">
             <option value="CIF">CIF</option>
             <option value="FOB">FOB</option>
-          </select>
-        </div>
-
-        <div class="campo">
-          <label>Produto</label>
-          <select id="cif-produto">
-            <option value="CPIII-32-RS-SC-V">CPIII</option>
-            <option value="CPII-F-32-SC-V-MA">MAUA</option>
-            <option value="CPII-E-32-SC-V">E32</option>
-            <option value="CPII-F-32-SC-25-MA">M25KG</option>
-            <option value="CPV-ARI-SC-40-V">CPV</option>
           </select>
         </div>
 
@@ -250,14 +281,11 @@
           <input type="text" id="cif-transportadora" placeholder="Nome da transportadora">
         </div>
 
-        <div class="campo">
-          <label>Nota Fiscal</label>
-          <input type="text" id="cif-nf" placeholder="Nº da NF">
-        </div>
-
-        <div class="campo">
-          <label>Quantidade (sacos)</label>
-          <input type="text" id="cif-quantidade" placeholder="Ex: 600 sc">
+        <!-- PRODUTOS DINÂMICOS -->
+        <div class="campo full">
+          <label>Produtos</label>
+          <div class="produtos-lista" id="produtos-lista"></div>
+          <button class="btn-add-produto" onclick="adicionarProduto()">+ Adicionar produto</button>
         </div>
 
         <div class="campo full">
@@ -277,18 +305,20 @@
   <script>
     const API_URL = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
 
-    const PRODUTOS_MAP = [
-      { match: ["CPIII-32-RS-SC-V"],   label: "CPIII"  },
-      { match: ["CPII-F-32-SC-V-MA"],  label: "MAUA"   },
-      { match: ["CPII-E-32-SC-V"],     label: "E32"    },
-      { match: ["CPII-F-32-SC-25-MA"], label: "M25KG"  },
-      { match: ["CPV-ARI-SC-40-V"],    label: "CPV"    },
+    const PRODUTOS_OPCOES = [
+      { value: "CPIII-32-RS-SC-V",   label: "CPIII"  },
+      { value: "CPII-F-32-SC-V-MA",  label: "MAUA"   },
+      { value: "CPII-E-32-SC-V",     label: "E32"    },
+      { value: "CPII-F-32-SC-25-MA", label: "M25KG"  },
+      { value: "CPV-ARI-SC-40-V",    label: "CPV"    },
     ];
+
+    const PRODUTOS_MAP = PRODUTOS_OPCOES;
 
     function simplificarProduto(produto) {
       const p = (produto || "").toUpperCase();
       for (const e of PRODUTOS_MAP) {
-        if (e.match.some(m => p.includes(m))) return e.label;
+        if (p.includes(e.value.toUpperCase()) || p.includes(e.label)) return e.label;
       }
       return produto || "—";
     }
@@ -306,13 +336,11 @@
     function calcularPermanencia(horaEntrada) {
       if (!horaEntrada) return null;
       const [h, m] = horaEntrada.split(":").map(Number);
-      const agora   = new Date();
-      const entrada = new Date();
+      const agora = new Date(), entrada = new Date();
       entrada.setHours(h, m, 0);
       const diff  = Math.floor((agora - entrada) / 60000);
       if (diff < 0) return null;
-      const horas = Math.floor(diff / 60);
-      const mins  = diff % 60;
+      const horas = Math.floor(diff / 60), mins = diff % 60;
       return { texto: horas > 0 ? `${horas}h ${mins}min` : `${mins}min`, alerta: diff > 120 };
     }
 
@@ -354,6 +382,66 @@
       }
     }
 
+    // ── PRODUTOS DINÂMICOS ────────────────────
+    let contadorProduto = 0;
+
+    function opcoesSelect() {
+      return PRODUTOS_OPCOES.map(p =>
+        `<option value="${p.value}">${p.label}</option>`
+      ).join("");
+    }
+
+    function adicionarProduto() {
+      const id  = contadorProduto++;
+      const div = document.createElement("div");
+      div.className = "produto-linha";
+      div.id = `prod-linha-${id}`;
+      div.innerHTML = `
+        <div class="campo">
+          <label>Produto</label>
+          <select id="prod-${id}">${opcoesSelect()}</select>
+        </div>
+        <div class="campo">
+          <label>Qtd (sacos)</label>
+          <input type="text" id="qtd-${id}" placeholder="Ex: 600 sc">
+        </div>
+        <div class="campo">
+          <label>Nota Fiscal</label>
+          <input type="text" id="nf-${id}" placeholder="Nº NF">
+        </div>
+        <button class="btn-remover" onclick="removerProduto(${id})">✕</button>
+      `;
+      document.getElementById("produtos-lista").appendChild(div);
+    }
+
+    function removerProduto(id) {
+      const el = document.getElementById(`prod-linha-${id}`);
+      if (el) el.remove();
+    }
+
+    function coletarProdutos() {
+      const linhas = document.querySelectorAll("[id^='prod-linha-']");
+      return Array.from(linhas).map(linha => {
+        const id  = linha.id.replace("prod-linha-", "");
+        return {
+          produto:    document.getElementById(`prod-${id}`)?.value || "",
+          quantidade: document.getElementById(`qtd-${id}`)?.value  || "",
+          nf:         document.getElementById(`nf-${id}`)?.value   || "",
+        };
+      }).filter(p => p.produto);
+    }
+
+    function limparFormularioCif() {
+      ["cif-placa","cif-motorista","cif-transportadora"].forEach(id => {
+        document.getElementById(id).value = "";
+      });
+      document.getElementById("cif-transp-tipo").value = "transportadora";
+      document.getElementById("campo-transp-nome").style.display = "flex";
+      document.getElementById("produtos-lista").innerHTML = "";
+      contadorProduto = 0;
+      adicionarProduto(); // começa com uma linha
+    }
+
     // ── MENSAGEM ──────────────────────────────
     function mostrarMensagem(texto, tipo) {
       const el = document.getElementById("mensagem");
@@ -387,8 +475,7 @@
         .filter(a => !["CIF","FOB"].includes((a.tipo_operacao || "").toUpperCase()))
         .sort((a, b) => {
           const ordem = { chamando:1, descarregando:2, agendado:3, reagendado_fila:4, finalizado:5, cancelado:6 };
-          const pa = ordem[a.status] || 9;
-          const pb = ordem[b.status] || 9;
+          const pa = ordem[a.status] || 9, pb = ordem[b.status] || 9;
           if (pa !== pb) return pa - pb;
           return new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`);
         });
@@ -407,9 +494,9 @@
 
         return `
           <div class="item-veiculo status-${item.status}">
-
             <div class="item-info">
               <span class="item-placa">${item.placa}</span>
+              ${item.motorista ? `<span class="item-motorista">👤 ${item.motorista}</span>` : ''}
               <span class="item-hora">Agendado: ${item.hora} · ${formatarData(item.data)}</span>
               <span class="item-produto">${simplificarProduto(item.produto)}</span>
               ${badgeStatus(item.status)}
@@ -434,7 +521,11 @@
                   <label>H. Saída</label>
                   <input type="time" id="sai-${item.id}" value="${item.hora_saida || ''}">
                 </div>
-                <div class="mini-campo" style="min-width:130px;">
+                <div class="mini-campo">
+                  <label>Motorista</label>
+                  <input type="text" id="mot-${item.id}" value="${item.motorista || ''}" placeholder="Nome">
+                </div>
+                <div class="mini-campo" style="min-width:120px;">
                   <label>Transportadora</label>
                   <input type="text" id="tr-${item.id}" value="${item.transportadora || ''}" placeholder="Transportadora">
                 </div>
@@ -458,11 +549,10 @@
                 `<button class="btn-acao btn-finalizar" onclick="acao('${item.id}','finalizar')">FINALIZAR</button>` : ''}
               ${!encerrado ?
                 `<button class="btn-acao btn-salvar" onclick="salvarExtras('${item.id}')">SALVAR</button>` : ''}
-              ${!encerrado ?
-                `<button class="btn-acao btn-cancelar" onclick="if(confirm('Cancelar agendamento?')) acao('${item.id}','cancelar')">CANCELAR</button>
-                 <button class="btn-acao btn-ausente"  onclick="if(confirm('Marcar como ausente?')) acao('${item.id}','ausente')">AUSENTE</button>` : ''}
+              ${!encerrado ? `
+                <button class="btn-acao btn-cancelar" onclick="if(confirm('Cancelar agendamento?')) acao('${item.id}','cancelar')">CANCELAR</button>
+                <button class="btn-acao btn-ausente"  onclick="if(confirm('Marcar como ausente?')) acao('${item.id}','ausente')">AUSENTE</button>` : ''}
             </div>
-
           </div>`;
       }).join("");
     }
@@ -490,19 +580,37 @@
           ? `<span class="permanencia ${perm.alerta ? 'alerta' : ''}">⏱ ${perm.texto}</span>`
           : "";
 
+        // Produtos: pode ser JSON array ou string simples
+        let produtosHTML = "";
+        try {
+          const prods = JSON.parse(item.produto || "[]");
+          if (Array.isArray(prods)) {
+            produtosHTML = prods.map(p =>
+              `<span class="item-produto">${simplificarProduto(p.produto)}</span>
+               ${p.quantidade ? `<span style="font-size:0.7rem;color:var(--muted)">${p.quantidade}</span>` : ''}
+               ${p.nf ? `<span style="font-size:0.7rem;color:var(--muted)">NF:${p.nf}</span>` : ''}`
+            ).join(' · ');
+          } else {
+            produtosHTML = `<span class="item-produto">${simplificarProduto(item.produto)}</span>`;
+          }
+        } catch {
+          produtosHTML = `<span class="item-produto">${simplificarProduto(item.produto)}</span>`;
+        }
+
         return `
           <div class="item-veiculo status-${item.status}">
             <div class="item-info">
               <span class="item-placa">${item.placa}</span>
+              ${item.motorista ? `<span class="item-motorista">👤 ${item.motorista}</span>` : ''}
               <span class="item-hora">Entrada: ${item.hora_entrada || item.hora}</span>
-              <span class="item-produto">${simplificarProduto(item.produto)}</span>
               <span class="badge" style="background:#e8f0fb;color:#1a4a7a;">${item.tipo_operacao}</span>
               ${permHTML}
             </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              ${produtosHTML}
+            </div>
             <div class="item-resumo">
               ${item.transportadora ? `${item.transportadora}` : ''}
-              ${item.nota_fiscal    ? ` · NF: ${item.nota_fiscal}` : ''}
-              ${item.quantidade     ? ` · ${item.quantidade}` : ''}
             </div>
             <div class="item-acoes">
               ${item.status === 'agendado' ?
@@ -526,8 +634,8 @@
       if (tipo === 'descarregando') { campos.status = 'descarregando'; }
       if (tipo === 'finalizar')     { campos.status = 'finalizado';    campos.hora_saida   = agora; }
       if (tipo === 'cancelar')      { campos.status = 'cancelado'; }
-      if (tipo === 'ausente') { campos.status = 'reagendado_fila'; }
-      
+      if (tipo === 'ausente')       { campos.status = 'reagendado_fila'; }
+
       if (await atualizarRegistro(id, campos)) {
         mostrarMensagem("Atualizado!", "sucesso");
         renderizarDescarga();
@@ -542,12 +650,14 @@
       const campos = {};
       const entrada        = document.getElementById(`ent-${id}`)?.value;
       const saida          = document.getElementById(`sai-${id}`)?.value;
+      const motorista      = document.getElementById(`mot-${id}`)?.value;
       const transportadora = document.getElementById(`tr-${id}`)?.value;
       const nf             = document.getElementById(`nf-${id}`)?.value;
       const quantidade     = document.getElementById(`qt-${id}`)?.value;
 
       if (entrada)        campos.hora_entrada   = entrada;
       if (saida)          campos.hora_saida     = saida;
+      if (motorista)      campos.motorista      = motorista;
       if (transportadora) campos.transportadora = transportadora;
       if (nf)             campos.nota_fiscal    = nf;
       if (quantidade)     campos.quantidade     = quantidade;
@@ -568,27 +678,31 @@
     // ── REGISTRAR CIF/FOB ─────────────────────
     async function registrarCifFob() {
       const placa          = document.getElementById("cif-placa").value.trim().toUpperCase();
+      const motorista      = document.getElementById("cif-motorista").value.trim();
       const tipo           = document.getElementById("cif-tipo").value;
-      const produto        = document.getElementById("cif-produto").value;
       const transportadora = document.getElementById("cif-transportadora").value.trim();
-      const nf             = document.getElementById("cif-nf").value.trim();
-      const quantidade     = document.getElementById("cif-quantidade").value.trim();
+      const produtos       = coletarProdutos();
 
       if (!placa) { mostrarMensagem("Informe a placa.", "erro"); return; }
+      if (!produtos.length) { mostrarMensagem("Adicione ao menos um produto.", "erro"); return; }
 
       const agora = horaAgora();
       const hoje  = new Date().toISOString().split("T")[0];
+
+      // Primeiro produto como campo principal, restante em JSON
+      const primeiroProd = produtos[0];
 
       const payload = {
         data:           hoje,
         hora:           agora,
         hora_entrada:   agora,
         placa,
-        produto,
+        motorista:      motorista      || null,
+        produto:        produtos.length > 1 ? JSON.stringify(produtos) : primeiroProd.produto,
         tipo_operacao:  tipo,
         transportadora: transportadora || null,
-        nota_fiscal:    nf             || null,
-        quantidade:     quantidade     || null,
+        nota_fiscal:    primeiroProd.nf        || null,
+        quantidade:     primeiroProd.quantidade || null,
         status:         "agendado"
       };
 
@@ -601,10 +715,7 @@
 
         if (res.ok) {
           mostrarMensagem("Veículo registrado!", "sucesso");
-          ["cif-placa","cif-transportadora","cif-nf","cif-quantidade"]
-            .forEach(id => { document.getElementById(id).value = ""; });
-          document.getElementById("cif-transp-tipo").value = "transportadora";
-          document.getElementById("campo-transp-nome").style.display = "flex";
+          limparFormularioCif();
           renderizarCarga();
         } else {
           mostrarMensagem("Erro ao registrar.", "erro");
@@ -630,6 +741,9 @@
     setInterval(atualizarTudo, 10000);
 
     atualizarRelogio();
+
+    // Inicia com uma linha de produto já aberta
+    adicionarProduto();
     atualizarTudo();
   </script>
 </body>
