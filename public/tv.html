@@ -574,17 +574,30 @@ if ("serviceWorker" in navigator && !location.pathname.includes("tv.html")) {
       setTimeout(tocarSom, BIP_DELAY);
     }
 
-    function anunciarVeiculo(placa) {
-      const placaFalada = placa.split('').join(' ');
-      const texto = `Atenção, motorista do veículo ${placaFalada}. Dirija-se à área de descarga.`;
-      const fala  = new SpeechSynthesisUtterance(texto);
-      fala.lang   = 'pt-BR';
-      fala.rate   = 0.9;
-      fala.pitch  = 1;
-      fala.volume = 1;
-      speechSynthesis.cancel();
-      speechSynthesis.speak(fala);
-    }
+    function anunciarVeiculo(placa, motorista) {
+  if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
+    console.log("Voz não suportada neste dispositivo.");
+    return; 
+  }
+
+  try {
+    const placaFalada = placa.split('').join(' ');
+    
+    // Lógica para montar o texto: se tiver motorista, fala o nome. Se não, fala só a placa.
+    const trechoMotorista = motorista ? `${motorista} ` : '';
+    const texto = `Atenção, motorista ${trechoMotorista}da placa ${placaFalada}. Dirija-se à área de descarga.`;
+    
+    const fala  = new SpeechSynthesisUtterance(texto);
+    fala.lang   = 'pt-BR';
+    fala.rate   = 0.9; // Mantive 0.9 para ele falar a placa pausadamente
+    fala.pitch  = 1;
+    fala.volume = 1;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(fala);
+  } catch (err) {
+    console.log("Erro ao tentar falar: ", err);
+  }
+}
 
     // ─── POLLING PRINCIPAL ───────────────────────────────────
 
