@@ -11,28 +11,32 @@
 
   /* ─── TITULO ─────────────────────────────────────────── */
 .topo {
-  position: relative;
-  top: 14px;
-  left: 36px;
-  right: 36px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  padding: 0 36px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: linear-gradient(to bottom, #111, #0a0a0a);
+  border-bottom: 1px solid var(--border);
   z-index: 10;
 }
 
 .titulo-cd {
   color: var(--accent);
-  font-family: var(--font-display);
   font-weight: 700;
-  letter-spacing: 0.08em;
-  font-size: 1.1rem;
+  letter-spacing: 0.12em;
+  font-size: 0.95rem;
+  text-transform: uppercase;
 }
 
 .relogio {
-  color: var(--muted);
-  font-family: var(--font-display);
-  font-size: 1rem;
+  color: #888;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
 }
 
 /* ─── DECORAÇÃO FILA ─────────────────────────────────────────── */
