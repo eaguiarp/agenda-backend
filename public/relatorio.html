@@ -469,9 +469,29 @@
     }
 
     function parseSacos(val) {
-      if (!val) return 0;
-      return parseInt((val + "").replace(/[^\d]/g, "")) || 0;
+  if (!val) return 0;
+  // tenta JSON array (múltiplos produtos)
+  try {
+    const arr = JSON.parse(val);
+    if (Array.isArray(arr)) {
+      return arr.reduce((s, p) => s + (parseInt((p.quantidade+"").replace(/[^\d]/g,""))||0), 0);
     }
+  } catch {}
+  return parseInt((val + "").replace(/[^\d]/g, "")) || 0;
+}
+
+// Adicione esta função nova logo após parseSacos:
+function parseSacosAgendamento(a) {
+  // tenta extrair do campo produto (JSON múltiplos)
+  try {
+    const arr = JSON.parse(a.produto || "");
+    if (Array.isArray(arr)) {
+      return arr.reduce((s, p) => s + (parseInt((p.quantidade+"").replace(/[^\d]/g,""))||0), 0);
+    }
+  } catch {}
+  // fallback: campo quantidade normal
+  return parseSacos(a.quantidade);
+}
 
     function getIntervalo(periodo) {
       const hoje = new Date(), hojeStr = hoje.toISOString().split("T")[0];
@@ -560,7 +580,8 @@
       document.getElementById("kpi-acima").textContent = acima.length;
       document.getElementById("kpi-acima-card").className = `kpi ${acima.length > 0 ? 'alerta' : 'ok'}`;
 
-      document.getElementById("kpi-total").textContent      = dados.length;
+     document.getElementById("kpi-total").textContent =
+  dados.filter(a => a.hora_entrada || ['chamando','descarregando','finalizado','cancelado','reagendado_fila'].includes(a.status)).length;
       document.getElementById("kpi-finalizados").textContent = finalizados.length;
 
       // Pontualidade
@@ -652,8 +673,8 @@
           simplificarProduto(a.produto) === produto &&
           ["CIF","FOB"].includes((a.tipo_operacao||"").toUpperCase())
         );
-        const totalEnt = entradas.reduce((s,a) => s+parseSacos(a.quantidade), 0);
-        const totalSai = saidas.reduce((s,a)   => s+parseSacos(a.quantidade), 0);
+        const totalEnt = entradas.reduce((s,a) => s+parseSacosAgendamento(a), 0);
+const totalSai = saidas.reduce((s,a)   => s+parseSacosAgendamento(a), 0);
 
         return `<div class="produto-card">
           <div class="produto-card-titulo">${produto}</div>
