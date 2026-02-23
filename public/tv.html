@@ -482,7 +482,7 @@ if ("serviceWorker" in navigator && !location.pathname.includes("tv.html")) {
     painel.innerHTML = `
       <div class="chamando-wrap">
         <div class="placa-mercosul">
-          <div class="placa-topo">${chamando.motorista ? `⚠ Chamando motorista ${chamando.motorista}` : `⚠ CHAMANDO AGORA`}</div>
+          <div class="placa-topo">${chamando.motorista ? `⚠ Chamando motorista ${chamando.motorista}` : `CHAMANDO AGORA`}</div>
           <div class="placa-numero">${chamando.placa}</div>
         </div>
         <div class="hora-chamando" style="margin-top:16px;">${chamando.hora}${chamando.motorista ? ` &bull; ${chamando.motorista}` : ''}</div>
