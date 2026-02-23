@@ -108,7 +108,8 @@ app.get("/criar-banco", async (req, res) => {
     "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS transportadora VARCHAR(50)",
     "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS hora_entrada VARCHAR(10)",
     "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS hora_saida VARCHAR(10)",
-    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS motorista VARCHAR(100)"  
+    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS motorista VARCHAR(100)", 
+    "ALTER TABLE agendamentos ALTER COLUMN produto TYPE VARCHAR(500)"  
 ];
         for (const sql of colunas) {
             try { await pool.query(sql); } catch (e) {}
