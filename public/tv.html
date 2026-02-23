@@ -605,11 +605,19 @@ if (!res.ok) {
       dados.filter(a => a.status !== 'finalizado')
     );
 
-        const chamando = ativos.find(a => a.status === 'chamando') ?? null;
-        const proximo  = ativos.find(a => a.status === 'agendado') ?? null;
-        const fila     = ativos
-          .filter(a => a.status === 'agendado' && a.id !== proximo?.id)
-          .slice(0, 5);
+      const chamando = ativos.find(a => a.status === 'chamando') || null;
+const proximo  = ativos.find(a => a.status === 'agendado') || null;
+
+const fila = ativos
+  .filter(a => {
+    // Se o status for agendado...
+    if (a.status !== 'agendado') return false;
+    // E se existir um próximo, garante que não é o mesmo ID
+    if (proximo && a.id === proximo.id) return false;
+    
+    return true;
+  })
+  .slice(0, 5);
 
         renderPrincipal(chamando);
         renderProximo(proximo);
