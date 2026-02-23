@@ -448,6 +448,13 @@
     src="https://agenda-backend-production-5b72.up.railway.app/msn-wizz-sound.ogg?v=2">
   </audio>
 
+
+<script>
+if ("serviceWorker" in navigator && !location.pathname.includes("tv.html")) {
+  navigator.serviceWorker.register("sw.js")
+}
+</script>
+
   <script>
     // ─── CONFIGURAÇÃO ────────────────────────────────────────
     const API_URL     = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
