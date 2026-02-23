@@ -6,6 +6,8 @@ const FILES_TO_CACHE = [
   "./",
   "./index.html",
   "./consulta.html",
+  "./tv.html",
+  "./mobile.html",
   "./style.css",
   "./script.js",
   "./manifest.json",
