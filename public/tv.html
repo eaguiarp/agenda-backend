@@ -203,33 +203,29 @@
       overflow: hidden;
     }
 
-    /* linha decorativa esquerda */
-    .area-principal::before {
-      content: '';
-      position: absolute;
-      left: 0; top: 0; bottom: 0;
-      width: 4px;
-      background: var(--accent);
-      opacity: 0;
-      transition: opacity 0.4s;
-    }
-    .area-principal.ativo::before { opacity: 1; }
+   
+   
 
-    /* painel de chamada */
+   /* painel de chamada */
     #painel-principal {
       width: 100%;
+      display: flex;             /* Adicionado para flexibilizar o container */
+      flex-direction: column;
+      align-items: center;       /* Centraliza horizontalmente o radar e o wrap */
+      justify-content: center;
     }
 
    .chamando-wrap {
-  background: #151203;
-  border: 1px solid var(--accent);
-  border-radius: 4px;
-  padding: 20px 28px;
-  animation: pulsar 1.6s ease-in-out infinite;
-  display: flex;
-  flex-direction: column;
-  align-items: center;  /* ← centraliza a placa */
-}
+      background: #151203;
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 20px 28px;
+      animation: pulsar 1.6s ease-in-out infinite;
+      display: flex;
+      flex-direction: column;
+      align-items: center;       /* ← centraliza a placa */
+      text-align: center;        /* ← Garante que os avisos de EPI fiquem centralizados */
+    }
     @keyframes pulsar {
       0%, 100% { box-shadow: 0 0 0 0 rgba(240,180,41,0); }
       50%       { box-shadow: 0 0 0 10px rgba(240,180,41,0.08); }
@@ -478,35 +474,32 @@ if ("serviceWorker" in navigator && !location.pathname.includes("tv.html")) {
 
     
     function renderPrincipal(chamando) {
-      const area  = document.getElementById('area-principal');
-      const painel = document.getElementById('painel-principal');
+  const area   = document.getElementById('area-principal');
+  const painel = document.getElementById('painel-principal');
 
-      if (chamando) {
-        area.classList.add('ativo');
-        painel.innerHTML = `
-          <div class="label">Chamando Agora</div>
-          <div class="chamando-wrap">
-          <div class="placa-mercosul">
+  if (chamando) {
+    area.classList.add('ativo');
+    painel.innerHTML = `
+      <div class="chamando-wrap">
+        <div class="placa-mercosul">
           <div class="placa-topo">${chamando.motorista ? `⚠ Chamando motorista ${chamando.motorista}` : `⚠ CHAMANDO AGORA`}</div>
           <div class="placa-numero">${chamando.placa}</div>
-          </div>
-            <div class="hora-chamando" style="margin-top:16px;">${chamando.hora}${chamando.motorista ? ` &bull; ${chamando.motorista}` : ''}</div>
-            <div class="aviso-epi">
-              <div class="aviso-linha">Desligue o motor &bull; Calce as rodas &bull; Entregue as chaves</div>
-              <div class="aviso-linha destaque">&#9888;&#65039; Uso obrigatório de EPIs</div>
-            </div>
-          </div>`;
-      } else {
-        area.classList.remove('ativo');
-        painel.innerHTML = `
-            <div class="label">Chamando Agora</div>
-            <div class="aguardando-wrapper">
-            <div class="radar"></div>
-            <span>Aguardando chamada...</span>
-            </div>`;
-      }
-    }
-
+        </div>
+        <div class="hora-chamando" style="margin-top:16px;">${chamando.hora}${chamando.motorista ? ` &bull; ${chamando.motorista}` : ''}</div>
+        <div class="aviso-epi">
+          <div class="aviso-linha">Desligue o motor &bull; Calce as rodas &bull; Entregue as chaves</div>
+          <div class="aviso-linha destaque">&#9888;&#65039; Uso obrigatório de EPIs</div>
+        </div>
+      </div>`;
+  } else {
+    area.classList.remove('ativo');
+    painel.innerHTML = `
+      <div class="aguardando-wrapper">
+        <div class="radar"></div>
+        <span>Aguardando chamada...</span>
+      </div>`;
+  }
+}
     function renderProximo(proximo) {
       const el = document.getElementById('painel-proximo');
       el.innerHTML = proximo
