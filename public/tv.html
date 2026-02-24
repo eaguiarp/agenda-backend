@@ -159,6 +159,27 @@
   }
 }
 
+/* ─── DESCANSO ────────────────────────────────────────────── */
+.modo-descanso {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  color: #333;
+  font-size: 1rem;
+  letter-spacing: 0.2em;
+  z-index: 9999;
+  animation: leveMovimento 20s infinite alternate ease-in-out;
+}
+
+@keyframes leveMovimento {
+  from { transform: translateY(0px); }
+  to   { transform: translateY(10px); }
+}
+
     /* ─── RESET ────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -468,6 +489,30 @@ if ("serviceWorker" in navigator && !location.pathname.includes("tv.html")) {
     let ultimoChamadoID = null;
     let contadorBips    = 0;
 
+
+    // ─── descanso ─────────────────────────────────────────────
+    let tempoSemChamada = 0;
+let descansoAtivo = false;
+
+function ativarDescanso() {
+  if (descansoAtivo) return;
+
+  descansoAtivo = true;
+
+  const div = document.createElement("div");
+  div.className = "modo-descanso";
+  div.id = "modoDescanso";
+  div.innerHTML = "PAINEL EM ESPERA";
+  document.body.appendChild(div);
+}
+
+function desativarDescanso() {
+  const tela = document.getElementById("modoDescanso");
+  if (tela) tela.remove();
+  descansoAtivo = false;
+  tempoSemChamada = 0;
+}
+
     // ─── HELPERS ─────────────────────────────────────────────
     /** Ordena agendamentos por data+hora */
     const ordenarPorHora = (arr) =>
@@ -636,6 +681,21 @@ const fila = ativos
         renderFila(fila);
         renderStatus(dados);
 
+if (chamando) {
+  tempoSemChamada = 0;
+
+  if (descansoAtivo) {
+    desativarDescanso();
+  }
+
+} else {
+  tempoSemChamada += POLL_MS;
+
+  if (tempoSemChamada >= 1800000 && !descansoAtivo) {
+    ativarDescanso();
+  }
+}
+
         // Dispara som/voz apenas em nova chamada
         if (chamando && ultimoChamadoID !== chamando.id) {
           ultimoChamadoID = chamando.id;
@@ -649,6 +709,7 @@ const fila = ativos
       }
     }
 
+  
     // ─── INIT ────────────────────────────────────────────────
 
     // Libera contexto de áudio no primeiro clique
@@ -671,6 +732,15 @@ function atualizarRelogio() {
 
 setInterval(atualizarRelogio, 1000);
 atualizarRelogio();
+
+setInterval(() => {
+  const offsetX = Math.floor(Math.random() * 3) - 1;
+  const offsetY = Math.floor(Math.random() * 3) - 1;
+
+  document.body.style.transition = "transform 1s ease-in-out";
+  document.body.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+}, 300000);
+
 
   </script>
 </body>
