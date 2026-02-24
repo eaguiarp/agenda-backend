@@ -14,7 +14,7 @@ app.use(express.json());
 // 👥 USUÁRIOS
 // ========================================================
 const USUARIOS = {
-    'eduardo':   'senhaMestre',
+    'eduardo':   'senhaMestre1',
     'gabriel':   'logistica2026',
     'operacao':  'patio123',
     'tora':      'tora2026',
