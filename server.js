@@ -20,7 +20,8 @@ const USUARIOS = {
     'tora':      'tora2026',
     'transagil': 'trans2026',
     'portaria':  'portaria2026',
-    'uillian':    'uillian2026'
+    'uillian':    'uillian2026',
+    'fabiano':    'fabiano2026'
 };
 
 // ========================================================
