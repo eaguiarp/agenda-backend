@@ -15,7 +15,8 @@ const inputBuscaPlaca = document.getElementById("busca-placa");
 const btnLimpar = document.getElementById("btn-limpar");
 const lista = document.getElementById("lista-agendamentos");
 
-const hoje = new Date().toISOString().split("T")[0];
+const d = new Date();
+const hoje = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
 
 const STATUS_ENCERRADOS = ["finalizado", "cancelado", "reagendado_fila"];
@@ -231,7 +232,8 @@ async function renderizarOpcoesHorario() {
     const diaSemana = dataObj.getDay(); // 0=Dom, 1=Seg...
     const souCantagalo = ehCantagalo(selectProduto.value);
 
-    const hojeData = new Date().toISOString().split("T")[0];
+    const dl = new Date();
+const hojeData = `${dl.getFullYear()}-${String(dl.getMonth() + 1).padStart(2, '0')}-${String(dl.getDate()).padStart(2, '0')}`;
     const agora = new Date();
     const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
 
