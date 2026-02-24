@@ -19,7 +19,8 @@ const USUARIOS = {
     'operacao':  'patio123',
     'tora':      'tora2026',
     'transagil': 'trans2026',
-    'portaria':  'portaria2026'
+    'portaria':  'portaria2026',
+    'uillian':    'uillian2026'
 };
 
 // ========================================================
