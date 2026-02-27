@@ -20,8 +20,8 @@ const USUARIOS = {
     'tora':      'tora2026',
     'transagil': 'trans2026',
     'portaria':  'portaria2026',
-    'uillian':    'uillian2026',
-    'fabiano':    'fabiano2026'
+    'uillian':   'uillian2026',
+    'fabiano':   'fabiano2026'
 };
 
 // ========================================================
@@ -102,20 +102,35 @@ app.get("/criar-banco", async (req, res) => {
         `);
 
         const colunas = [
-    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS produto VARCHAR(50)",
-    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS alterado_por VARCHAR(50)",
-    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS tipo_operacao VARCHAR(20) DEFAULT 'transferencia'",
-    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS quantidade VARCHAR(20)",
-    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS nota_fiscal VARCHAR(30)",
-    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS transportadora VARCHAR(50)",
-    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS hora_entrada VARCHAR(10)",
-    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS hora_saida VARCHAR(10)",
-    "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS motorista VARCHAR(100)", 
-    "ALTER TABLE agendamentos ALTER COLUMN produto TYPE VARCHAR(500)"  
-];
+            "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS produto VARCHAR(50)",
+            "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS alterado_por VARCHAR(50)",
+            "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS tipo_operacao VARCHAR(20) DEFAULT 'transferencia'",
+            "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS quantidade VARCHAR(20)",
+            "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS nota_fiscal VARCHAR(30)",
+            "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS transportadora VARCHAR(50)",
+            "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS hora_entrada VARCHAR(10)",
+            "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS hora_saida VARCHAR(10)",
+            "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS motorista VARCHAR(100)",
+            "ALTER TABLE agendamentos ALTER COLUMN produto TYPE VARCHAR(500)"
+        ];
+
         for (const sql of colunas) {
             try { await pool.query(sql); } catch (e) {}
         }
+
+        // Tabela de bloqueios
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS bloqueios (
+                id SERIAL PRIMARY KEY,
+                data_inicio VARCHAR(20) NOT NULL,
+                data_fim VARCHAR(20) NOT NULL,
+                hora_inicio VARCHAR(10),
+                hora_fim VARCHAR(10),
+                motivo VARCHAR(200),
+                criado_por VARCHAR(50),
+                criado_em TIMESTAMP DEFAULT NOW()
+            );
+        `);
 
         res.send("<h1>Sucesso! Tabela verificada e atualizada.</h1>");
     } catch (error) {
@@ -124,7 +139,7 @@ app.get("/criar-banco", async (req, res) => {
 });
 
 // ========================================================
-// 🚏 ROTAS DA API
+// 🚏 ROTAS DA API — AGENDAMENTOS
 // ========================================================
 
 // Listar agendamentos
@@ -141,11 +156,12 @@ app.get("/agendamentos", async (req, res) => {
 // Criar agendamento
 app.post("/agendamentos", async (req, res) => {
     try {
-      const {data, hora, placa, produto, alterado_por,
-    tipo_operacao, quantidade, nota_fiscal,
-    transportadora, hora_entrada, hora_saida, status,
-    motorista
-} = req.body;
+        const {
+            data, hora, placa, produto, alterado_por,
+            tipo_operacao, quantidade, nota_fiscal,
+            transportadora, hora_entrada, hora_saida, status,
+            motorista
+        } = req.body;
 
         const result = await pool.query(`
             INSERT INTO agendamentos
@@ -156,16 +172,16 @@ app.post("/agendamentos", async (req, res) => {
             RETURNING *`,
             [
                 data, hora, placa,
-                produto       || 'Geral',
-                status        || 'agendado',
-                alterado_por  || null,
-                tipo_operacao || null,
-                quantidade    || null,
-                nota_fiscal   || null,
-                transportadora|| null,
-                hora_entrada  || null,
-                hora_saida    || null,
-                motorista     || null
+                produto        || 'Geral',
+                status         || 'agendado',
+                alterado_por   || null,
+                tipo_operacao  || null,
+                quantidade     || null,
+                nota_fiscal    || null,
+                transportadora || null,
+                hora_entrada   || null,
+                hora_saida     || null,
+                motorista      || null
             ]
         );
         res.json(result.rows[0]);
@@ -175,13 +191,12 @@ app.post("/agendamentos", async (req, res) => {
     }
 });
 
-// Atualizar agendamento (status, campos extras, etc.)
+// Atualizar agendamento
 app.put("/agendamentos/:id", async (req, res) => {
     try {
         const { id } = req.params;
         const campos = req.body;
 
-        // Monta a query dinamicamente com os campos enviados
         const chaves = Object.keys(campos);
         if (!chaves.length) {
             return res.status(400).json({ erro: "Nenhum campo enviado" });
@@ -214,12 +229,69 @@ app.delete("/agendamentos/:id", async (req, res) => {
 });
 
 // ========================================================
+// 🚫 ROTAS DA API — BLOQUEIOS
+// ========================================================
+
+// Listar bloqueios
+app.get("/bloqueios", async (req, res) => {
+    try {
+        const result = await pool.query(
+            "SELECT * FROM bloqueios ORDER BY data_inicio, hora_inicio"
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ erro: "Erro ao buscar bloqueios" });
+    }
+});
+
+// Criar bloqueio
+app.post("/bloqueios", async (req, res) => {
+    try {
+        const { data_inicio, data_fim, hora_inicio, hora_fim, motivo, criado_por } = req.body;
+
+        if (!data_inicio || !data_fim) {
+            return res.status(400).json({ erro: "data_inicio e data_fim são obrigatórios" });
+        }
+
+        const result = await pool.query(`
+            INSERT INTO bloqueios (data_inicio, data_fim, hora_inicio, hora_fim, motivo, criado_por)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING *`,
+            [
+                data_inicio,
+                data_fim,
+                hora_inicio || null,
+                hora_fim    || null,
+                motivo      || null,
+                criado_por  || null
+            ]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Erro ao criar bloqueio");
+    }
+});
+
+// Deletar bloqueio
+app.delete("/bloqueios/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query("DELETE FROM bloqueios WHERE id = $1", [id]);
+        res.json({ sucesso: true });
+    } catch (error) {
+        res.status(500).json({ erro: "Erro ao deletar bloqueio" });
+    }
+});
+
+// ========================================================
 // 🖥️ ROTAS DE PÁGINAS
 // ========================================================
-app.get("/tv",       (req, res) => res.sendFile(__dirname + "/public/tv.html"));
-app.get("/mobile",   (req, res) => res.sendFile(__dirname + "/public/mobile.html"));
-app.get("/portaria", (req, res) => res.sendFile(__dirname + "/public/portaria.html"));
-app.get("/relatorio",(req, res) => res.sendFile(__dirname + "/public/relatorio.html"));
+app.get("/tv",        (req, res) => res.sendFile(__dirname + "/public/tv.html"));
+app.get("/mobile",    (req, res) => res.sendFile(__dirname + "/public/mobile.html"));
+app.get("/portaria",  (req, res) => res.sendFile(__dirname + "/public/portaria.html"));
+app.get("/relatorio", (req, res) => res.sendFile(__dirname + "/public/relatorio.html"));
 
 // ========================================================
 // 🚀 START

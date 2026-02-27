@@ -27,14 +27,11 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--fn-body);
-      min-height: 100vh;
+      background: var(--bg); color: var(--text);
+      font-family: var(--fn-body); min-height: 100vh;
       padding: 28px 24px 60px;
     }
 
-    /* ── HEADER ─────────────────────────────── */
     .page-header {
       display: flex; justify-content: space-between; align-items: flex-start;
       margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--border);
@@ -51,7 +48,7 @@
     .btn-exportar:hover { opacity: 0.85; }
     .btn-exportar:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* ── ABAS ────────────────────────────────── */
+    /* ── ABAS ── */
     .abas {
       display: flex; gap: 4px; margin-bottom: 24px;
       background: var(--surface); border: 1px solid var(--border);
@@ -59,7 +56,7 @@
     }
     .aba {
       flex: 1; padding: 10px; text-align: center; border-radius: 4px;
-      cursor: pointer; font-weight: 600; font-size: 0.85rem;
+      cursor: pointer; font-weight: 600; font-size: 0.82rem;
       border: none; background: transparent; color: var(--muted); transition: all 0.15s;
     }
     .aba.ativa { background: var(--accent); color: white; }
@@ -67,7 +64,7 @@
     .painel { display: none; }
     .painel.ativo { display: block; }
 
-    /* ── CARDS ───────────────────────────────── */
+    /* ── CARDS ── */
     .card {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 6px; padding: 18px 20px; margin-bottom: 16px;
@@ -79,49 +76,40 @@
       display: flex; justify-content: space-between; align-items: center;
     }
 
-    /* ── KPI GRID ────────────────────────────── */
+    /* ── KPI ── */
     .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 10px; margin-bottom: 16px;
     }
     .kpi {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 6px; padding: 14px 16px;
-      display: flex; flex-direction: column; gap: 4px;
+      border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px;
     }
     .kpi.destaque { border-left: 3px solid var(--accent); }
     .kpi.alerta   { border-left: 3px solid var(--red);   background: #fdf5f5; }
     .kpi.ok       { border-left: 3px solid var(--green); background: #f5fdf7; }
+    .kpi-valor { font-family: var(--fn-mono); font-size: 1.6rem; font-weight: 500; line-height: 1; }
+    .kpi-label { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 
-    .kpi-valor {
-      font-family: var(--fn-mono); font-size: 1.6rem; font-weight: 500;
-      color: var(--text); line-height: 1;
-    }
-    .kpi-label {
-      font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
-    }
-
-    /* ── GRÁFICO DE BARRAS ───────────────────── */
+    /* ── BARRAS ── */
     .barras { display: flex; flex-direction: column; gap: 8px; }
     .barra-item { display: flex; align-items: center; gap: 10px; }
-    .barra-label { font-size: 0.75rem; font-family: var(--fn-mono); min-width: 100px; color: var(--text); }
+    .barra-label { font-size: 0.75rem; font-family: var(--fn-mono); min-width: 100px; }
     .barra-track { flex: 1; background: #f0ede6; border-radius: 2px; height: 22px; overflow: hidden; }
-    .barra-fill  {
+    .barra-fill {
       height: 100%; background: var(--accent); border-radius: 2px;
-      transition: width 0.6s ease; display: flex; align-items: center; padding-left: 8px;
-      min-width: 40px;
+      transition: width 0.6s ease; display: flex; align-items: center;
+      padding-left: 8px; min-width: 40px;
     }
     .barra-fill span { font-size: 0.65rem; font-family: var(--fn-mono); color: white; white-space: nowrap; }
     .barra-fill.laranja { background: var(--orange); }
     .barra-fill.azul    { background: #3498db; }
     .barra-fill.verde   { background: var(--green); }
 
-    /* ── GRID DE DOIS ────────────────────────── */
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
     @media (max-width: 680px) { .grid-2 { grid-template-columns: 1fr; } }
 
-    /* ── PERÍODO ─────────────────────────────── */
+    /* ── PERÍODO ── */
     .periodo-selector { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
     .btn-periodo {
       padding: 6px 14px; border: 1px solid var(--border); border-radius: 4px;
@@ -130,15 +118,12 @@
     }
     .btn-periodo.ativo { background: var(--accent); color: white; border-color: var(--accent); }
 
-    /* ── CONCILIAÇÃO ─────────────────────────── */
+    /* ── CONCILIAÇÃO ── */
     .conciliacao-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 12px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;
     }
     .produto-card {
-      background: var(--bg); border: 1px solid var(--border);
-      border-radius: 5px; padding: 14px 16px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 14px 16px;
     }
     .produto-card-titulo {
       font-family: var(--fn-mono); font-size: 0.72rem; font-weight: 500;
@@ -160,13 +145,13 @@
     .input-inv {
       border: 1px solid var(--border); border-radius: 3px;
       padding: 4px 8px; font-family: var(--fn-mono); font-size: 0.85rem;
-      background: white; color: var(--text); width: 110px; text-align: right;
+      background: white; width: 110px; text-align: right;
     }
     .input-inv:focus { outline: none; border-color: var(--accent); }
     .div-ok     { color: var(--green); font-weight: 700; font-family: var(--fn-mono); }
     .div-alerta { color: var(--red);   font-weight: 700; font-family: var(--fn-mono); }
 
-    /* ── FILTROS ─────────────────────────────── */
+    /* ── FILTROS ── */
     .filtros {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 6px; padding: 16px 18px; margin-bottom: 14px;
@@ -179,7 +164,7 @@
     }
     .filtro-grupo input, .filtro-grupo select {
       border: 1px solid var(--border); border-radius: 4px; padding: 7px 10px;
-      font-family: var(--fn-body); font-size: 0.85rem; background: var(--bg); color: var(--text);
+      font-family: var(--fn-body); font-size: 0.85rem; background: var(--bg);
     }
     .btn-filtrar {
       background: var(--text); color: white; border: none;
@@ -192,7 +177,7 @@
       font-size: 0.85rem; cursor: pointer; align-self: flex-end;
     }
 
-    /* ── CONTADORES ──────────────────────────── */
+    /* ── CONTADORES ── */
     .contadores { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
     .contador-card {
       background: var(--surface); border: 1px solid var(--border);
@@ -201,7 +186,7 @@
     .contador-card .num { font-family: var(--fn-mono); font-size: 1.3rem; font-weight: 500; }
     .contador-card .desc { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 
-    /* ── TABELA ──────────────────────────────── */
+    /* ── TABELA ── */
     .tabela-wrap {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 6px; overflow: hidden; overflow-x: auto;
@@ -235,11 +220,81 @@
       text-align: center; padding: 36px; color: var(--muted);
       font-size: 0.82rem; font-family: var(--fn-mono);
     }
-  </style>
-  
-<link rel="icon" type="image/png" sizes="72x72" href="icon-72.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 
+    /* ── CONTROLE / BLOQUEIOS ── */
+    .form-bloqueio {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    @media (max-width: 580px) { .form-bloqueio { grid-template-columns: 1fr; } }
+
+    .campo { display: flex; flex-direction: column; gap: 5px; }
+    .campo.full { grid-column: 1 / -1; }
+    .campo label {
+      font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); font-family: var(--fn-mono);
+    }
+    .campo input, .campo select {
+      border: 1px solid var(--border); border-radius: 4px; padding: 8px 10px;
+      font-family: var(--fn-body); font-size: 0.88rem; background: var(--bg);
+    }
+    .campo input:focus, .campo select:focus { outline: none; border-color: var(--accent); }
+
+    .btn-bloquear {
+      background: var(--red); color: white; border: none;
+      padding: 10px 20px; border-radius: 4px; font-family: var(--fn-body);
+      font-weight: 700; font-size: 0.88rem; cursor: pointer;
+      transition: opacity 0.15s; width: 100%; margin-top: 4px;
+    }
+    .btn-bloquear:hover { opacity: 0.85; }
+
+    /* Lista de bloqueios */
+    .bloqueio-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 14px; border: 1px solid var(--border); border-radius: 4px;
+      background: var(--surface); margin-bottom: 8px;
+      border-left: 3px solid var(--red);
+    }
+    .bloqueio-info { display: flex; flex-direction: column; gap: 3px; }
+    .bloqueio-periodo {
+      font-family: var(--fn-mono); font-size: 0.88rem; font-weight: 500;
+    }
+    .bloqueio-detalhe {
+      font-size: 0.72rem; color: var(--muted); font-family: var(--fn-mono);
+    }
+    .bloqueio-motivo {
+      font-size: 0.75rem; color: var(--orange); margin-top: 2px;
+    }
+    .btn-remover-bloqueio {
+      background: #f4e6e6; color: var(--red); border: none;
+      border-radius: 4px; padding: 6px 12px; cursor: pointer;
+      font-family: var(--fn-body); font-weight: 600; font-size: 0.75rem;
+      transition: opacity 0.15s; white-space: nowrap;
+    }
+    .btn-remover-bloqueio:hover { opacity: 0.75; }
+
+    .tipo-bloqueio-selector {
+      display: flex; gap: 8px; margin-bottom: 4px;
+    }
+    .tipo-btn {
+      flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 4px;
+      font-family: var(--fn-body); font-size: 0.82rem; cursor: pointer;
+      background: var(--bg); color: var(--muted); transition: all 0.15s; text-align: center;
+    }
+    .tipo-btn.ativo { background: var(--accent); color: white; border-color: var(--accent); }
+
+    #campos-faixa { display: none; }
+
+    /* Mensagem */
+    #mensagem-relatorio {
+      position: fixed; top: 16px; right: 16px; padding: 12px 18px;
+      border-radius: 4px; font-size: 0.85rem; font-weight: 600;
+      display: none; z-index: 999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .msg-sucesso { background: #e6f4ec; color: var(--green); border: 1px solid #b8dfc4; }
+    .msg-erro    { background: #f4e6e6; color: var(--red);   border: 1px solid #dbb8b8; }
+  </style>
+  <link rel="icon" type="image/png" sizes="72x72" href="icon-72.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 </head>
 <body>
 
@@ -251,82 +306,46 @@
     <button class="btn-exportar" id="btn-exportar" style="display:none">↓ Exportar Excel</button>
   </div>
 
+  <div id="mensagem-relatorio"></div>
+
   <div class="abas">
     <button class="aba ativa" onclick="trocarAba('dashboard')">📊 Dashboard</button>
     <button class="aba"       onclick="trocarAba('conciliacao')">⚖️ Conciliação</button>
     <button class="aba"       onclick="trocarAba('relatorio')">📋 Relatório</button>
+    <button class="aba"       onclick="trocarAba('controle')">⚙️ Controle</button>
   </div>
 
   <!-- ═══ DASHBOARD ═══ -->
   <div class="painel ativo" id="painel-dashboard">
-
     <div class="periodo-selector">
       <button class="btn-periodo ativo" onclick="setPeriodo('hoje')">Hoje</button>
       <button class="btn-periodo"       onclick="setPeriodo('semana')">Esta semana</button>
       <button class="btn-periodo"       onclick="setPeriodo('mes')">Este mês</button>
     </div>
-
     <div class="kpi-grid">
-      <div class="kpi destaque">
-        <div class="kpi-valor" id="kpi-tempo-medio">--</div>
-        <div class="kpi-label">Tempo médio permanência</div>
-      </div>
-      <div class="kpi" id="kpi-acima-card">
-        <div class="kpi-valor" id="kpi-acima">--</div>
-        <div class="kpi-label">Acima de 45min agora</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-valor" id="kpi-total">--</div>
-        <div class="kpi-label">Veículos no período</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-valor" id="kpi-finalizados">--</div>
-        <div class="kpi-label">Finalizados</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-valor" id="kpi-pontualidade">--</div>
-        <div class="kpi-label">Chegaram antes do horário</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-valor" id="kpi-ausentes">--</div>
-        <div class="kpi-label">Ausentes / Reagendados</div>
-      </div>
+      <div class="kpi destaque"><div class="kpi-valor" id="kpi-tempo-medio">--</div><div class="kpi-label">Tempo médio permanência</div></div>
+      <div class="kpi" id="kpi-acima-card"><div class="kpi-valor" id="kpi-acima">--</div><div class="kpi-label">Acima de 45min agora</div></div>
+      <div class="kpi"><div class="kpi-valor" id="kpi-total">--</div><div class="kpi-label">Veículos chegaram</div></div>
+      <div class="kpi"><div class="kpi-valor" id="kpi-finalizados">--</div><div class="kpi-label">Finalizados</div></div>
+      <div class="kpi"><div class="kpi-valor" id="kpi-pontualidade">--</div><div class="kpi-label">Chegaram antes do horário</div></div>
+      <div class="kpi"><div class="kpi-valor" id="kpi-ausentes">--</div><div class="kpi-label">Ausentes / Reagendados</div></div>
     </div>
-
     <div class="grid-2">
-      <div class="card">
-        <div class="card-titulo">Tempo médio por transportadora</div>
-        <div class="barras" id="barras-transportadora"><div class="vazio" style="padding:12px">Carregando...</div></div>
-      </div>
-      <div class="card">
-        <div class="card-titulo">Tempo médio por produto</div>
-        <div class="barras" id="barras-produto"><div class="vazio" style="padding:12px">Carregando...</div></div>
-      </div>
+      <div class="card"><div class="card-titulo">Tempo médio por transportadora</div><div class="barras" id="barras-transportadora"><div class="vazio" style="padding:12px">Carregando...</div></div></div>
+      <div class="card"><div class="card-titulo">Tempo médio por produto</div><div class="barras" id="barras-produto"><div class="vazio" style="padding:12px">Carregando...</div></div></div>
     </div>
-
     <div class="grid-2">
-      <div class="card">
-        <div class="card-titulo">Volume por faixa de horário</div>
-        <div class="barras" id="barras-horario"><div class="vazio" style="padding:12px">Carregando...</div></div>
-      </div>
-      <div class="card">
-        <div class="card-titulo">Volume por dia da semana</div>
-        <div class="barras" id="barras-diasemana"><div class="vazio" style="padding:12px">Carregando...</div></div>
-      </div>
+      <div class="card"><div class="card-titulo">Volume por faixa de horário</div><div class="barras" id="barras-horario"><div class="vazio" style="padding:12px">Carregando...</div></div></div>
+      <div class="card"><div class="card-titulo">Volume por dia da semana</div><div class="barras" id="barras-diasemana"><div class="vazio" style="padding:12px">Carregando...</div></div></div>
     </div>
-
   </div>
 
   <!-- ═══ CONCILIAÇÃO ═══ -->
   <div class="painel" id="painel-conciliacao">
-
     <div class="card">
       <div class="card-titulo">Selecionar período</div>
       <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
-        <div class="filtro-grupo">
-          <label>Data</label>
-          <input type="date" id="conc-data">
-        </div>
+        <div class="filtro-grupo"><label>Data</label><input type="date" id="conc-data"></div>
         <div class="filtro-grupo">
           <label>Turno</label>
           <select id="conc-turno">
@@ -337,7 +356,6 @@
         <button class="btn-filtrar" onclick="calcularConciliacao()">Calcular</button>
       </div>
     </div>
-
     <div class="card">
       <div class="card-titulo">
         Conciliação por produto
@@ -347,21 +365,13 @@
         <div class="vazio">Selecione data e turno e clique em Calcular</div>
       </div>
     </div>
-
   </div>
 
   <!-- ═══ RELATÓRIO ═══ -->
   <div class="painel" id="painel-relatorio">
-
     <div class="filtros">
-      <div class="filtro-grupo">
-        <label>Data início</label>
-        <input type="date" id="filtro-inicio">
-      </div>
-      <div class="filtro-grupo">
-        <label>Data fim</label>
-        <input type="date" id="filtro-fim">
-      </div>
+      <div class="filtro-grupo"><label>Data início</label><input type="date" id="filtro-inicio"></div>
+      <div class="filtro-grupo"><label>Data fim</label><input type="date" id="filtro-fim"></div>
       <div class="filtro-grupo">
         <label>Status</label>
         <select id="filtro-status">
@@ -374,25 +384,17 @@
           <option value="reagendado_fila">Reagendado</option>
         </select>
       </div>
-      <div class="filtro-grupo">
-        <label>Usuário</label>
-        <select id="filtro-usuario"><option value="">Todos</option></select>
-      </div>
-      <div class="filtro-grupo">
-        <label>Placa</label>
-        <input type="text" id="filtro-placa" placeholder="ABC1D23">
-      </div>
+      <div class="filtro-grupo"><label>Usuário</label><select id="filtro-usuario"><option value="">Todos</option></select></div>
+      <div class="filtro-grupo"><label>Placa</label><input type="text" id="filtro-placa" placeholder="ABC1D23"></div>
       <button class="btn-filtrar" onclick="aplicarFiltros()">Filtrar</button>
       <button class="btn-limpar"  onclick="limparFiltros()">Limpar</button>
     </div>
-
     <div class="contadores">
       <div class="contador-card"><span class="num" id="cnt-total">—</span><span class="desc">Total</span></div>
       <div class="contador-card"><span class="num" id="cnt-finalizado">—</span><span class="desc">Finalizados</span></div>
       <div class="contador-card"><span class="num" id="cnt-cancelado">—</span><span class="desc">Cancelados</span></div>
       <div class="contador-card"><span class="num" id="cnt-pendente">—</span><span class="desc">Pendentes</span></div>
     </div>
-
     <div class="tabela-wrap">
       <table>
         <thead>
@@ -407,17 +409,78 @@
         </tbody>
       </table>
     </div>
+  </div>
+
+  <!-- ═══ CONTROLE ═══ -->
+  <div class="painel" id="painel-controle">
+
+    <!-- CRIAR BLOQUEIO -->
+    <div class="card">
+      <div class="card-titulo">Novo bloqueio de horários</div>
+
+      <div style="margin-bottom:12px;">
+        <div style="font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-family:var(--fn-mono);margin-bottom:6px;">Tipo de bloqueio</div>
+        <div class="tipo-bloqueio-selector">
+          <div class="tipo-btn ativo" id="tipo-dia" onclick="setTipoBloqueio('dia')">🗓 Dia(s) inteiro(s)</div>
+          <div class="tipo-btn" id="tipo-faixa" onclick="setTipoBloqueio('faixa')">⏰ Faixa de horário</div>
+        </div>
+      </div>
+
+      <div class="form-bloqueio">
+        <div class="campo">
+          <label>Data início</label>
+          <input type="date" id="bl-inicio">
+        </div>
+        <div class="campo">
+          <label>Data fim</label>
+          <input type="date" id="bl-fim">
+        </div>
+
+        <div class="campo full" id="campos-faixa">
+          <div class="form-bloqueio" style="margin:0;">
+            <div class="campo">
+              <label>Hora início</label>
+              <input type="time" id="bl-hora-inicio">
+            </div>
+            <div class="campo">
+              <label>Hora fim</label>
+              <input type="time" id="bl-hora-fim">
+            </div>
+          </div>
+        </div>
+
+        <div class="campo full">
+          <label>Motivo (opcional)</label>
+          <input type="text" id="bl-motivo" placeholder="Ex: Domingo sem expediente, Feriado, Manutenção...">
+        </div>
+
+        <div class="campo full">
+          <button class="btn-bloquear" onclick="criarBloqueio()">🚫 Criar bloqueio</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LISTA DE BLOQUEIOS ATIVOS -->
+    <div class="card">
+      <div class="card-titulo">
+        Bloqueios ativos
+        <span id="badge-bloqueios" style="background:#f4e6e6;color:var(--red);font-family:var(--fn-mono);font-size:0.65rem;padding:2px 8px;border-radius:2px;">0</span>
+      </div>
+      <div id="lista-bloqueios">
+        <div class="vazio">Nenhum bloqueio ativo.</div>
+      </div>
+    </div>
 
   </div>
 
   <script>
-    const API_URL = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
+    const API_URL       = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
+    const BLOQUEIOS_URL = 'https://agenda-backend-production-5b72.up.railway.app/bloqueios';
 
     const PRODUTOS      = ['CPIII','MAUA','E32','M25KG','CPV'];
     const DIAS_SEMANA   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
     const TRANSPORTADORAS = ['Transagil','Tora','Targets'];
-
-    const PRODUTOS_MAP = [
+    const PRODUTOS_MAP  = [
       { match: ["CPIII-32-RS-SC-V"],   label: "CPIII"  },
       { match: ["CPII-F-32-SC-V-MA"],  label: "MAUA"   },
       { match: ["CPII-E-32-SC-V"],     label: "E32"    },
@@ -428,8 +491,9 @@
     let todosAgendamentos = [];
     let dadosFiltrados    = [];
     let periodoAtivo      = 'hoje';
+    let tipoBloqueio      = 'dia';
 
-    // ── HELPERS ───────────────────────────────
+    // ── HELPERS ──
     function simplificarProduto(produto) {
       const p = (produto || "").toUpperCase();
       for (const e of PRODUTOS_MAP) {
@@ -437,251 +501,198 @@
       }
       return produto || "—";
     }
-
     function formatarData(data) {
       if (!data) return "—";
       const [ano, mes, dia] = data.split("-");
       return `${dia}/${mes}/${ano}`;
     }
-
     function calcularMinutos(entrada, saida) {
       if (!entrada || !saida) return null;
-      const [h1, m1] = entrada.split(":").map(Number);
-      const [h2, m2] = saida.split(":").map(Number);
-      let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+      const [h1,m1] = entrada.split(":").map(Number);
+      const [h2,m2] = saida.split(":").map(Number);
+      let diff = (h2*60+m2)-(h1*60+m1);
       if (diff < 0) diff += 1440;
       return diff;
     }
-
     function formatarTempo(min) {
-      if (min === null || min === undefined) return "—";
-      const h = Math.floor(min / 60), m = min % 60;
-      return h > 0 ? `${h}h ${m}min` : `${m}min`;
+      if (min===null||min===undefined) return "—";
+      const h=Math.floor(min/60), m=min%60;
+      return h>0 ? `${h}h ${m}min` : `${m}min`;
     }
-
     function minutosDesde(horaEntrada) {
       if (!horaEntrada) return null;
-      const [h, m] = horaEntrada.split(":").map(Number);
-      const agora = new Date(), ent = new Date();
-      ent.setHours(h, m, 0);
-      const d = Math.floor((agora - ent) / 60000);
-      return d < 0 ? null : d;
+      const [h,m] = horaEntrada.split(":").map(Number);
+      const agora=new Date(), ent=new Date();
+      ent.setHours(h,m,0);
+      const d=Math.floor((agora-ent)/60000);
+      return d<0?null:d;
     }
-
     function parseSacos(val) {
-  if (!val) return 0;
-  // tenta JSON array (múltiplos produtos)
-  try {
-    const arr = JSON.parse(val);
-    if (Array.isArray(arr)) {
-      return arr.reduce((s, p) => s + (parseInt((p.quantidade+"").replace(/[^\d]/g,""))||0), 0);
+      if (!val) return 0;
+      try {
+        const arr = JSON.parse(val);
+        if (Array.isArray(arr))
+          return arr.reduce((s,p)=>s+(parseInt((p.quantidade+"").replace(/[^\d]/g,""))||0),0);
+      } catch {}
+      return parseInt((val+"").replace(/[^\d]/g,""))||0;
     }
-  } catch {}
-  return parseInt((val + "").replace(/[^\d]/g, "")) || 0;
-}
-
-// Adicione esta função nova logo após parseSacos:
-function parseSacosAgendamento(a) {
-  // tenta extrair do campo produto (JSON múltiplos)
-  try {
-    const arr = JSON.parse(a.produto || "");
-    if (Array.isArray(arr)) {
-      return arr.reduce((s, p) => s + (parseInt((p.quantidade+"").replace(/[^\d]/g,""))||0), 0);
+    function parseSacosAgendamento(a) {
+      try {
+        const arr = JSON.parse(a.produto||"");
+        if (Array.isArray(arr))
+          return arr.reduce((s,p)=>s+(parseInt((p.quantidade+"").replace(/[^\d]/g,""))||0),0);
+      } catch {}
+      return parseSacos(a.quantidade);
     }
-  } catch {}
-  // fallback: campo quantidade normal
-  return parseSacos(a.quantidade);
-}
-
     function getIntervalo(periodo) {
-      const hoje = new Date(), hojeStr = hoje.toISOString().split("T")[0];
-      if (periodo === 'hoje') return { inicio: hojeStr, fim: hojeStr };
-      if (periodo === 'semana') {
-        const ini = new Date(hoje); ini.setDate(hoje.getDate() - hoje.getDay());
-        return { inicio: ini.toISOString().split("T")[0], fim: hojeStr };
+      const hoje=new Date(), hojeStr=hoje.toISOString().split("T")[0];
+      if (periodo==='hoje') return {inicio:hojeStr,fim:hojeStr};
+      if (periodo==='semana') {
+        const ini=new Date(hoje); ini.setDate(hoje.getDate()-hoje.getDay());
+        return {inicio:ini.toISOString().split("T")[0],fim:hojeStr};
       }
-      const ini = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-      return { inicio: ini.toISOString().split("T")[0], fim: hojeStr };
+      const ini=new Date(hoje.getFullYear(),hoje.getMonth(),1);
+      return {inicio:ini.toISOString().split("T")[0],fim:hojeStr};
     }
-
     function filtrarPeriodo(dados) {
-      const { inicio, fim } = getIntervalo(periodoAtivo);
-      return dados.filter(a => a.data >= inicio && a.data <= fim);
+      const {inicio,fim}=getIntervalo(periodoAtivo);
+      return dados.filter(a=>a.data>=inicio&&a.data<=fim);
     }
-
     function badgeStatus(status) {
-      const map = {
-        finalizado:      ["badge-finalizado",    "FINALIZADO"],
-        agendado:        ["badge-agendado",       "AGENDADO"],
-        chamando:        ["badge-chamando",       "CHAMANDO"],
-        descarregando:   ["badge-descarregando",  "DESCARREGANDO"],
-        cancelado:       ["badge-cancelado",      "CANCELADO"],
-        reagendado_fila: ["badge-reagendado",     "REAGENDADO"],
+      const map={
+        finalizado:["badge-finalizado","FINALIZADO"],agendado:["badge-agendado","AGENDADO"],
+        chamando:["badge-chamando","CHAMANDO"],descarregando:["badge-descarregando","DESCARREGANDO"],
+        cancelado:["badge-cancelado","CANCELADO"],reagendado_fila:["badge-reagendado","REAGENDADO"],
       };
-      const [cls, label] = map[status] || ["badge-agendado", (status||"").toUpperCase()];
+      const [cls,label]=map[status]||["badge-agendado",(status||"").toUpperCase()];
       return `<span class="badge ${cls}">${label}</span>`;
     }
-
-    function mediaArr(arr) {
-      return arr.length ? Math.round(arr.reduce((s,v)=>s+v,0)/arr.length) : null;
-    }
-
-    function renderBarras(elId, itens, cor) {
-      const el  = document.getElementById(elId);
-      const max = Math.max(...itens.map(i => i.val), 1);
-      if (!itens.filter(i => i.val > 0).length) {
-        el.innerHTML = `<div class="vazio" style="padding:12px">Sem dados suficientes</div>`;
-        return;
-      }
-      el.innerHTML = itens.map(({ label, val, sub }) => {
-        if (!val) return '';
-        const pct = Math.round(val / max * 100);
-        return `<div class="barra-item">
-          <span class="barra-label">${label}</span>
-          <div class="barra-track">
-            <div class="barra-fill ${cor}" style="width:${Math.max(pct,8)}%">
-              <span>${sub}</span>
-            </div>
-          </div>
-        </div>`;
+    function mediaArr(arr) { return arr.length?Math.round(arr.reduce((s,v)=>s+v,0)/arr.length):null; }
+    function renderBarras(elId,itens,cor) {
+      const el=document.getElementById(elId);
+      const max=Math.max(...itens.map(i=>i.val),1);
+      if (!itens.filter(i=>i.val>0).length) { el.innerHTML=`<div class="vazio" style="padding:12px">Sem dados suficientes</div>`; return; }
+      el.innerHTML=itens.map(({label,val,sub})=>{
+        if(!val) return '';
+        const pct=Math.round(val/max*100);
+        return `<div class="barra-item"><span class="barra-label">${label}</span><div class="barra-track"><div class="barra-fill ${cor}" style="width:${Math.max(pct,8)}%"><span>${sub}</span></div></div></div>`;
       }).join("");
     }
-
-    // ── ABAS ──────────────────────────────────
-    function trocarAba(aba) {
-      const abas = ['dashboard','conciliacao','relatorio'];
-      document.querySelectorAll(".aba").forEach((b,i) => b.classList.toggle("ativa", abas[i]===aba));
-      abas.forEach(id => document.getElementById(`painel-${id}`).classList.toggle("ativo", id===aba));
-      document.getElementById("btn-exportar").style.display = aba==='relatorio' ? 'block' : 'none';
+    function mostrarMsg(texto, tipo) {
+      const el=document.getElementById("mensagem-relatorio");
+      el.textContent=texto;
+      el.className=tipo==="sucesso"?"msg-sucesso":"msg-erro";
+      el.style.display="block";
+      setTimeout(()=>{el.style.display="none";},3000);
     }
 
-    // ── PERÍODO ───────────────────────────────
+    // ── ABAS ──
+    function trocarAba(aba) {
+      const abas=['dashboard','conciliacao','relatorio','controle'];
+      document.querySelectorAll(".aba").forEach((b,i)=>b.classList.toggle("ativa",abas[i]===aba));
+      abas.forEach(id=>document.getElementById(`painel-${id}`).classList.toggle("ativo",id===aba));
+      document.getElementById("btn-exportar").style.display=aba==='relatorio'?'block':'none';
+      if (aba==='controle') renderizarBloqueios();
+    }
+
+    // ── PERÍODO ──
     function setPeriodo(p) {
-      periodoAtivo = p;
-      document.querySelectorAll(".btn-periodo").forEach((b,i) =>
-        b.classList.toggle("ativo", ['hoje','semana','mes'][i]===p));
+      periodoAtivo=p;
+      document.querySelectorAll(".btn-periodo").forEach((b,i)=>b.classList.toggle("ativo",['hoje','semana','mes'][i]===p));
       renderizarDashboard();
     }
 
-    // ── DASHBOARD ─────────────────────────────
+    // ── DASHBOARD ──
     function renderizarDashboard() {
-      const dados      = filtrarPeriodo(todosAgendamentos);
-      const finalizados = dados.filter(a => a.status === 'finalizado');
+      const dados=filtrarPeriodo(todosAgendamentos);
+      const finalizados=dados.filter(a=>a.status==='finalizado');
 
-      // Tempo médio
-      const tempos = finalizados
-        .map(a => calcularMinutos(a.hora_entrada, a.hora_saida))
-        .filter(t => t !== null && t > 0 && t < 480);
-      document.getElementById("kpi-tempo-medio").textContent = formatarTempo(mediaArr(tempos));
+      const tempos=finalizados.map(a=>calcularMinutos(a.hora_entrada,a.hora_saida)).filter(t=>t!==null&&t>0&&t<480);
+      document.getElementById("kpi-tempo-medio").textContent=formatarTempo(mediaArr(tempos));
 
-      // Acima de 45min
-      const ativos = todosAgendamentos.filter(a => ['chamando','descarregando'].includes(a.status));
-      const acima  = ativos.filter(a => { const m = minutosDesde(a.hora_entrada||a.hora); return m!==null && m>45; });
-      document.getElementById("kpi-acima").textContent = acima.length;
-      document.getElementById("kpi-acima-card").className = `kpi ${acima.length > 0 ? 'alerta' : 'ok'}`;
+      const ativos=todosAgendamentos.filter(a=>['chamando','descarregando'].includes(a.status));
+      const acima=ativos.filter(a=>{const m=minutosDesde(a.hora_entrada||a.hora);return m!==null&&m>45;});
+      document.getElementById("kpi-acima").textContent=acima.length;
+      document.getElementById("kpi-acima-card").className=`kpi ${acima.length>0?'alerta':'ok'}`;
 
-     document.getElementById("kpi-total").textContent =
-  dados.filter(a => a.hora_entrada || ['chamando','descarregando','finalizado','cancelado','reagendado_fila'].includes(a.status)).length;
-      document.getElementById("kpi-finalizados").textContent = finalizados.length;
+      // Apenas veículos que realmente chegaram
+      document.getElementById("kpi-total").textContent=
+        dados.filter(a=>a.hora_entrada||['chamando','descarregando','finalizado','cancelado','reagendado_fila'].includes(a.status)).length;
+      document.getElementById("kpi-finalizados").textContent=finalizados.length;
 
-      // Pontualidade
-      const comEntrada = dados.filter(a => a.hora_entrada && a.hora);
-      const antecipados = comEntrada.filter(a => a.hora_entrada <= a.hora);
-      const pct = comEntrada.length ? Math.round(antecipados.length/comEntrada.length*100) : 0;
-      document.getElementById("kpi-pontualidade").textContent = `${pct}%`;
+      const comEntrada=dados.filter(a=>a.hora_entrada&&a.hora);
+      const antecipados=comEntrada.filter(a=>a.hora_entrada<=a.hora);
+      const pct=comEntrada.length?Math.round(antecipados.length/comEntrada.length*100):0;
+      document.getElementById("kpi-pontualidade").textContent=`${pct}%`;
+      document.getElementById("kpi-ausentes").textContent=dados.filter(a=>a.status==='reagendado_fila').length;
 
-      document.getElementById("kpi-ausentes").textContent =
-        dados.filter(a => a.status==='reagendado_fila').length;
-
-      // Barras: transportadora
-      const porTransp = {};
-      TRANSPORTADORAS.forEach(t => { porTransp[t] = []; });
-      finalizados.forEach(a => {
-        const t = (a.transportadora||"").trim();
-        const m = calcularMinutos(a.hora_entrada, a.hora_saida);
-        if (m && m>0 && m<480) { if (porTransp[t]) porTransp[t].push(m); else porTransp[t]=[m]; }
+      const porTransp={};
+      TRANSPORTADORAS.forEach(t=>{porTransp[t]=[];});
+      finalizados.forEach(a=>{
+        const t=(a.transportadora||"").trim();
+        const m=calcularMinutos(a.hora_entrada,a.hora_saida);
+        if(m&&m>0&&m<480){if(porTransp[t])porTransp[t].push(m);else porTransp[t]=[m];}
       });
-      renderBarras("barras-transportadora",
-        Object.entries(porTransp).map(([label, arr]) => ({
-          label, val: mediaArr(arr)||0,
-          sub: arr.length ? `${formatarTempo(mediaArr(arr))} (${arr.length}x)` : ''
-        })), "");
+      renderBarras("barras-transportadora",Object.entries(porTransp).map(([label,arr])=>({label,val:mediaArr(arr)||0,sub:arr.length?`${formatarTempo(mediaArr(arr))} (${arr.length}x)`:''})),"");
 
-      // Barras: produto
-      const porProduto = {};
-      PRODUTOS.forEach(p => { porProduto[p] = []; });
-      finalizados.forEach(a => {
-        const prod = simplificarProduto(a.produto);
-        const m    = calcularMinutos(a.hora_entrada, a.hora_saida);
-        if (m && m>0 && m<480) { if (porProduto[prod]) porProduto[prod].push(m); else porProduto[prod]=[m]; }
+      const porProduto={};
+      PRODUTOS.forEach(p=>{porProduto[p]=[];});
+      finalizados.forEach(a=>{
+        const prod=simplificarProduto(a.produto);
+        const m=calcularMinutos(a.hora_entrada,a.hora_saida);
+        if(m&&m>0&&m<480){if(porProduto[prod])porProduto[prod].push(m);else porProduto[prod]=[m];}
       });
-      renderBarras("barras-produto",
-        Object.entries(porProduto).map(([label, arr]) => ({
-          label, val: mediaArr(arr)||0,
-          sub: arr.length ? `${formatarTempo(mediaArr(arr))} (${arr.length}x)` : ''
-        })), "laranja");
+      renderBarras("barras-produto",Object.entries(porProduto).map(([label,arr])=>({label,val:mediaArr(arr)||0,sub:arr.length?`${formatarTempo(mediaArr(arr))} (${arr.length}x)`:''})),"laranja");
 
-      // Barras: faixa horária
-      const faixas = [
-        {label:'00h–06h', min:0,  max:6},  {label:'06h–10h', min:6,  max:10},
-        {label:'10h–14h', min:10, max:14}, {label:'14h–18h', min:14, max:18},
-        {label:'18h–22h', min:18, max:22}, {label:'22h–00h', min:22, max:24},
-      ];
-      const contFaixas = faixas.map(f => {
-        const qtd = dados.filter(a => { if (!a.hora) return false; const h=parseInt(a.hora.split(":")[0]); return h>=f.min && h<f.max; }).length;
-        return { label: f.label, val: qtd, sub: `${qtd} veíc.` };
-      });
-      renderBarras("barras-horario", contFaixas, "azul");
+      const faixas=[{label:'00h–06h',min:0,max:6},{label:'06h–10h',min:6,max:10},{label:'10h–14h',min:10,max:14},{label:'14h–18h',min:14,max:18},{label:'18h–22h',min:18,max:22},{label:'22h–00h',min:22,max:24}];
+      renderBarras("barras-horario",faixas.map(f=>{
+        const qtd=dados.filter(a=>{if(!a.hora)return false;const h=parseInt(a.hora.split(":")[0]);return h>=f.min&&h<f.max;}).length;
+        return{label:f.label,val:qtd,sub:`${qtd} veíc.`};
+      }),"azul");
 
-      // Barras: dia da semana
-      const porDia = Array(7).fill(0);
-      dados.forEach(a => { if (a.data) { const d=new Date(a.data+'T12:00:00').getDay(); porDia[d]++; } });
-      renderBarras("barras-diasemana",
-        DIAS_SEMANA.map((label,i) => ({ label, val: porDia[i], sub: `${porDia[i]} veíc.` })),
-        "verde");
+      const porDia=Array(7).fill(0);
+      dados.forEach(a=>{if(a.data){const d=new Date(a.data+'T12:00:00').getDay();porDia[d]++;}});
+      renderBarras("barras-diasemana",DIAS_SEMANA.map((label,i)=>({label,val:porDia[i],sub:`${porDia[i]} veíc.`})),"verde");
     }
 
-    // ── CONCILIAÇÃO ───────────────────────────
+    // ── CONCILIAÇÃO ──
     function calcularConciliacao() {
-      const data  = document.getElementById("conc-data").value;
-      const turno = document.getElementById("conc-turno").value;
-      if (!data) { alert("Selecione uma data."); return; }
+      const data=document.getElementById("conc-data").value;
+      const turno=document.getElementById("conc-turno").value;
+      if(!data){alert("Selecione uma data.");return;}
 
-      // Filtrar agendamentos do turno
-      const dataObj  = new Date(data);
-      const proxDia  = new Date(dataObj); proxDia.setDate(dataObj.getDate()+1);
-      const proxDiaStr = proxDia.toISOString().split("T")[0];
+      const dataObj=new Date(data);
+      const proxDia=new Date(dataObj);proxDia.setDate(dataObj.getDate()+1);
+      const proxDiaStr=proxDia.toISOString().split("T")[0];
 
-      const doTurno = todosAgendamentos.filter(a => {
-        if (!a.hora) return false;
-        const h = parseInt(a.hora.split(":")[0]);
-        if (turno === 'manha') return a.data === data && h >= 6 && h < 16;
-        // tarde/noite: 16h–06h do dia seguinte
-        if (a.data === data)      return h >= 16;
-        if (a.data === proxDiaStr) return h < 6;
+      const doTurno=todosAgendamentos.filter(a=>{
+        if(!a.hora) return false;
+        const h=parseInt(a.hora.split(":")[0]);
+        if(turno==='manha') return a.data===data&&h>=6&&h<16;
+        if(a.data===data) return h>=16;
+        if(a.data===proxDiaStr) return h<6;
         return false;
-      }).filter(a => a.status === 'finalizado');
+      }).filter(a=>a.status==='finalizado');
 
-      const grid = document.getElementById("conciliacao-grid");
+      const grid=document.getElementById("conciliacao-grid");
 
-      grid.innerHTML = PRODUTOS.map(produto => {
-        const entradas = doTurno.filter(a =>
-          simplificarProduto(a.produto) === produto &&
-          !["CIF","FOB"].includes((a.tipo_operacao||"").toUpperCase())
-        );
-        const saidas = doTurno.filter(a =>
-          simplificarProduto(a.produto) === produto &&
-          ["CIF","FOB"].includes((a.tipo_operacao||"").toUpperCase())
-        );
-        const totalEnt = entradas.reduce((s,a) => s+parseSacosAgendamento(a), 0);
-const totalSai = saidas.reduce((s,a)   => s+parseSacosAgendamento(a), 0);
+      grid.innerHTML=PRODUTOS.map(produto=>{
+        const entradas=doTurno.filter(a=>simplificarProduto(a.produto)===produto&&!["CIF","FOB"].includes((a.tipo_operacao||"").toUpperCase()));
+        const saidas=doTurno.filter(a=>simplificarProduto(a.produto)===produto&&["CIF","FOB"].includes((a.tipo_operacao||"").toUpperCase()));
+        const totalEnt=entradas.reduce((s,a)=>s+parseSacosAgendamento(a),0);
+        const totalSai=saidas.reduce((s,a)=>s+parseSacosAgendamento(a),0);
+
+        // Saldo anterior salvo
+        const chaveAnterior=`saldo_${produto}_${data}_${turno}`;
+        const saldoAnterior=localStorage.getItem(chaveAnterior);
 
         return `<div class="produto-card">
           <div class="produto-card-titulo">${produto}</div>
           <div class="linha-conc">
             <span class="desc">Inventário abertura (sc)</span>
             <input class="input-inv" type="number" id="inv-ab-${produto}" placeholder="0"
-              oninput="recalcular('${produto}',${totalEnt},${totalSai})">
+              value="${saldoAnterior||''}"
+              oninput="recalcular('${produto}',${totalEnt},${totalSai},'${data}','${turno}')">
           </div>
           <div class="linha-conc">
             <span class="desc">+ Entradas (${entradas.length} veíc.)</span>
@@ -698,7 +709,7 @@ const totalSai = saidas.reduce((s,a)   => s+parseSacosAgendamento(a), 0);
           <div class="linha-conc">
             <span class="desc">Inventário fechamento (sc)</span>
             <input class="input-inv" type="number" id="inv-fe-${produto}" placeholder="0"
-              oninput="recalcular('${produto}',${totalEnt},${totalSai})">
+              oninput="recalcular('${produto}',${totalEnt},${totalSai},'${data}','${turno}')">
           </div>
           <div class="linha-conc total">
             <span>Divergência</span>
@@ -706,64 +717,77 @@ const totalSai = saidas.reduce((s,a)   => s+parseSacosAgendamento(a), 0);
           </div>
         </div>`;
       }).join("");
+
+      // Recalcula automaticamente se houver valor de abertura salvo
+      PRODUTOS.forEach(produto=>{
+        const el=document.getElementById(`inv-ab-${produto}`);
+        if(el&&el.value) {
+          const totalEnt=parseInt(document.querySelector(`#conciliacao-grid .produto-card:nth-child(${PRODUTOS.indexOf(produto)+1}) .val.positivo`)?.textContent||0);
+          el.dispatchEvent(new Event('input'));
+        }
+      });
     }
 
-    function recalcular(produto, entradas, saidas) {
-      const abertura   = parseInt(document.getElementById(`inv-ab-${produto}`)?.value) || 0;
-      const fechamento = parseInt(document.getElementById(`inv-fe-${produto}`)?.value) || 0;
-      const saldo = abertura + entradas - saidas;
+    function recalcular(produto, entradas, saidas, data, turno) {
+      const abertura=parseInt(document.getElementById(`inv-ab-${produto}`)?.value)||0;
+      const fechamento=parseInt(document.getElementById(`inv-fe-${produto}`)?.value)||0;
+      const saldo=abertura+entradas-saidas;
 
-      document.getElementById(`saldo-${produto}`).textContent = `${saldo} sc`;
+      document.getElementById(`saldo-${produto}`).textContent=`${saldo} sc`;
 
-      const divEl = document.getElementById(`div-${produto}`);
-      if (fechamento > 0) {
-        const diff = fechamento - saldo;
-        divEl.textContent = diff === 0 ? "✓ OK" : `${diff > 0 ? '+' : ''}${diff} sc`;
-        divEl.className   = `val ${diff === 0 ? 'div-ok' : 'div-alerta'}`;
+      const divEl=document.getElementById(`div-${produto}`);
+      if(fechamento>0){
+        const diff=fechamento-saldo;
+        divEl.textContent=diff===0?"✓ OK":`${diff>0?'+':''}${diff} sc`;
+        divEl.className=`val ${diff===0?'div-ok':'div-alerta'}`;
+
+        // Salva fechamento como abertura do próximo turno
+        const proximoTurno=turno==='manha'?'tarde':'manha';
+        const proximaData=turno==='manha'?data:(()=>{
+          const d=new Date(data);d.setDate(d.getDate()+1);return d.toISOString().split("T")[0];
+        })();
+        localStorage.setItem(`saldo_${produto}_${proximaData}_${proximoTurno}`, fechamento);
       } else {
-        divEl.textContent = "—"; divEl.className = "val";
+        divEl.textContent="—";divEl.className="val";
       }
     }
 
-    // ── RELATÓRIO ─────────────────────────────
+    // ── RELATÓRIO ──
     function aplicarFiltros() {
-      const inicio  = document.getElementById("filtro-inicio").value;
-      const fim     = document.getElementById("filtro-fim").value;
-      const status  = document.getElementById("filtro-status").value;
-      const usuario = document.getElementById("filtro-usuario").value;
-      const placa   = document.getElementById("filtro-placa").value.trim().toUpperCase();
+      const inicio=document.getElementById("filtro-inicio").value;
+      const fim=document.getElementById("filtro-fim").value;
+      const status=document.getElementById("filtro-status").value;
+      const usuario=document.getElementById("filtro-usuario").value;
+      const placa=document.getElementById("filtro-placa").value.trim().toUpperCase();
 
-      dadosFiltrados = todosAgendamentos.filter(a => {
-        if (inicio && a.data < inicio) return false;
-        if (fim    && a.data > fim)    return false;
-        if (status && a.status !== status) return false;
-        if (usuario && a.alterado_por !== usuario) return false;
-        if (placa  && !(a.placa||"").toUpperCase().includes(placa)) return false;
+      dadosFiltrados=todosAgendamentos.filter(a=>{
+        if(inicio&&a.data<inicio) return false;
+        if(fim&&a.data>fim) return false;
+        if(status&&a.status!==status) return false;
+        if(usuario&&a.alterado_por!==usuario) return false;
+        if(placa&&!(a.placa||"").toUpperCase().includes(placa)) return false;
         return true;
-      }).sort((a,b) => new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`));
+      }).sort((a,b)=>new Date(`${a.data} ${a.hora}`)-new Date(`${b.data} ${b.hora}`));
 
       renderizarTabela();
       atualizarContadores();
     }
 
     function limparFiltros() {
-      ["filtro-inicio","filtro-fim","filtro-placa"].forEach(id => document.getElementById(id).value="");
-      document.getElementById("filtro-status").value  = "";
-      document.getElementById("filtro-usuario").value = "";
+      ["filtro-inicio","filtro-fim","filtro-placa"].forEach(id=>document.getElementById(id).value="");
+      document.getElementById("filtro-status").value="";
+      document.getElementById("filtro-usuario").value="";
       aplicarFiltros();
     }
 
     function renderizarTabela() {
-      const tbody  = document.getElementById("tabela-body");
-      const btnExp = document.getElementById("btn-exportar");
-      if (!dadosFiltrados.length) {
-        tbody.innerHTML = `<tr><td colspan="13" class="vazio">Nenhum registro encontrado.</td></tr>`;
-        btnExp.disabled = true; return;
-      }
-      btnExp.disabled = false;
-      tbody.innerHTML = dadosFiltrados.map(item => {
-        const perm = calcularMinutos(item.hora_entrada, item.hora_saida);
-        const v = (val) => val ? `<span class="td-mono">${val}</span>` : `<span class="td-vazio">—</span>`;
+      const tbody=document.getElementById("tabela-body");
+      const btnExp=document.getElementById("btn-exportar");
+      if(!dadosFiltrados.length){tbody.innerHTML=`<tr><td colspan="13" class="vazio">Nenhum registro encontrado.</td></tr>`;btnExp.disabled=true;return;}
+      btnExp.disabled=false;
+      tbody.innerHTML=dadosFiltrados.map(item=>{
+        const perm=calcularMinutos(item.hora_entrada,item.hora_saida);
+        const v=(val)=>val?`<span class="td-mono">${val}</span>`:`<span class="td-vazio">—</span>`;
         return `<tr>
           <td class="td-mono">${formatarData(item.data)}</td>
           <td class="td-mono">${item.hora||"—"}</td>
@@ -773,7 +797,7 @@ const totalSai = saidas.reduce((s,a)   => s+parseSacosAgendamento(a), 0);
           <td><strong>${item.placa||"—"}</strong></td>
           <td>${simplificarProduto(item.produto)}</td>
           <td>${badgeStatus(item.status)}</td>
-          <td class="td-mono">${item.tipo_operacao ? item.tipo_operacao.toUpperCase() : "<span class='td-vazio'>—</span>"}</td>
+          <td class="td-mono">${item.tipo_operacao?item.tipo_operacao.toUpperCase():"<span class='td-vazio'>—</span>"}</td>
           <td>${v(item.quantidade)}</td>
           <td>${v(item.nota_fiscal)}</td>
           <td>${v(item.transportadora)}</td>
@@ -783,57 +807,149 @@ const totalSai = saidas.reduce((s,a)   => s+parseSacosAgendamento(a), 0);
     }
 
     function atualizarContadores() {
-      document.getElementById("cnt-total").textContent      = dadosFiltrados.length;
-      document.getElementById("cnt-finalizado").textContent = dadosFiltrados.filter(a=>a.status==="finalizado").length;
-      document.getElementById("cnt-cancelado").textContent  = dadosFiltrados.filter(a=>a.status==="cancelado").length;
-      document.getElementById("cnt-pendente").textContent   = dadosFiltrados.filter(a=>
-        ["agendado","chamando","descarregando"].includes(a.status)).length;
+      document.getElementById("cnt-total").textContent=dadosFiltrados.length;
+      document.getElementById("cnt-finalizado").textContent=dadosFiltrados.filter(a=>a.status==="finalizado").length;
+      document.getElementById("cnt-cancelado").textContent=dadosFiltrados.filter(a=>a.status==="cancelado").length;
+      document.getElementById("cnt-pendente").textContent=dadosFiltrados.filter(a=>["agendado","chamando","descarregando"].includes(a.status)).length;
     }
 
-    // ── EXPORTAR ──────────────────────────────
     function exportarExcel() {
-      const linhas = dadosFiltrados.map(item => ({
-        "Data":           formatarData(item.data),
-        "Hora Ag.":       item.hora||"",
-        "H. Entrada":     item.hora_entrada||"",
-        "H. Saída":       item.hora_saida||"",
-        "Permanência":    formatarTempo(calcularMinutos(item.hora_entrada,item.hora_saida)),
-        "Placa":          item.placa||"",
-        "Produto":        simplificarProduto(item.produto),
-        "Status":         (item.status||"").toUpperCase(),
-        "Tipo Operação":  item.tipo_operacao ? item.tipo_operacao.toUpperCase() : "",
-        "Qtd (sacos)":    item.quantidade||"",
-        "Nota Fiscal":    item.nota_fiscal||"",
-        "Transportadora": item.transportadora||"",
-        "Usuário":        item.alterado_por||"",
+      const linhas=dadosFiltrados.map(item=>({
+        "Data":formatarData(item.data),"Hora Ag.":item.hora||"",
+        "H. Entrada":item.hora_entrada||"","H. Saída":item.hora_saida||"",
+        "Permanência":formatarTempo(calcularMinutos(item.hora_entrada,item.hora_saida)),
+        "Placa":item.placa||"","Produto":simplificarProduto(item.produto),
+        "Status":(item.status||"").toUpperCase(),
+        "Tipo Operação":item.tipo_operacao?item.tipo_operacao.toUpperCase():"",
+        "Qtd (sacos)":item.quantidade||"","Nota Fiscal":item.nota_fiscal||"",
+        "Transportadora":item.transportadora||"","Usuário":item.alterado_por||"",
       }));
-      const ws = XLSX.utils.json_to_sheet(linhas);
-      ws["!cols"] = [{wch:12},{wch:10},{wch:10},{wch:10},{wch:12},{wch:12},{wch:10},
-                     {wch:14},{wch:14},{wch:10},{wch:14},{wch:18},{wch:12}];
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Agendamentos");
-      XLSX.writeFile(wb, `relatorio-cd-itaborai-${new Date().toISOString().split("T")[0]}.xlsx`);
+      const ws=XLSX.utils.json_to_sheet(linhas);
+      ws["!cols"]=[{wch:12},{wch:10},{wch:10},{wch:10},{wch:12},{wch:12},{wch:10},{wch:14},{wch:14},{wch:10},{wch:14},{wch:18},{wch:12}];
+      const wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb,ws,"Agendamentos");
+      XLSX.writeFile(wb,`relatorio-cd-itaborai-${new Date().toISOString().split("T")[0]}.xlsx`);
     }
 
-    // ── INIT ──────────────────────────────────
+    // ── CONTROLE — BLOQUEIOS ──
+    function setTipoBloqueio(tipo) {
+      tipoBloqueio=tipo;
+      document.getElementById("tipo-dia").classList.toggle("ativo",tipo==='dia');
+      document.getElementById("tipo-faixa").classList.toggle("ativo",tipo==='faixa');
+      document.getElementById("campos-faixa").style.display=tipo==='faixa'?'block':'none';
+    }
+
+    async function criarBloqueio() {
+      const inicio=document.getElementById("bl-inicio").value;
+      const fim=document.getElementById("bl-fim").value;
+      const motivo=document.getElementById("bl-motivo").value.trim();
+
+      if(!inicio||!fim){mostrarMsg("Informe data início e fim.","erro");return;}
+      if(inicio>fim){mostrarMsg("Data início não pode ser maior que data fim.","erro");return;}
+
+      const payload={
+        data_inicio: inicio,
+        data_fim:    fim,
+        motivo:      motivo||null,
+        criado_por:  null
+      };
+
+      if(tipoBloqueio==='faixa'){
+        const hi=document.getElementById("bl-hora-inicio").value;
+        const hf=document.getElementById("bl-hora-fim").value;
+        if(!hi||!hf){mostrarMsg("Informe hora início e hora fim.","erro");return;}
+        if(hi>=hf){mostrarMsg("Hora início deve ser menor que hora fim.","erro");return;}
+        payload.hora_inicio=hi;
+        payload.hora_fim=hf;
+      }
+
+      try{
+        const res=await fetch(BLOQUEIOS_URL,{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify(payload)
+        });
+        if(res.ok){
+          mostrarMsg("Bloqueio criado com sucesso!","sucesso");
+          // limpa campos
+          ["bl-inicio","bl-fim","bl-motivo","bl-hora-inicio","bl-hora-fim"]
+            .forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+          renderizarBloqueios();
+        } else {
+          mostrarMsg("Erro ao criar bloqueio.","erro");
+        }
+      } catch(e){
+        mostrarMsg("Erro de conexão.","erro");
+      }
+    }
+
+    async function renderizarBloqueios() {
+      try{
+        const res=await fetch(BLOQUEIOS_URL);
+        const bloqueios=await res.json();
+        const el=document.getElementById("lista-bloqueios");
+        const badge=document.getElementById("badge-bloqueios");
+        badge.textContent=bloqueios.length;
+
+        if(!bloqueios.length){
+          el.innerHTML=`<div class="vazio">Nenhum bloqueio ativo.</div>`;
+          return;
+        }
+
+        el.innerHTML=bloqueios.map(b=>{
+          const mesmaData=b.data_inicio===b.data_fim;
+          const periodo=mesmaData
+            ?formatarData(b.data_inicio)
+            :`${formatarData(b.data_inicio)} → ${formatarData(b.data_fim)}`;
+
+          const faixa=b.hora_inicio&&b.hora_fim
+            ?`Faixa: ${b.hora_inicio} → ${b.hora_fim}`
+            :`Dia inteiro`;
+
+          return `<div class="bloqueio-item">
+            <div class="bloqueio-info">
+              <div class="bloqueio-periodo">🚫 ${periodo}</div>
+              <div class="bloqueio-detalhe">${faixa}</div>
+              ${b.motivo?`<div class="bloqueio-motivo">${b.motivo}</div>`:''}
+            </div>
+            <button class="btn-remover-bloqueio" onclick="removerBloqueio(${b.id})">Remover</button>
+          </div>`;
+        }).join("");
+      } catch(e){
+        console.error("Erro ao carregar bloqueios",e);
+      }
+    }
+
+    async function removerBloqueio(id) {
+      if(!confirm("Remover este bloqueio?")) return;
+      try{
+        const res=await fetch(`${BLOQUEIOS_URL}/${id}`,{method:"DELETE"});
+        if(res.ok){mostrarMsg("Bloqueio removido.","sucesso");renderizarBloqueios();}
+        else mostrarMsg("Erro ao remover.","erro");
+      } catch(e){
+        mostrarMsg("Erro de conexão.","erro");
+      }
+    }
+
+    // ── INIT ──
     async function carregar() {
-      try {
-        const res = await fetch(API_URL);
-        todosAgendamentos = await res.json();
+      try{
+        const res=await fetch(API_URL);
+        todosAgendamentos=await res.json();
 
-        const usuarios = [...new Set(todosAgendamentos.map(a=>a.alterado_por).filter(Boolean))].sort();
-        const sel = document.getElementById("filtro-usuario");
-        usuarios.forEach(u => { const o=document.createElement("option"); o.value=u; o.textContent=u; sel.appendChild(o); });
+        const usuarios=[...new Set(todosAgendamentos.map(a=>a.alterado_por).filter(Boolean))].sort();
+        const sel=document.getElementById("filtro-usuario");
+        usuarios.forEach(u=>{const o=document.createElement("option");o.value=u;o.textContent=u;sel.appendChild(o);});
 
-        document.getElementById("conc-data").value = new Date().toISOString().split("T")[0];
-        dadosFiltrados = [...todosAgendamentos];
+        document.getElementById("conc-data").value=new Date().toISOString().split("T")[0];
+        dadosFiltrados=[...todosAgendamentos];
 
         renderizarDashboard();
         aplicarFiltros();
-      } catch(e) { console.error("Erro ao carregar:", e); }
+      }catch(e){console.error("Erro ao carregar:",e);}
     }
 
-    document.getElementById("btn-exportar").addEventListener("click", exportarExcel);
+    document.getElementById("btn-exportar").addEventListener("click",exportarExcel);
     carregar();
   </script>
 </body>
