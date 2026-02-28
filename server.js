@@ -11,56 +11,66 @@ app.use(cors());
 app.use(express.json());
 
 // ========================================================
-// 👥 USUÁRIOS
+// 🗄️ BANCO DE DADOS
 // ========================================================
-const USUARIOS = {
-    'eduardo':   'senhaMestre1',
-    'gabriel':   'logistica2026',
-    'operacao':  'patio123',
-    'tora':      'tora2026',
-    'transagil': 'trans2026',
-    'portaria':  'portaria2026',
-    'uillian':   'uillian2026',
-    'fabiano':   'fabiano2026'
-};
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+});
+
+// ========================================================
+// 🔑 HIERARQUIA DE PERFIS
+// Quanto maior o número, mais acesso.
+// admin(4) > relatorio(3) > portaria(2) > operacao(1)
+// ========================================================
+const NIVEL = { admin: 4, relatorio: 3, portaria: 2, operacao: 1 };
+
+async function verificarAcesso(user, pass, nivelMinimo) {
+    try {
+        const result = await pool.query(
+            "SELECT perfil FROM usuarios WHERE nome = $1 AND senha = $2",
+            [user, pass]
+        );
+        if (!result.rows.length) return false;
+        const nivel = NIVEL[result.rows[0].perfil] || 1;
+        return nivel >= nivelMinimo;
+    } catch (e) {
+        console.error("Erro ao verificar acesso:", e);
+        return false;
+    }
+}
+
+function auth(nivelMinimo, realm) {
+    return basicAuth({
+        authorizer: (user, pass, cb) => {
+            verificarAcesso(user, pass, nivelMinimo)
+                .then(ok => cb(null, ok))
+                .catch(() => cb(null, false));
+        },
+        authorizeAsync: true,
+        challenge: true,
+        realm
+    });
+}
 
 // ========================================================
 // 🛡️ BLOCO DE SEGURANÇA
 // ========================================================
 app.use((req, res, next) => {
 
-    // Index — todos os usuários
+    // Index — todos os usuários (operacao+)
     if (req.path === '/' || req.path === '/index.html') {
-        return basicAuth({
-            users: USUARIOS,
-            challenge: true,
-            realm: 'Painel Logistico Itaborai'
-        })(req, res, next);
+        return auth(1, 'Painel Logistico Itaborai')(req, res, next);
     }
 
-    // Portaria — Eduardo, Gabriel e Portaria
+    // Portaria — portaria+
     if (req.path === '/portaria' || req.path === '/portaria.html') {
-        return basicAuth({
-            users: {
-                'eduardo':  USUARIOS['eduardo'],
-                'gabriel':  USUARIOS['gabriel'],
-                'portaria': USUARIOS['portaria']
-            },
-            challenge: true,
-            realm: 'Portaria CD Itaborai'
-        })(req, res, next);
+        return auth(2, 'Portaria CD Itaborai')(req, res, next);
     }
 
-    // Relatório — apenas Eduardo e Gabriel
+    // Relatório — relatorio+
     if (req.path === '/relatorio' || req.path === '/relatorio.html') {
-        return basicAuth({
-            users: {
-                'eduardo': USUARIOS['eduardo'],
-                'gabriel': USUARIOS['gabriel']
-            },
-            challenge: true,
-            realm: 'Relatorio CD Itaborai'
-        })(req, res, next);
+        return auth(3, 'Relatorio CD Itaborai')(req, res, next);
     }
 
     // TV, Consulta, API — livre
@@ -68,7 +78,7 @@ app.use((req, res, next) => {
 });
 
 // Retorna o usuário logado
-app.get("/eu", basicAuth({ users: USUARIOS, challenge: true }), (req, res) => {
+app.get("/eu", auth(1, 'CD Itaborai'), (req, res) => {
     res.json({ usuario: req.auth.user });
 });
 
@@ -78,18 +88,11 @@ app.get("/eu", basicAuth({ users: USUARIOS, challenge: true }), (req, res) => {
 app.use(express.static(path.join(__dirname, "public")));
 
 // ========================================================
-// 🗄️ BANCO DE DADOS
-// ========================================================
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
-
-// ========================================================
 // 🔧 ROTA DE MIGRAÇÃO
 // ========================================================
 app.get("/criar-banco", async (req, res) => {
     try {
+        // Tabela principal
         await pool.query(`
             CREATE TABLE IF NOT EXISTS agendamentos (
                 id SERIAL PRIMARY KEY,
@@ -123,44 +126,72 @@ app.get("/criar-banco", async (req, res) => {
             CREATE TABLE IF NOT EXISTS bloqueios (
                 id SERIAL PRIMARY KEY,
                 data_inicio VARCHAR(20) NOT NULL,
-                data_fim VARCHAR(20) NOT NULL,
+                data_fim    VARCHAR(20) NOT NULL,
                 hora_inicio VARCHAR(10),
-                hora_fim VARCHAR(10),
-                motivo VARCHAR(200),
-                criado_por VARCHAR(50),
+                hora_fim    VARCHAR(10),
+                motivo      VARCHAR(200),
+                criado_por  VARCHAR(50),
+                criado_em   TIMESTAMP DEFAULT NOW()
+            );
+        `);
+
+        // Tabela de usuários
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id        SERIAL PRIMARY KEY,
+                nome      VARCHAR(50) UNIQUE NOT NULL,
+                senha     VARCHAR(100) NOT NULL,
+                perfil    VARCHAR(20) DEFAULT 'operacao',
                 criado_em TIMESTAMP DEFAULT NOW()
             );
         `);
 
-        res.send("<h1>Sucesso! Tabela verificada e atualizada.</h1>");
+        // Usuários padrão — só insere se ainda não existirem
+        const usuariosPadrao = [
+            { nome: 'eduardo',   senha: 'senhaMestre1',  perfil: 'admin'     },
+            { nome: 'gabriel',   senha: 'logistica2026', perfil: 'relatorio' },
+            { nome: 'portaria',  senha: 'portaria2026',  perfil: 'portaria'  },
+            { nome: 'operacao',  senha: 'patio123',      perfil: 'operacao'  },
+            { nome: 'tora',      senha: 'tora2026',      perfil: 'operacao'  },
+            { nome: 'transagil', senha: 'trans2026',     perfil: 'operacao'  },
+            { nome: 'uillian',   senha: 'uillian2026',   perfil: 'operacao'  },
+            { nome: 'fabiano',   senha: 'fabiano2026',   perfil: 'operacao'  },
+        ];
+
+        for (const u of usuariosPadrao) {
+            try {
+                await pool.query(
+                    "INSERT INTO usuarios (nome, senha, perfil) VALUES ($1, $2, $3) ON CONFLICT (nome) DO NOTHING",
+                    [u.nome, u.senha, u.perfil]
+                );
+            } catch (e) {}
+        }
+
+        res.send("<h1>✅ Sucesso! Tabelas verificadas e atualizadas.</h1>");
     } catch (error) {
         res.status(500).send("Erro: " + error.message);
     }
 });
 
 // ========================================================
-// 🚏 ROTAS DA API — AGENDAMENTOS
+// 🚏 ROTAS — AGENDAMENTOS
 // ========================================================
 
-// Listar agendamentos
 app.get("/agendamentos", async (req, res) => {
     try {
         const result = await pool.query("SELECT * FROM agendamentos ORDER BY data, hora");
         res.json(result.rows);
     } catch (error) {
-        console.error(error);
         res.status(500).json({ erro: "Erro ao buscar dados" });
     }
 });
 
-// Criar agendamento
 app.post("/agendamentos", async (req, res) => {
     try {
         const {
             data, hora, placa, produto, alterado_por,
             tipo_operacao, quantidade, nota_fiscal,
-            transportadora, hora_entrada, hora_saida, status,
-            motorista
+            transportadora, hora_entrada, hora_saida, status, motorista
         } = req.body;
 
         const result = await pool.query(`
@@ -191,37 +222,24 @@ app.post("/agendamentos", async (req, res) => {
     }
 });
 
-// Atualizar agendamento
 app.put("/agendamentos/:id", async (req, res) => {
     try {
         const { id } = req.params;
         const campos = req.body;
-
         const chaves = Object.keys(campos);
-        if (!chaves.length) {
-            return res.status(400).json({ erro: "Nenhum campo enviado" });
-        }
-
+        if (!chaves.length) return res.status(400).json({ erro: "Nenhum campo enviado" });
         const setClause = chaves.map((k, i) => `${k} = $${i + 1}`).join(", ");
         const valores   = [...chaves.map(k => campos[k]), id];
-
-        await pool.query(
-            `UPDATE agendamentos SET ${setClause} WHERE id = $${chaves.length + 1}`,
-            valores
-        );
-
+        await pool.query(`UPDATE agendamentos SET ${setClause} WHERE id = $${chaves.length + 1}`, valores);
         res.json({ sucesso: true });
     } catch (error) {
-        console.error(error);
         res.status(500).json({ erro: "Erro ao atualizar" });
     }
 });
 
-// Deletar agendamento
 app.delete("/agendamentos/:id", async (req, res) => {
     try {
-        const { id } = req.params;
-        await pool.query("DELETE FROM agendamentos WHERE id = $1", [id]);
+        await pool.query("DELETE FROM agendamentos WHERE id = $1", [req.params.id]);
         res.json({ sucesso: true });
     } catch (error) {
         res.status(500).json({ erro: "Erro ao deletar" });
@@ -229,59 +247,96 @@ app.delete("/agendamentos/:id", async (req, res) => {
 });
 
 // ========================================================
-// 🚫 ROTAS DA API — BLOQUEIOS
+// 🚫 ROTAS — BLOQUEIOS
 // ========================================================
 
-// Listar bloqueios
 app.get("/bloqueios", async (req, res) => {
     try {
-        const result = await pool.query(
-            "SELECT * FROM bloqueios ORDER BY data_inicio, hora_inicio"
-        );
+        const result = await pool.query("SELECT * FROM bloqueios ORDER BY data_inicio, hora_inicio");
         res.json(result.rows);
     } catch (error) {
-        console.error(error);
         res.status(500).json({ erro: "Erro ao buscar bloqueios" });
     }
 });
 
-// Criar bloqueio
 app.post("/bloqueios", async (req, res) => {
     try {
         const { data_inicio, data_fim, hora_inicio, hora_fim, motivo, criado_por } = req.body;
-
-        if (!data_inicio || !data_fim) {
-            return res.status(400).json({ erro: "data_inicio e data_fim são obrigatórios" });
-        }
-
-        const result = await pool.query(`
-            INSERT INTO bloqueios (data_inicio, data_fim, hora_inicio, hora_fim, motivo, criado_por)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING *`,
-            [
-                data_inicio,
-                data_fim,
-                hora_inicio || null,
-                hora_fim    || null,
-                motivo      || null,
-                criado_por  || null
-            ]
+        if (!data_inicio || !data_fim) return res.status(400).json({ erro: "Datas obrigatórias" });
+        const result = await pool.query(
+            "INSERT INTO bloqueios (data_inicio, data_fim, hora_inicio, hora_fim, motivo, criado_por) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *",
+            [data_inicio, data_fim, hora_inicio || null, hora_fim || null, motivo || null, criado_por || null]
         );
         res.json(result.rows[0]);
     } catch (err) {
-        console.error(err);
         res.status(500).send("Erro ao criar bloqueio");
     }
 });
 
-// Deletar bloqueio
 app.delete("/bloqueios/:id", async (req, res) => {
     try {
-        const { id } = req.params;
-        await pool.query("DELETE FROM bloqueios WHERE id = $1", [id]);
+        await pool.query("DELETE FROM bloqueios WHERE id = $1", [req.params.id]);
         res.json({ sucesso: true });
     } catch (error) {
         res.status(500).json({ erro: "Erro ao deletar bloqueio" });
+    }
+});
+
+// ========================================================
+// 👥 ROTAS — USUÁRIOS
+// ========================================================
+
+// Listar (sem expor senha)
+app.get("/usuarios", async (req, res) => {
+    try {
+        const result = await pool.query(
+            "SELECT id, nome, perfil, criado_em FROM usuarios ORDER BY nome"
+        );
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ erro: "Erro ao buscar usuários" });
+    }
+});
+
+// Criar
+app.post("/usuarios", async (req, res) => {
+    try {
+        const { nome, senha, perfil } = req.body;
+        if (!nome || !senha) return res.status(400).json({ erro: "Nome e senha obrigatórios" });
+        const result = await pool.query(
+            "INSERT INTO usuarios (nome, senha, perfil) VALUES ($1, $2, $3) RETURNING id, nome, perfil",
+            [nome.toLowerCase().trim(), senha, perfil || 'operacao']
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        if (err.code === '23505') return res.status(409).json({ erro: "Usuário já existe" });
+        res.status(500).json({ erro: "Erro ao criar usuário" });
+    }
+});
+
+// Atualizar senha e/ou perfil
+app.put("/usuarios/:id", async (req, res) => {
+    try {
+        const { senha, perfil } = req.body;
+        const campos = [], valores = [];
+        if (senha)  { campos.push(`senha  = $${campos.length + 1}`); valores.push(senha); }
+        if (perfil) { campos.push(`perfil = $${campos.length + 1}`); valores.push(perfil); }
+        if (!campos.length) return res.status(400).json({ erro: "Nada para atualizar" });
+        valores.push(req.params.id);
+        await pool.query(`UPDATE usuarios SET ${campos.join(', ')} WHERE id = $${valores.length}`, valores);
+        res.json({ sucesso: true });
+    } catch (error) {
+        res.status(500).json({ erro: "Erro ao atualizar usuário" });
+    }
+});
+
+// Deletar
+app.delete("/usuarios/:id", async (req, res) => {
+    try {
+        await pool.query("DELETE FROM usuarios WHERE id = $1", [req.params.id]);
+        res.json({ sucesso: true });
+    } catch (error) {
+        res.status(500).json({ erro: "Erro ao deletar usuário" });
     }
 });
 

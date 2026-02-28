@@ -23,84 +23,39 @@
       --fn-body: 'DM Sans', sans-serif;
       --fn-mono: 'DM Mono', monospace;
     }
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--fn-body); min-height: 100vh; padding: 28px 24px 60px; }
 
-    body {
-      background: var(--bg); color: var(--text);
-      font-family: var(--fn-body); min-height: 100vh;
-      padding: 28px 24px 60px;
-    }
-
-    .page-header {
-      display: flex; justify-content: space-between; align-items: flex-start;
-      margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--border);
-    }
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
     .page-header h1 { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
     .page-header p  { font-size: 0.75rem; color: var(--muted); font-family: var(--fn-mono); margin-top: 3px; }
 
-    .btn-exportar {
-      background: var(--accent); color: white; border: none;
-      padding: 10px 20px; border-radius: 4px; font-family: var(--fn-body);
-      font-weight: 700; font-size: 0.85rem; cursor: pointer;
-      letter-spacing: 0.04em; transition: opacity 0.15s; white-space: nowrap;
-    }
+    .btn-exportar { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 4px; font-family: var(--fn-body); font-weight: 700; font-size: 0.85rem; cursor: pointer; letter-spacing: 0.04em; transition: opacity 0.15s; white-space: nowrap; }
     .btn-exportar:hover { opacity: 0.85; }
     .btn-exportar:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* ── ABAS ── */
-    .abas {
-      display: flex; gap: 4px; margin-bottom: 24px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 6px; padding: 4px;
-    }
-    .aba {
-      flex: 1; padding: 10px; text-align: center; border-radius: 4px;
-      cursor: pointer; font-weight: 600; font-size: 0.82rem;
-      border: none; background: transparent; color: var(--muted); transition: all 0.15s;
-    }
+    .abas { display: flex; gap: 4px; margin-bottom: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 4px; }
+    .aba { flex: 1; padding: 10px; text-align: center; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.82rem; border: none; background: transparent; color: var(--muted); transition: all 0.15s; }
     .aba.ativa { background: var(--accent); color: white; }
-
     .painel { display: none; }
     .painel.ativo { display: block; }
 
-    /* ── CARDS ── */
-    .card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 6px; padding: 18px 20px; margin-bottom: 16px;
-    }
-    .card-titulo {
-      font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase;
-      color: var(--muted); font-family: var(--fn-mono);
-      margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
-      display: flex; justify-content: space-between; align-items: center;
-    }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 18px 20px; margin-bottom: 16px; }
+    .card-titulo { font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); font-family: var(--fn-mono); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
 
-    /* ── KPI ── */
-    .kpi-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 10px; margin-bottom: 16px;
-    }
-    .kpi {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px;
-    }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
     .kpi.destaque { border-left: 3px solid var(--accent); }
     .kpi.alerta   { border-left: 3px solid var(--red);   background: #fdf5f5; }
     .kpi.ok       { border-left: 3px solid var(--green); background: #f5fdf7; }
     .kpi-valor { font-family: var(--fn-mono); font-size: 1.6rem; font-weight: 500; line-height: 1; }
     .kpi-label { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 
-    /* ── BARRAS ── */
     .barras { display: flex; flex-direction: column; gap: 8px; }
     .barra-item { display: flex; align-items: center; gap: 10px; }
     .barra-label { font-size: 0.75rem; font-family: var(--fn-mono); min-width: 100px; }
     .barra-track { flex: 1; background: #f0ede6; border-radius: 2px; height: 22px; overflow: hidden; }
-    .barra-fill {
-      height: 100%; background: var(--accent); border-radius: 2px;
-      transition: width 0.6s ease; display: flex; align-items: center;
-      padding-left: 8px; min-width: 40px;
-    }
+    .barra-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.6s ease; display: flex; align-items: center; padding-left: 8px; min-width: 40px; }
     .barra-fill span { font-size: 0.65rem; font-family: var(--fn-mono); color: white; white-space: nowrap; }
     .barra-fill.laranja { background: var(--orange); }
     .barra-fill.azul    { background: #3498db; }
@@ -109,95 +64,41 @@
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
     @media (max-width: 680px) { .grid-2 { grid-template-columns: 1fr; } }
 
-    /* ── PERÍODO ── */
     .periodo-selector { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
-    .btn-periodo {
-      padding: 6px 14px; border: 1px solid var(--border); border-radius: 4px;
-      font-family: var(--fn-mono); font-size: 0.75rem; cursor: pointer;
-      background: var(--surface); color: var(--muted); transition: all 0.15s;
-    }
+    .btn-periodo { padding: 6px 14px; border: 1px solid var(--border); border-radius: 4px; font-family: var(--fn-mono); font-size: 0.75rem; cursor: pointer; background: var(--surface); color: var(--muted); transition: all 0.15s; }
     .btn-periodo.ativo { background: var(--accent); color: white; border-color: var(--accent); }
 
-    /* ── CONCILIAÇÃO ── */
-    .conciliacao-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;
-    }
-    .produto-card {
-      background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 14px 16px;
-    }
-    .produto-card-titulo {
-      font-family: var(--fn-mono); font-size: 0.72rem; font-weight: 500;
-      letter-spacing: 0.1em; color: var(--accent); margin-bottom: 12px; text-transform: uppercase;
-    }
-    .linha-conc {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.82rem;
-    }
+    .conciliacao-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+    .produto-card { background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 14px 16px; }
+    .produto-card-titulo { font-family: var(--fn-mono); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 12px; text-transform: uppercase; }
+    .linha-conc { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.82rem; }
     .linha-conc:last-child { border-bottom: none; }
     .linha-conc .desc { color: var(--muted); font-size: 0.74rem; }
     .linha-conc .val  { font-family: var(--fn-mono); font-weight: 500; }
     .linha-conc .val.positivo { color: var(--green); }
     .linha-conc .val.negativo { color: var(--red); }
-    .linha-conc.total {
-      margin-top: 4px; padding-top: 10px;
-      border-top: 2px solid var(--border); border-bottom: none; font-weight: 700;
-    }
-    .input-inv {
-      border: 1px solid var(--border); border-radius: 3px;
-      padding: 4px 8px; font-family: var(--fn-mono); font-size: 0.85rem;
-      background: white; width: 110px; text-align: right;
-    }
+    .linha-conc.total { margin-top: 4px; padding-top: 10px; border-top: 2px solid var(--border); border-bottom: none; font-weight: 700; }
+    .input-inv { border: 1px solid var(--border); border-radius: 3px; padding: 4px 8px; font-family: var(--fn-mono); font-size: 0.85rem; background: white; width: 110px; text-align: right; }
     .input-inv:focus { outline: none; border-color: var(--accent); }
     .div-ok     { color: var(--green); font-weight: 700; font-family: var(--fn-mono); }
     .div-alerta { color: var(--red);   font-weight: 700; font-family: var(--fn-mono); }
 
-    /* ── FILTROS ── */
-    .filtros {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 6px; padding: 16px 18px; margin-bottom: 14px;
-      display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
-    }
+    .filtros { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px 18px; margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
     .filtro-grupo { display: flex; flex-direction: column; gap: 4px; min-width: 130px; }
-    .filtro-grupo label {
-      font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase;
-      color: var(--muted); font-family: var(--fn-mono);
-    }
-    .filtro-grupo input, .filtro-grupo select {
-      border: 1px solid var(--border); border-radius: 4px; padding: 7px 10px;
-      font-family: var(--fn-body); font-size: 0.85rem; background: var(--bg);
-    }
-    .btn-filtrar {
-      background: var(--text); color: white; border: none;
-      padding: 7px 16px; border-radius: 4px; font-family: var(--fn-body);
-      font-weight: 600; font-size: 0.85rem; cursor: pointer; align-self: flex-end;
-    }
-    .btn-limpar {
-      background: transparent; color: var(--muted); border: 1px solid var(--border);
-      padding: 7px 12px; border-radius: 4px; font-family: var(--fn-body);
-      font-size: 0.85rem; cursor: pointer; align-self: flex-end;
-    }
+    .filtro-grupo label { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-family: var(--fn-mono); }
+    .filtro-grupo input, .filtro-grupo select { border: 1px solid var(--border); border-radius: 4px; padding: 7px 10px; font-family: var(--fn-body); font-size: 0.85rem; background: var(--bg); }
+    .btn-filtrar { background: var(--text); color: white; border: none; padding: 7px 16px; border-radius: 4px; font-family: var(--fn-body); font-weight: 600; font-size: 0.85rem; cursor: pointer; align-self: flex-end; }
+    .btn-limpar  { background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 7px 12px; border-radius: 4px; font-family: var(--fn-body); font-size: 0.85rem; cursor: pointer; align-self: flex-end; }
 
-    /* ── CONTADORES ── */
     .contadores { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
-    .contador-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 4px; padding: 9px 14px; display: flex; flex-direction: column; gap: 2px;
-    }
-    .contador-card .num { font-family: var(--fn-mono); font-size: 1.3rem; font-weight: 500; }
+    .contador-card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 9px 14px; display: flex; flex-direction: column; gap: 2px; }
+    .contador-card .num  { font-family: var(--fn-mono); font-size: 1.3rem; font-weight: 500; }
     .contador-card .desc { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 
-    /* ── TABELA ── */
-    .tabela-wrap {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 6px; overflow: hidden; overflow-x: auto;
-    }
+    .tabela-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
     thead { background: #f0ede6; }
-    thead th {
-      padding: 10px 13px; text-align: left; font-family: var(--fn-mono);
-      font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase;
-      color: var(--muted); font-weight: 500; white-space: nowrap; border-bottom: 1px solid var(--border);
-    }
+    thead th { padding: 10px 13px; text-align: left; font-family: var(--fn-mono); font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 500; white-space: nowrap; border-bottom: 1px solid var(--border); }
     tbody tr { border-bottom: 1px solid #f0ede6; transition: background 0.1s; }
     tbody tr:last-child { border-bottom: none; }
     tbody tr:hover { background: #faf9f6; }
@@ -205,10 +106,7 @@
     .td-mono  { font-family: var(--fn-mono); font-size: 0.78rem; }
     .td-vazio { color: #ccc; font-style: italic; font-size: 0.73rem; }
 
-    .badge {
-      display: inline-block; font-family: var(--fn-mono); font-size: 0.58rem;
-      letter-spacing: 0.1em; font-weight: 500; padding: 2px 7px; border-radius: 2px;
-    }
+    .badge { display: inline-block; font-family: var(--fn-mono); font-size: 0.58rem; letter-spacing: 0.1em; font-weight: 500; padding: 2px 7px; border-radius: 2px; }
     .badge-finalizado    { background: #e6f4ec; color: var(--green); }
     .badge-agendado      { background: #e8f0fb; color: var(--blue); }
     .badge-chamando      { background: #fef9e0; color: var(--yellow); border: 1px solid #f1c40f; }
@@ -216,80 +114,62 @@
     .badge-cancelado     { background: #f4e6e6; color: var(--red); }
     .badge-reagendado    { background: #e8f0fb; color: var(--blue); }
 
-    .vazio {
-      text-align: center; padding: 36px; color: var(--muted);
-      font-size: 0.82rem; font-family: var(--fn-mono);
-    }
+    .vazio { text-align: center; padding: 36px; color: var(--muted); font-size: 0.82rem; font-family: var(--fn-mono); }
 
-    /* ── CONTROLE / BLOQUEIOS ── */
-    .form-bloqueio {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-    }
-    @media (max-width: 580px) { .form-bloqueio { grid-template-columns: 1fr; } }
-
+    /* ── CONTROLE ── */
+    .form-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 580px) { .form-2col { grid-template-columns: 1fr; } }
     .campo { display: flex; flex-direction: column; gap: 5px; }
     .campo.full { grid-column: 1 / -1; }
-    .campo label {
-      font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase;
-      color: var(--muted); font-family: var(--fn-mono);
-    }
-    .campo input, .campo select {
-      border: 1px solid var(--border); border-radius: 4px; padding: 8px 10px;
-      font-family: var(--fn-body); font-size: 0.88rem; background: var(--bg);
-    }
+    .campo label { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-family: var(--fn-mono); }
+    .campo input, .campo select { border: 1px solid var(--border); border-radius: 4px; padding: 8px 10px; font-family: var(--fn-body); font-size: 0.88rem; background: var(--bg); }
     .campo input:focus, .campo select:focus { outline: none; border-color: var(--accent); }
 
-    .btn-bloquear {
-      background: var(--red); color: white; border: none;
-      padding: 10px 20px; border-radius: 4px; font-family: var(--fn-body);
-      font-weight: 700; font-size: 0.88rem; cursor: pointer;
-      transition: opacity 0.15s; width: 100%; margin-top: 4px;
-    }
-    .btn-bloquear:hover { opacity: 0.85; }
+    .btn-submit { color: white; border: none; padding: 10px 20px; border-radius: 4px; font-family: var(--fn-body); font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: opacity 0.15s; width: 100%; margin-top: 4px; }
+    .btn-submit:hover { opacity: 0.85; }
+    .btn-submit.verde    { background: var(--accent); }
+    .btn-submit.vermelho { background: var(--red); }
 
-    /* Lista de bloqueios */
-    .bloqueio-item {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 12px 14px; border: 1px solid var(--border); border-radius: 4px;
-      background: var(--surface); margin-bottom: 8px;
-      border-left: 3px solid var(--red);
-    }
-    .bloqueio-info { display: flex; flex-direction: column; gap: 3px; }
-    .bloqueio-periodo {
-      font-family: var(--fn-mono); font-size: 0.88rem; font-weight: 500;
-    }
-    .bloqueio-detalhe {
-      font-size: 0.72rem; color: var(--muted); font-family: var(--fn-mono);
-    }
-    .bloqueio-motivo {
-      font-size: 0.75rem; color: var(--orange); margin-top: 2px;
-    }
-    .btn-remover-bloqueio {
-      background: #f4e6e6; color: var(--red); border: none;
-      border-radius: 4px; padding: 6px 12px; cursor: pointer;
-      font-family: var(--fn-body); font-weight: 600; font-size: 0.75rem;
-      transition: opacity 0.15s; white-space: nowrap;
-    }
-    .btn-remover-bloqueio:hover { opacity: 0.75; }
-
-    .tipo-bloqueio-selector {
-      display: flex; gap: 8px; margin-bottom: 4px;
-    }
-    .tipo-btn {
-      flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 4px;
-      font-family: var(--fn-body); font-size: 0.82rem; cursor: pointer;
-      background: var(--bg); color: var(--muted); transition: all 0.15s; text-align: center;
-    }
+    /* Bloqueios */
+    .tipo-bloqueio-selector { display: flex; gap: 8px; margin-bottom: 4px; }
+    .tipo-btn { flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 4px; font-family: var(--fn-body); font-size: 0.82rem; cursor: pointer; background: var(--bg); color: var(--muted); transition: all 0.15s; text-align: center; }
     .tipo-btn.ativo { background: var(--accent); color: white; border-color: var(--accent); }
-
     #campos-faixa { display: none; }
 
-    /* Mensagem */
-    #mensagem-relatorio {
-      position: fixed; top: 16px; right: 16px; padding: 12px 18px;
-      border-radius: 4px; font-size: 0.85rem; font-weight: 600;
-      display: none; z-index: 999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
+    .bloqueio-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); margin-bottom: 8px; border-left: 3px solid var(--red); }
+    .bloqueio-info { display: flex; flex-direction: column; gap: 3px; }
+    .bloqueio-periodo { font-family: var(--fn-mono); font-size: 0.88rem; font-weight: 500; }
+    .bloqueio-detalhe { font-size: 0.72rem; color: var(--muted); font-family: var(--fn-mono); }
+    .bloqueio-motivo  { font-size: 0.75rem; color: var(--orange); margin-top: 2px; }
+    .btn-remover { background: #f4e6e6; color: var(--red); border: none; border-radius: 4px; padding: 6px 12px; cursor: pointer; font-family: var(--fn-body); font-weight: 600; font-size: 0.75rem; transition: opacity 0.15s; white-space: nowrap; }
+    .btn-remover:hover { opacity: 0.75; }
+
+    /* Usuários */
+    .usuario-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); margin-bottom: 8px; border-left: 3px solid var(--accent); gap: 12px; }
+    .usuario-item.editando { background: #f5fdf7; border-left-color: var(--green); }
+    .usuario-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .usuario-nome { font-family: var(--fn-mono); font-size: 0.92rem; font-weight: 500; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .perfil-badge { display: inline-block; font-size: 0.58rem; font-family: var(--fn-mono); letter-spacing: 0.1em; padding: 2px 7px; border-radius: 2px; font-weight: 500; }
+    .perfil-admin     { background: #f4e6e6; color: var(--red); }
+    .perfil-relatorio { background: #e8f0fb; color: var(--blue); }
+    .perfil-portaria  { background: #fef9e0; color: var(--yellow); }
+    .perfil-operacao  { background: #f0f0f0; color: var(--muted); }
+
+    .edit-form { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; align-items: center; }
+    .edit-form input, .edit-form select { border: 1px solid var(--border); border-radius: 3px; padding: 5px 8px; font-family: var(--fn-mono); font-size: 0.8rem; background: white; }
+    .edit-form input { width: 160px; }
+    .edit-form input:focus, .edit-form select:focus { outline: none; border-color: var(--green); }
+
+    .usuario-acoes { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .btn-usr { border: none; padding: 5px 11px; border-radius: 3px; font-family: var(--fn-body); font-size: 0.72rem; font-weight: 600; cursor: pointer; transition: opacity 0.15s; white-space: nowrap; }
+    .btn-usr:hover { opacity: 0.75; }
+    .btn-editar   { background: #e8f0fb; color: var(--blue); }
+    .btn-salvar   { background: #e6f4ec; color: var(--green); }
+    .btn-cancelar { background: #f0f0f0; color: var(--muted); }
+    .btn-excluir  { background: #f4e6e6; color: var(--red); }
+
+    /* Mensagem toast */
+    #mensagem-relatorio { position: fixed; top: 16px; right: 16px; padding: 12px 18px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; display: none; z-index: 999; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
     .msg-sucesso { background: #e6f4ec; color: var(--green); border: 1px solid #b8dfc4; }
     .msg-erro    { background: #f4e6e6; color: var(--red);   border: 1px solid #dbb8b8; }
   </style>
@@ -414,61 +294,73 @@
   <!-- ═══ CONTROLE ═══ -->
   <div class="painel" id="painel-controle">
 
-    <!-- CRIAR BLOQUEIO -->
+    <!-- ── USUÁRIOS: CADASTRAR ── -->
     <div class="card">
-      <div class="card-titulo">Novo bloqueio de horários</div>
-
-      <div style="margin-bottom:12px;">
-        <div style="font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-family:var(--fn-mono);margin-bottom:6px;">Tipo de bloqueio</div>
-        <div class="tipo-bloqueio-selector">
-          <div class="tipo-btn ativo" id="tipo-dia" onclick="setTipoBloqueio('dia')">🗓 Dia(s) inteiro(s)</div>
-          <div class="tipo-btn" id="tipo-faixa" onclick="setTipoBloqueio('faixa')">⏰ Faixa de horário</div>
-        </div>
-      </div>
-
-      <div class="form-bloqueio">
+      <div class="card-titulo">Cadastrar novo usuário</div>
+      <div class="form-2col">
         <div class="campo">
-          <label>Data início</label>
-          <input type="date" id="bl-inicio">
+          <label>Nome de usuário</label>
+          <input type="text" id="usr-nome" placeholder="ex: joao" autocomplete="off">
         </div>
         <div class="campo">
-          <label>Data fim</label>
-          <input type="date" id="bl-fim">
+          <label>Senha</label>
+          <input type="text" id="usr-senha" placeholder="Senha de acesso" autocomplete="off">
         </div>
-
-        <div class="campo full" id="campos-faixa">
-          <div class="form-bloqueio" style="margin:0;">
-            <div class="campo">
-              <label>Hora início</label>
-              <input type="time" id="bl-hora-inicio">
-            </div>
-            <div class="campo">
-              <label>Hora fim</label>
-              <input type="time" id="bl-hora-fim">
-            </div>
-          </div>
+        <div class="campo">
+          <label>Perfil de acesso</label>
+          <select id="usr-perfil">
+            <option value="operacao">Operação — agendamentos</option>
+            <option value="portaria">Portaria — gate + agendamentos</option>
+            <option value="relatorio">Relatório — relatórios + controle</option>
+            <option value="admin">Admin — acesso total</option>
+          </select>
         </div>
-
-        <div class="campo full">
-          <label>Motivo (opcional)</label>
-          <input type="text" id="bl-motivo" placeholder="Ex: Domingo sem expediente, Feriado, Manutenção...">
-        </div>
-
-        <div class="campo full">
-          <button class="btn-bloquear" onclick="criarBloqueio()">🚫 Criar bloqueio</button>
+        <div class="campo" style="justify-content:flex-end;">
+          <button class="btn-submit verde" onclick="criarUsuario()">+ Cadastrar usuário</button>
         </div>
       </div>
     </div>
 
-    <!-- LISTA DE BLOQUEIOS ATIVOS -->
+    <!-- ── USUÁRIOS: LISTA ── -->
+    <div class="card">
+      <div class="card-titulo">
+        Usuários cadastrados
+        <span id="badge-usuarios" style="background:#e8f0fb;color:var(--blue);font-family:var(--fn-mono);font-size:0.65rem;padding:2px 8px;border-radius:2px;">0</span>
+      </div>
+      <div id="lista-usuarios"><div class="vazio">Carregando...</div></div>
+    </div>
+
+    <!-- ── BLOQUEIOS: CRIAR ── -->
+    <div class="card">
+      <div class="card-titulo">Novo bloqueio de horários</div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-family:var(--fn-mono);margin-bottom:6px;">Tipo de bloqueio</div>
+        <div class="tipo-bloqueio-selector">
+          <div class="tipo-btn ativo" id="tipo-dia"   onclick="setTipoBloqueio('dia')">🗓 Dia(s) inteiro(s)</div>
+          <div class="tipo-btn"       id="tipo-faixa" onclick="setTipoBloqueio('faixa')">⏰ Faixa de horário</div>
+        </div>
+      </div>
+      <div class="form-2col">
+        <div class="campo"><label>Data início</label><input type="date" id="bl-inicio"></div>
+        <div class="campo"><label>Data fim</label><input type="date" id="bl-fim"></div>
+        <div class="campo full" id="campos-faixa">
+          <div class="form-2col" style="margin:0;">
+            <div class="campo"><label>Hora início</label><input type="time" id="bl-hora-inicio"></div>
+            <div class="campo"><label>Hora fim</label><input type="time" id="bl-hora-fim"></div>
+          </div>
+        </div>
+        <div class="campo full"><label>Motivo (opcional)</label><input type="text" id="bl-motivo" placeholder="Ex: Domingo sem expediente, Feriado, Manutenção..."></div>
+        <div class="campo full"><button class="btn-submit vermelho" onclick="criarBloqueio()">🚫 Criar bloqueio</button></div>
+      </div>
+    </div>
+
+    <!-- ── BLOQUEIOS: LISTA ── -->
     <div class="card">
       <div class="card-titulo">
         Bloqueios ativos
         <span id="badge-bloqueios" style="background:#f4e6e6;color:var(--red);font-family:var(--fn-mono);font-size:0.65rem;padding:2px 8px;border-radius:2px;">0</span>
       </div>
-      <div id="lista-bloqueios">
-        <div class="vazio">Nenhum bloqueio ativo.</div>
-      </div>
+      <div id="lista-bloqueios"><div class="vazio">Nenhum bloqueio ativo.</div></div>
     </div>
 
   </div>
@@ -476,11 +368,12 @@
   <script>
     const API_URL       = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
     const BLOQUEIOS_URL = 'https://agenda-backend-production-5b72.up.railway.app/bloqueios';
+    const USUARIOS_URL  = 'https://agenda-backend-production-5b72.up.railway.app/usuarios';
 
-    const PRODUTOS      = ['CPIII','MAUA','E32','M25KG','CPV'];
-    const DIAS_SEMANA   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    const PRODUTOS        = ['CPIII','MAUA','E32','M25KG','CPV'];
+    const DIAS_SEMANA     = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
     const TRANSPORTADORAS = ['Transagil','Tora','Targets'];
-    const PRODUTOS_MAP  = [
+    const PRODUTOS_MAP    = [
       { match: ["CPIII-32-RS-SC-V"],   label: "CPIII"  },
       { match: ["CPII-F-32-SC-V-MA"],  label: "MAUA"   },
       { match: ["CPII-E-32-SC-V"],     label: "E32"    },
@@ -496,9 +389,7 @@
     // ── HELPERS ──
     function simplificarProduto(produto) {
       const p = (produto || "").toUpperCase();
-      for (const e of PRODUTOS_MAP) {
-        if (e.match.some(m => p.includes(m))) return e.label;
-      }
+      for (const e of PRODUTOS_MAP) { if (e.match.some(m => p.includes(m))) return e.label; }
       return produto || "—";
     }
     function formatarData(data) {
@@ -529,28 +420,17 @@
     }
     function parseSacos(val) {
       if (!val) return 0;
-      try {
-        const arr = JSON.parse(val);
-        if (Array.isArray(arr))
-          return arr.reduce((s,p)=>s+(parseInt((p.quantidade+"").replace(/[^\d]/g,""))||0),0);
-      } catch {}
+      try { const arr=JSON.parse(val); if(Array.isArray(arr)) return arr.reduce((s,p)=>s+(parseInt((p.quantidade+"").replace(/[^\d]/g,""))||0),0); } catch {}
       return parseInt((val+"").replace(/[^\d]/g,""))||0;
     }
     function parseSacosAgendamento(a) {
-      try {
-        const arr = JSON.parse(a.produto||"");
-        if (Array.isArray(arr))
-          return arr.reduce((s,p)=>s+(parseInt((p.quantidade+"").replace(/[^\d]/g,""))||0),0);
-      } catch {}
+      try { const arr=JSON.parse(a.produto||""); if(Array.isArray(arr)) return arr.reduce((s,p)=>s+(parseInt((p.quantidade+"").replace(/[^\d]/g,""))||0),0); } catch {}
       return parseSacos(a.quantidade);
     }
     function getIntervalo(periodo) {
       const hoje=new Date(), hojeStr=hoje.toISOString().split("T")[0];
       if (periodo==='hoje') return {inicio:hojeStr,fim:hojeStr};
-      if (periodo==='semana') {
-        const ini=new Date(hoje); ini.setDate(hoje.getDate()-hoje.getDay());
-        return {inicio:ini.toISOString().split("T")[0],fim:hojeStr};
-      }
+      if (periodo==='semana') { const ini=new Date(hoje); ini.setDate(hoje.getDate()-hoje.getDay()); return {inicio:ini.toISOString().split("T")[0],fim:hojeStr}; }
       const ini=new Date(hoje.getFullYear(),hoje.getMonth(),1);
       return {inicio:ini.toISOString().split("T")[0],fim:hojeStr};
     }
@@ -559,11 +439,7 @@
       return dados.filter(a=>a.data>=inicio&&a.data<=fim);
     }
     function badgeStatus(status) {
-      const map={
-        finalizado:["badge-finalizado","FINALIZADO"],agendado:["badge-agendado","AGENDADO"],
-        chamando:["badge-chamando","CHAMANDO"],descarregando:["badge-descarregando","DESCARREGANDO"],
-        cancelado:["badge-cancelado","CANCELADO"],reagendado_fila:["badge-reagendado","REAGENDADO"],
-      };
+      const map={finalizado:["badge-finalizado","FINALIZADO"],agendado:["badge-agendado","AGENDADO"],chamando:["badge-chamando","CHAMANDO"],descarregando:["badge-descarregando","DESCARREGANDO"],cancelado:["badge-cancelado","CANCELADO"],reagendado_fila:["badge-reagendado","REAGENDADO"]};
       const [cls,label]=map[status]||["badge-agendado",(status||"").toUpperCase()];
       return `<span class="badge ${cls}">${label}</span>`;
     }
@@ -580,10 +456,12 @@
     }
     function mostrarMsg(texto, tipo) {
       const el=document.getElementById("mensagem-relatorio");
-      el.textContent=texto;
-      el.className=tipo==="sucesso"?"msg-sucesso":"msg-erro";
-      el.style.display="block";
-      setTimeout(()=>{el.style.display="none";},3000);
+      el.textContent=texto; el.className=tipo==="sucesso"?"msg-sucesso":"msg-erro";
+      el.style.display="block"; setTimeout(()=>{el.style.display="none";},3000);
+    }
+    function perfilBadge(perfil) {
+      const map={admin:`<span class="perfil-badge perfil-admin">ADMIN</span>`,relatorio:`<span class="perfil-badge perfil-relatorio">RELATÓRIO</span>`,portaria:`<span class="perfil-badge perfil-portaria">PORTARIA</span>`,operacao:`<span class="perfil-badge perfil-operacao">OPERAÇÃO</span>`};
+      return map[perfil]||`<span class="perfil-badge perfil-operacao">${(perfil||"").toUpperCase()}</span>`;
     }
 
     // ── ABAS ──
@@ -592,7 +470,7 @@
       document.querySelectorAll(".aba").forEach((b,i)=>b.classList.toggle("ativa",abas[i]===aba));
       abas.forEach(id=>document.getElementById(`painel-${id}`).classList.toggle("ativo",id===aba));
       document.getElementById("btn-exportar").style.display=aba==='relatorio'?'block':'none';
-      if (aba==='controle') renderizarBloqueios();
+      if (aba==='controle') { renderizarUsuarios(); renderizarBloqueios(); }
     }
 
     // ── PERÍODO ──
@@ -606,52 +484,28 @@
     function renderizarDashboard() {
       const dados=filtrarPeriodo(todosAgendamentos);
       const finalizados=dados.filter(a=>a.status==='finalizado');
-
       const tempos=finalizados.map(a=>calcularMinutos(a.hora_entrada,a.hora_saida)).filter(t=>t!==null&&t>0&&t<480);
       document.getElementById("kpi-tempo-medio").textContent=formatarTempo(mediaArr(tempos));
-
       const ativos=todosAgendamentos.filter(a=>['chamando','descarregando'].includes(a.status));
       const acima=ativos.filter(a=>{const m=minutosDesde(a.hora_entrada||a.hora);return m!==null&&m>45;});
       document.getElementById("kpi-acima").textContent=acima.length;
       document.getElementById("kpi-acima-card").className=`kpi ${acima.length>0?'alerta':'ok'}`;
-
-      // Apenas veículos que realmente chegaram
-      document.getElementById("kpi-total").textContent=
-        dados.filter(a=>a.hora_entrada||['chamando','descarregando','finalizado','cancelado','reagendado_fila'].includes(a.status)).length;
+      document.getElementById("kpi-total").textContent=dados.filter(a=>a.hora_entrada||['chamando','descarregando','finalizado','cancelado','reagendado_fila'].includes(a.status)).length;
       document.getElementById("kpi-finalizados").textContent=finalizados.length;
-
       const comEntrada=dados.filter(a=>a.hora_entrada&&a.hora);
       const antecipados=comEntrada.filter(a=>a.hora_entrada<=a.hora);
       const pct=comEntrada.length?Math.round(antecipados.length/comEntrada.length*100):0;
       document.getElementById("kpi-pontualidade").textContent=`${pct}%`;
       document.getElementById("kpi-ausentes").textContent=dados.filter(a=>a.status==='reagendado_fila').length;
-
-      const porTransp={};
-      TRANSPORTADORAS.forEach(t=>{porTransp[t]=[];});
-      finalizados.forEach(a=>{
-        const t=(a.transportadora||"").trim();
-        const m=calcularMinutos(a.hora_entrada,a.hora_saida);
-        if(m&&m>0&&m<480){if(porTransp[t])porTransp[t].push(m);else porTransp[t]=[m];}
-      });
+      const porTransp={};TRANSPORTADORAS.forEach(t=>{porTransp[t]=[];});
+      finalizados.forEach(a=>{const t=(a.transportadora||"").trim(),m=calcularMinutos(a.hora_entrada,a.hora_saida);if(m&&m>0&&m<480){if(porTransp[t])porTransp[t].push(m);else porTransp[t]=[m];}});
       renderBarras("barras-transportadora",Object.entries(porTransp).map(([label,arr])=>({label,val:mediaArr(arr)||0,sub:arr.length?`${formatarTempo(mediaArr(arr))} (${arr.length}x)`:''})),"");
-
-      const porProduto={};
-      PRODUTOS.forEach(p=>{porProduto[p]=[];});
-      finalizados.forEach(a=>{
-        const prod=simplificarProduto(a.produto);
-        const m=calcularMinutos(a.hora_entrada,a.hora_saida);
-        if(m&&m>0&&m<480){if(porProduto[prod])porProduto[prod].push(m);else porProduto[prod]=[m];}
-      });
+      const porProduto={};PRODUTOS.forEach(p=>{porProduto[p]=[];});
+      finalizados.forEach(a=>{const prod=simplificarProduto(a.produto),m=calcularMinutos(a.hora_entrada,a.hora_saida);if(m&&m>0&&m<480){if(porProduto[prod])porProduto[prod].push(m);else porProduto[prod]=[m];}});
       renderBarras("barras-produto",Object.entries(porProduto).map(([label,arr])=>({label,val:mediaArr(arr)||0,sub:arr.length?`${formatarTempo(mediaArr(arr))} (${arr.length}x)`:''})),"laranja");
-
       const faixas=[{label:'00h–06h',min:0,max:6},{label:'06h–10h',min:6,max:10},{label:'10h–14h',min:10,max:14},{label:'14h–18h',min:14,max:18},{label:'18h–22h',min:18,max:22},{label:'22h–00h',min:22,max:24}];
-      renderBarras("barras-horario",faixas.map(f=>{
-        const qtd=dados.filter(a=>{if(!a.hora)return false;const h=parseInt(a.hora.split(":")[0]);return h>=f.min&&h<f.max;}).length;
-        return{label:f.label,val:qtd,sub:`${qtd} veíc.`};
-      }),"azul");
-
-      const porDia=Array(7).fill(0);
-      dados.forEach(a=>{if(a.data){const d=new Date(a.data+'T12:00:00').getDay();porDia[d]++;}});
+      renderBarras("barras-horario",faixas.map(f=>{const qtd=dados.filter(a=>{if(!a.hora)return false;const h=parseInt(a.hora.split(":")[0]);return h>=f.min&&h<f.max;}).length;return{label:f.label,val:qtd,sub:`${qtd} veíc.`};}),"azul");
+      const porDia=Array(7).fill(0);dados.forEach(a=>{if(a.data){const d=new Date(a.data+'T12:00:00').getDay();porDia[d]++;}});
       renderBarras("barras-diasemana",DIAS_SEMANA.map((label,i)=>({label,val:porDia[i],sub:`${porDia[i]} veíc.`})),"verde");
     }
 
@@ -660,11 +514,9 @@
       const data=document.getElementById("conc-data").value;
       const turno=document.getElementById("conc-turno").value;
       if(!data){alert("Selecione uma data.");return;}
-
       const dataObj=new Date(data);
       const proxDia=new Date(dataObj);proxDia.setDate(dataObj.getDate()+1);
       const proxDiaStr=proxDia.toISOString().split("T")[0];
-
       const doTurno=todosAgendamentos.filter(a=>{
         if(!a.hora) return false;
         const h=parseInt(a.hora.split(":")[0]);
@@ -673,58 +525,26 @@
         if(a.data===proxDiaStr) return h<6;
         return false;
       }).filter(a=>a.status==='finalizado');
-
       const grid=document.getElementById("conciliacao-grid");
-
       grid.innerHTML=PRODUTOS.map(produto=>{
         const entradas=doTurno.filter(a=>simplificarProduto(a.produto)===produto&&!["CIF","FOB"].includes((a.tipo_operacao||"").toUpperCase()));
         const saidas=doTurno.filter(a=>simplificarProduto(a.produto)===produto&&["CIF","FOB"].includes((a.tipo_operacao||"").toUpperCase()));
         const totalEnt=entradas.reduce((s,a)=>s+parseSacosAgendamento(a),0);
         const totalSai=saidas.reduce((s,a)=>s+parseSacosAgendamento(a),0);
-
-        // Saldo anterior salvo
-        const chaveAnterior=`saldo_${produto}_${data}_${turno}`;
-        const saldoAnterior=localStorage.getItem(chaveAnterior);
-
+        const saldoAnterior=localStorage.getItem(`saldo_${produto}_${data}_${turno}`);
         return `<div class="produto-card">
           <div class="produto-card-titulo">${produto}</div>
-          <div class="linha-conc">
-            <span class="desc">Inventário abertura (sc)</span>
-            <input class="input-inv" type="number" id="inv-ab-${produto}" placeholder="0"
-              value="${saldoAnterior||''}"
-              oninput="recalcular('${produto}',${totalEnt},${totalSai},'${data}','${turno}')">
-          </div>
-          <div class="linha-conc">
-            <span class="desc">+ Entradas (${entradas.length} veíc.)</span>
-            <span class="val positivo">+${totalEnt} sc</span>
-          </div>
-          <div class="linha-conc">
-            <span class="desc">− Saídas (${saidas.length} veíc.)</span>
-            <span class="val negativo">−${totalSai} sc</span>
-          </div>
-          <div class="linha-conc total">
-            <span>Saldo calculado</span>
-            <span class="val" id="saldo-${produto}">—</span>
-          </div>
-          <div class="linha-conc">
-            <span class="desc">Inventário fechamento (sc)</span>
-            <input class="input-inv" type="number" id="inv-fe-${produto}" placeholder="0"
-              oninput="recalcular('${produto}',${totalEnt},${totalSai},'${data}','${turno}')">
-          </div>
-          <div class="linha-conc total">
-            <span>Divergência</span>
-            <span id="div-${produto}" class="val">—</span>
-          </div>
+          <div class="linha-conc"><span class="desc">Inventário abertura (sc)</span><input class="input-inv" type="number" id="inv-ab-${produto}" placeholder="0" value="${saldoAnterior||''}" oninput="recalcular('${produto}',${totalEnt},${totalSai},'${data}','${turno}')"></div>
+          <div class="linha-conc"><span class="desc">+ Entradas (${entradas.length} veíc.)</span><span class="val positivo">+${totalEnt} sc</span></div>
+          <div class="linha-conc"><span class="desc">− Saídas (${saidas.length} veíc.)</span><span class="val negativo">−${totalSai} sc</span></div>
+          <div class="linha-conc total"><span>Saldo calculado</span><span class="val" id="saldo-${produto}">—</span></div>
+          <div class="linha-conc"><span class="desc">Inventário fechamento (sc)</span><input class="input-inv" type="number" id="inv-fe-${produto}" placeholder="0" oninput="recalcular('${produto}',${totalEnt},${totalSai},'${data}','${turno}')"></div>
+          <div class="linha-conc total"><span>Divergência</span><span id="div-${produto}" class="val">—</span></div>
         </div>`;
       }).join("");
-
-      // Recalcula automaticamente se houver valor de abertura salvo
       PRODUTOS.forEach(produto=>{
         const el=document.getElementById(`inv-ab-${produto}`);
-        if(el&&el.value) {
-          const totalEnt=parseInt(document.querySelector(`#conciliacao-grid .produto-card:nth-child(${PRODUTOS.indexOf(produto)+1}) .val.positivo`)?.textContent||0);
-          el.dispatchEvent(new Event('input'));
-        }
+        if(el&&el.value) el.dispatchEvent(new Event('input'));
       });
     }
 
@@ -732,24 +552,16 @@
       const abertura=parseInt(document.getElementById(`inv-ab-${produto}`)?.value)||0;
       const fechamento=parseInt(document.getElementById(`inv-fe-${produto}`)?.value)||0;
       const saldo=abertura+entradas-saidas;
-
       document.getElementById(`saldo-${produto}`).textContent=`${saldo} sc`;
-
       const divEl=document.getElementById(`div-${produto}`);
       if(fechamento>0){
         const diff=fechamento-saldo;
         divEl.textContent=diff===0?"✓ OK":`${diff>0?'+':''}${diff} sc`;
         divEl.className=`val ${diff===0?'div-ok':'div-alerta'}`;
-
-        // Salva fechamento como abertura do próximo turno
         const proximoTurno=turno==='manha'?'tarde':'manha';
-        const proximaData=turno==='manha'?data:(()=>{
-          const d=new Date(data);d.setDate(d.getDate()+1);return d.toISOString().split("T")[0];
-        })();
-        localStorage.setItem(`saldo_${produto}_${proximaData}_${proximoTurno}`, fechamento);
-      } else {
-        divEl.textContent="—";divEl.className="val";
-      }
+        const proximaData=turno==='manha'?data:(()=>{const d=new Date(data);d.setDate(d.getDate()+1);return d.toISOString().split("T")[0];})();
+        localStorage.setItem(`saldo_${produto}_${proximaData}_${proximoTurno}`,fechamento);
+      } else { divEl.textContent="—"; divEl.className="val"; }
     }
 
     // ── RELATÓRIO ──
@@ -759,7 +571,6 @@
       const status=document.getElementById("filtro-status").value;
       const usuario=document.getElementById("filtro-usuario").value;
       const placa=document.getElementById("filtro-placa").value.trim().toUpperCase();
-
       dadosFiltrados=todosAgendamentos.filter(a=>{
         if(inicio&&a.data<inicio) return false;
         if(fim&&a.data>fim) return false;
@@ -768,18 +579,14 @@
         if(placa&&!(a.placa||"").toUpperCase().includes(placa)) return false;
         return true;
       }).sort((a,b)=>new Date(`${a.data} ${a.hora}`)-new Date(`${b.data} ${b.hora}`));
-
-      renderizarTabela();
-      atualizarContadores();
+      renderizarTabela(); atualizarContadores();
     }
-
     function limparFiltros() {
       ["filtro-inicio","filtro-fim","filtro-placa"].forEach(id=>document.getElementById(id).value="");
       document.getElementById("filtro-status").value="";
       document.getElementById("filtro-usuario").value="";
       aplicarFiltros();
     }
-
     function renderizarTabela() {
       const tbody=document.getElementById("tabela-body");
       const btnExp=document.getElementById("btn-exportar");
@@ -805,130 +612,168 @@
         </tr>`;
       }).join("");
     }
-
     function atualizarContadores() {
       document.getElementById("cnt-total").textContent=dadosFiltrados.length;
       document.getElementById("cnt-finalizado").textContent=dadosFiltrados.filter(a=>a.status==="finalizado").length;
       document.getElementById("cnt-cancelado").textContent=dadosFiltrados.filter(a=>a.status==="cancelado").length;
       document.getElementById("cnt-pendente").textContent=dadosFiltrados.filter(a=>["agendado","chamando","descarregando"].includes(a.status)).length;
     }
-
     function exportarExcel() {
       const linhas=dadosFiltrados.map(item=>({
-        "Data":formatarData(item.data),"Hora Ag.":item.hora||"",
-        "H. Entrada":item.hora_entrada||"","H. Saída":item.hora_saida||"",
-        "Permanência":formatarTempo(calcularMinutos(item.hora_entrada,item.hora_saida)),
-        "Placa":item.placa||"","Produto":simplificarProduto(item.produto),
-        "Status":(item.status||"").toUpperCase(),
-        "Tipo Operação":item.tipo_operacao?item.tipo_operacao.toUpperCase():"",
-        "Qtd (sacos)":item.quantidade||"","Nota Fiscal":item.nota_fiscal||"",
-        "Transportadora":item.transportadora||"","Usuário":item.alterado_por||"",
+        "Data":formatarData(item.data),"Hora Ag.":item.hora||"","H. Entrada":item.hora_entrada||"","H. Saída":item.hora_saida||"",
+        "Permanência":formatarTempo(calcularMinutos(item.hora_entrada,item.hora_saida)),"Placa":item.placa||"",
+        "Produto":simplificarProduto(item.produto),"Status":(item.status||"").toUpperCase(),
+        "Tipo Operação":item.tipo_operacao?item.tipo_operacao.toUpperCase():"","Qtd (sacos)":item.quantidade||"",
+        "Nota Fiscal":item.nota_fiscal||"","Transportadora":item.transportadora||"","Usuário":item.alterado_por||"",
       }));
       const ws=XLSX.utils.json_to_sheet(linhas);
       ws["!cols"]=[{wch:12},{wch:10},{wch:10},{wch:10},{wch:12},{wch:12},{wch:10},{wch:14},{wch:14},{wch:10},{wch:14},{wch:18},{wch:12}];
-      const wb=XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb,ws,"Agendamentos");
+      const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Agendamentos");
       XLSX.writeFile(wb,`relatorio-cd-itaborai-${new Date().toISOString().split("T")[0]}.xlsx`);
     }
 
-    // ── CONTROLE — BLOQUEIOS ──
+    // ── USUÁRIOS ──
+    async function renderizarUsuarios() {
+      try {
+        const res = await fetch(USUARIOS_URL);
+        const usuarios = await res.json();
+        const el = document.getElementById("lista-usuarios");
+        document.getElementById("badge-usuarios").textContent = usuarios.length;
+        if (!usuarios.length) { el.innerHTML=`<div class="vazio">Nenhum usuário cadastrado.</div>`; return; }
+        el.innerHTML = usuarios.map(u => `
+          <div class="usuario-item" id="usr-item-${u.id}">
+            <div class="usuario-info">
+              <div class="usuario-nome">${u.nome} ${perfilBadge(u.perfil)}</div>
+              <div class="edit-form" id="edit-form-${u.id}" style="display:none;">
+                <input type="text" id="edit-senha-${u.id}" placeholder="Nova senha (deixe vazio para manter)">
+                <select id="edit-perfil-${u.id}">
+                  <option value="operacao"  ${u.perfil==='operacao' ?'selected':''}>Operação</option>
+                  <option value="portaria"  ${u.perfil==='portaria' ?'selected':''}>Portaria</option>
+                  <option value="relatorio" ${u.perfil==='relatorio'?'selected':''}>Relatório</option>
+                  <option value="admin"     ${u.perfil==='admin'    ?'selected':''}>Admin</option>
+                </select>
+                <button class="btn-usr btn-salvar"   onclick="salvarUsuario(${u.id})">Salvar</button>
+                <button class="btn-usr btn-cancelar" onclick="cancelarEdicao(${u.id})">Cancelar</button>
+              </div>
+            </div>
+            <div class="usuario-acoes" id="acoes-${u.id}">
+              <button class="btn-usr btn-editar"  onclick="editarUsuario(${u.id})">Editar</button>
+              <button class="btn-usr btn-excluir" onclick="excluirUsuario(${u.id},'${u.nome}')">Excluir</button>
+            </div>
+          </div>`).join("");
+      } catch(e) { console.error("Erro ao carregar usuários", e); }
+    }
+
+    async function criarUsuario() {
+      const nome   = document.getElementById("usr-nome").value.trim().toLowerCase();
+      const senha  = document.getElementById("usr-senha").value.trim();
+      const perfil = document.getElementById("usr-perfil").value;
+      if (!nome || !senha) { mostrarMsg("Informe nome e senha.", "erro"); return; }
+      try {
+        const res = await fetch(USUARIOS_URL, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({nome,senha,perfil}) });
+        if (res.ok) {
+          mostrarMsg(`Usuário "${nome}" cadastrado!`, "sucesso");
+          document.getElementById("usr-nome").value = "";
+          document.getElementById("usr-senha").value = "";
+          renderizarUsuarios();
+        } else {
+          const err = await res.json();
+          mostrarMsg(err.erro || "Erro ao cadastrar.", "erro");
+        }
+      } catch(e) { mostrarMsg("Erro de conexão.", "erro"); }
+    }
+
+    function editarUsuario(id) {
+      document.getElementById(`edit-form-${id}`).style.display = "flex";
+      document.getElementById(`acoes-${id}`).style.display = "none";
+      document.getElementById(`usr-item-${id}`).classList.add("editando");
+    }
+    function cancelarEdicao(id) {
+      document.getElementById(`edit-form-${id}`).style.display = "none";
+      document.getElementById(`acoes-${id}`).style.display = "flex";
+      document.getElementById(`usr-item-${id}`).classList.remove("editando");
+    }
+    async function salvarUsuario(id) {
+      const senha  = document.getElementById(`edit-senha-${id}`).value.trim();
+      const perfil = document.getElementById(`edit-perfil-${id}`).value;
+      const payload = {};
+      if (senha)  payload.senha  = senha;
+      if (perfil) payload.perfil = perfil;
+      if (!Object.keys(payload).length) { mostrarMsg("Nada para salvar.", "erro"); return; }
+      try {
+        const res = await fetch(`${USUARIOS_URL}/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
+        if (res.ok) { mostrarMsg("Usuário atualizado!", "sucesso"); renderizarUsuarios(); }
+        else mostrarMsg("Erro ao atualizar.", "erro");
+      } catch(e) { mostrarMsg("Erro de conexão.", "erro"); }
+    }
+    async function excluirUsuario(id, nome) {
+      if (!confirm(`Excluir o usuário "${nome}"? Esta ação não pode ser desfeita.`)) return;
+      try {
+        const res = await fetch(`${USUARIOS_URL}/${id}`, { method: "DELETE" });
+        if (res.ok) { mostrarMsg(`Usuário "${nome}" excluído.`, "sucesso"); renderizarUsuarios(); }
+        else mostrarMsg("Erro ao excluir.", "erro");
+      } catch(e) { mostrarMsg("Erro de conexão.", "erro"); }
+    }
+
+    // ── BLOQUEIOS ──
     function setTipoBloqueio(tipo) {
       tipoBloqueio=tipo;
       document.getElementById("tipo-dia").classList.toggle("ativo",tipo==='dia');
       document.getElementById("tipo-faixa").classList.toggle("ativo",tipo==='faixa');
       document.getElementById("campos-faixa").style.display=tipo==='faixa'?'block':'none';
     }
-
     async function criarBloqueio() {
       const inicio=document.getElementById("bl-inicio").value;
       const fim=document.getElementById("bl-fim").value;
       const motivo=document.getElementById("bl-motivo").value.trim();
-
       if(!inicio||!fim){mostrarMsg("Informe data início e fim.","erro");return;}
       if(inicio>fim){mostrarMsg("Data início não pode ser maior que data fim.","erro");return;}
-
-      const payload={
-        data_inicio: inicio,
-        data_fim:    fim,
-        motivo:      motivo||null,
-        criado_por:  null
-      };
-
+      const payload={data_inicio:inicio,data_fim:fim,motivo:motivo||null};
       if(tipoBloqueio==='faixa'){
         const hi=document.getElementById("bl-hora-inicio").value;
         const hf=document.getElementById("bl-hora-fim").value;
         if(!hi||!hf){mostrarMsg("Informe hora início e hora fim.","erro");return;}
         if(hi>=hf){mostrarMsg("Hora início deve ser menor que hora fim.","erro");return;}
-        payload.hora_inicio=hi;
-        payload.hora_fim=hf;
+        payload.hora_inicio=hi; payload.hora_fim=hf;
       }
-
       try{
-        const res=await fetch(BLOQUEIOS_URL,{
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify(payload)
-        });
+        const res=await fetch(BLOQUEIOS_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
         if(res.ok){
           mostrarMsg("Bloqueio criado com sucesso!","sucesso");
-          // limpa campos
-          ["bl-inicio","bl-fim","bl-motivo","bl-hora-inicio","bl-hora-fim"]
-            .forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+          ["bl-inicio","bl-fim","bl-motivo","bl-hora-inicio","bl-hora-fim"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
           renderizarBloqueios();
-        } else {
-          mostrarMsg("Erro ao criar bloqueio.","erro");
-        }
-      } catch(e){
-        mostrarMsg("Erro de conexão.","erro");
-      }
+        } else mostrarMsg("Erro ao criar bloqueio.","erro");
+      }catch(e){mostrarMsg("Erro de conexão.","erro");}
     }
-
     async function renderizarBloqueios() {
       try{
         const res=await fetch(BLOQUEIOS_URL);
         const bloqueios=await res.json();
         const el=document.getElementById("lista-bloqueios");
-        const badge=document.getElementById("badge-bloqueios");
-        badge.textContent=bloqueios.length;
-
-        if(!bloqueios.length){
-          el.innerHTML=`<div class="vazio">Nenhum bloqueio ativo.</div>`;
-          return;
-        }
-
+        document.getElementById("badge-bloqueios").textContent=bloqueios.length;
+        if(!bloqueios.length){el.innerHTML=`<div class="vazio">Nenhum bloqueio ativo.</div>`;return;}
         el.innerHTML=bloqueios.map(b=>{
           const mesmaData=b.data_inicio===b.data_fim;
-          const periodo=mesmaData
-            ?formatarData(b.data_inicio)
-            :`${formatarData(b.data_inicio)} → ${formatarData(b.data_fim)}`;
-
-          const faixa=b.hora_inicio&&b.hora_fim
-            ?`Faixa: ${b.hora_inicio} → ${b.hora_fim}`
-            :`Dia inteiro`;
-
+          const periodo=mesmaData?formatarData(b.data_inicio):`${formatarData(b.data_inicio)} → ${formatarData(b.data_fim)}`;
+          const faixa=b.hora_inicio&&b.hora_fim?`Faixa: ${b.hora_inicio} → ${b.hora_fim}`:`Dia inteiro`;
           return `<div class="bloqueio-item">
             <div class="bloqueio-info">
               <div class="bloqueio-periodo">🚫 ${periodo}</div>
               <div class="bloqueio-detalhe">${faixa}</div>
               ${b.motivo?`<div class="bloqueio-motivo">${b.motivo}</div>`:''}
             </div>
-            <button class="btn-remover-bloqueio" onclick="removerBloqueio(${b.id})">Remover</button>
+            <button class="btn-remover" onclick="removerBloqueio(${b.id})">Remover</button>
           </div>`;
         }).join("");
-      } catch(e){
-        console.error("Erro ao carregar bloqueios",e);
-      }
+      }catch(e){console.error("Erro ao carregar bloqueios",e);}
     }
-
     async function removerBloqueio(id) {
       if(!confirm("Remover este bloqueio?")) return;
       try{
         const res=await fetch(`${BLOQUEIOS_URL}/${id}`,{method:"DELETE"});
         if(res.ok){mostrarMsg("Bloqueio removido.","sucesso");renderizarBloqueios();}
         else mostrarMsg("Erro ao remover.","erro");
-      } catch(e){
-        mostrarMsg("Erro de conexão.","erro");
-      }
+      }catch(e){mostrarMsg("Erro de conexão.","erro");}
     }
 
     // ── INIT ──
@@ -936,14 +781,11 @@
       try{
         const res=await fetch(API_URL);
         todosAgendamentos=await res.json();
-
         const usuarios=[...new Set(todosAgendamentos.map(a=>a.alterado_por).filter(Boolean))].sort();
         const sel=document.getElementById("filtro-usuario");
         usuarios.forEach(u=>{const o=document.createElement("option");o.value=u;o.textContent=u;sel.appendChild(o);});
-
         document.getElementById("conc-data").value=new Date().toISOString().split("T")[0];
         dadosFiltrados=[...todosAgendamentos];
-
         renderizarDashboard();
         aplicarFiltros();
       }catch(e){console.error("Erro ao carregar:",e);}
