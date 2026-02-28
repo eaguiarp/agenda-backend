@@ -218,7 +218,6 @@ app.post('/anomalia',
       const { tipo, descricao } = req.body
       const fotos = req.files || []
 
-      // 👇 AQUI entra o sendMail
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: 'emaildestino@empresa.com',
@@ -240,6 +239,13 @@ Usuário: ${req.auth.user}
         }))
       })
 
+      // ✅ Limpa as fotos depois de enviar
+      fotos.forEach(foto => {
+        fs.unlink(foto.path, err => {
+          if (err) console.error("Erro ao deletar arquivo:", err)
+        })
+      })
+
       res.json({ success: true })
 
     } catch (err) {
@@ -247,18 +253,6 @@ Usuário: ${req.auth.user}
       res.status(500).json({ error: 'Erro ao registrar anomalia' })
     }
 })
-
-await transporter.sendMail({...})
-
-// limpa as fotos
-fotos.forEach(foto => {
-  fs.unlink(foto.path, err => {
-    if (err) console.error("Erro ao deletar arquivo:", err)
-  })
-})
-
-
-
 // ========================================================
 // 🚏 ROTAS — AGENDAMENTOS
 // ========================================================
