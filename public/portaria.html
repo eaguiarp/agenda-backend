@@ -843,34 +843,67 @@
       }
     }
 
+    // ── ANOMALIA: COMPRESSÃO VIA CANVAS ──────
+    // Foto de celular (3–8MB) vira ~150–400KB antes de subir ao servidor
+    const fotosComprimidas = [null, null, null];
+
+    function comprimirImagem(file, maxPx, qualidade) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            let w = img.width, h = img.height;
+            if (w > maxPx || h > maxPx) {
+              if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
+              else       { w = Math.round(w * maxPx / h); h = maxPx; }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            canvas.toBlob((blob) => resolve(blob), 'image/jpeg', qualidade);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
     // ── ANOMALIA: PREVIEW FOTO ─────────────────
-    function previewFoto(idx, input) {
+    async function previewFoto(idx, input) {
       const slot = document.getElementById(`slot-${idx}`);
       if (!input.files || !input.files[0]) return;
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        // Remove ícones, mantém input
-        slot.querySelector('.icone-camera')?.remove();
-        slot.querySelector('.label-camera')?.remove();
+      // Comprime: máx 1200px, qualidade 75% → resultado típico 150–400KB
+      const blob = await comprimirImagem(input.files[0], 1200, 0.75);
+      fotosComprimidas[idx] = blob;
 
-        // Remove preview anterior se existir
-        slot.querySelector('img')?.remove();
-        slot.querySelector('.btn-remover-foto')?.remove();
+      const kb = Math.round(blob.size / 1024);
 
-        const img = document.createElement('img');
-        img.src = e.target.result;
-        slot.insertBefore(img, slot.querySelector('input'));
+      slot.querySelector('.icone-camera')?.remove();
+      slot.querySelector('.label-camera')?.remove();
+      slot.querySelector('img')?.remove();
+      slot.querySelector('.btn-remover-foto')?.remove();
+      slot.querySelector('.size-badge')?.remove();
 
-        const btn = document.createElement('button');
-        btn.className = 'btn-remover-foto';
-        btn.textContent = '✕';
-        btn.onclick = (ev) => { ev.preventDefault(); removerFoto(idx); };
-        slot.appendChild(btn);
+      const imgEl = document.createElement('img');
+      imgEl.src = URL.createObjectURL(blob);
+      slot.insertBefore(imgEl, slot.querySelector('input'));
 
-        slot.classList.add('tem-foto');
-      };
-      reader.readAsDataURL(input.files[0]);
+      // Badge de tamanho no canto inferior
+      const badge = document.createElement('span');
+      badge.className = 'size-badge';
+      badge.style.cssText = 'position:absolute;bottom:4px;left:0;right:0;text-align:center;background:rgba(0,0,0,0.5);color:white;font-size:0.58rem;font-family:var(--fn-mono);padding:2px 4px;pointer-events:none;';
+      badge.textContent = `${kb}KB`;
+      slot.appendChild(badge);
+
+      const btn = document.createElement('button');
+      btn.className = 'btn-remover-foto';
+      btn.textContent = '✕';
+      btn.onclick = (ev) => { ev.preventDefault(); removerFoto(idx); };
+      slot.appendChild(btn);
+
+      slot.classList.add('tem-foto');
     }
 
     function removerFoto(idx) {
@@ -879,10 +912,11 @@
 
       slot.querySelector('img')?.remove();
       slot.querySelector('.btn-remover-foto')?.remove();
+      slot.querySelector('.size-badge')?.remove();
       slot.classList.remove('tem-foto');
       input.value = '';
+      fotosComprimidas[idx] = null;
 
-      // Reinsere ícones
       if (!slot.querySelector('.icone-camera')) {
         const ic = document.createElement('span');
         ic.className = 'icone-camera'; ic.textContent = '📷';
@@ -913,16 +947,15 @@
         return;
       }
 
-      // Monta FormData com texto + fotos
+      // Monta FormData com texto + blobs já comprimidos
       const formData = new FormData();
       formData.append("tipo",      tipo);
       formData.append("descricao", descricao);
 
       let totalFotos = 0;
       for (let i = 0; i < 3; i++) {
-        const input = document.getElementById(`foto-${i}`);
-        if (input.files && input.files[0]) {
-          formData.append("fotos", input.files[0]);
+        if (fotosComprimidas[i]) {
+          formData.append("fotos", fotosComprimidas[i], `foto-${i + 1}.jpg`);
           totalFotos++;
         }
       }
@@ -944,7 +977,7 @@
           setTimeout(() => {
             document.getElementById("anom-tipo").value      = "";
             document.getElementById("anom-descricao").value = "";
-            for (let i = 0; i < 3; i++) removerFoto(i);
+            for (let i = 0; i < 3; i++) removerFoto(i); // removerFoto já zera fotosComprimidas[i]
             statusEl.className = "anomalia-status";
             btnEnviar.disabled = false;
           }, 3000);
