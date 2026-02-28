@@ -225,7 +225,7 @@ app.post('/anomalia',
 
       const { error: resendError } = await resend.emails.send({
         from:        'CD Itaboraí — Anomalias <onboarding@resend.dev>',
-        to:          [process.env.EMAIL_USER],
+        to:          process.env.EMAIL_USER,
         subject:     `🚨 Nova Anomalia Operacional — ${tipo}`,
         attachments,
         html: `
