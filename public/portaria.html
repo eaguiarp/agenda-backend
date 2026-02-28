@@ -50,10 +50,11 @@
     }
     .aba {
       flex: 1; padding: 10px; text-align: center; border-radius: 4px;
-      cursor: pointer; font-weight: 600; font-size: 0.85rem;
+      cursor: pointer; font-weight: 600; font-size: 0.8rem;
       border: none; background: transparent; color: var(--muted); transition: all 0.15s;
     }
     .aba.ativa { background: var(--accent); color: white; }
+    .aba.ativa-alerta { background: var(--red); color: white; }
 
     /* ── PAINÉIS ─────────────────────────────── */
     .painel { display: none; }
@@ -80,12 +81,15 @@
       font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase;
       color: var(--muted); font-family: var(--fn-mono);
     }
-    .campo input, .campo select {
+    .campo input, .campo select, .campo textarea {
       border: 1px solid var(--border); border-radius: 4px; padding: 9px 11px;
       font-family: var(--fn-body); font-size: 0.9rem;
       background: var(--bg); color: var(--text); width: 100%;
     }
-    .campo input:focus, .campo select:focus { outline: none; border-color: var(--accent); }
+    .campo textarea { resize: vertical; min-height: 100px; }
+    .campo input:focus, .campo select:focus, .campo textarea:focus {
+      outline: none; border-color: var(--accent);
+    }
 
     .btn-registrar {
       background: var(--accent); color: white; border: none;
@@ -94,6 +98,7 @@
       margin-top: 6px; transition: opacity 0.15s; width: 100%;
     }
     .btn-registrar:hover { opacity: 0.85; }
+    .btn-registrar:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* ── PRODUTOS DINÂMICOS ──────────────────── */
     .produtos-lista { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
@@ -114,9 +119,7 @@
       .produto-linha .btn-remover { grid-column: 1 / -1; }
     }
 
-    .produto-linha .campo label {
-      font-size: 0.6rem;
-    }
+    .produto-linha .campo label { font-size: 0.6rem; }
 
     .btn-add-produto {
       background: transparent; color: var(--accent);
@@ -149,9 +152,9 @@
     .item-veiculo.status-cancelado     { border-left-color: #95a5a6; opacity: 0.4; }
 
     .item-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .item-placa   { font-family: var(--fn-mono); font-size: 1.1rem; font-weight: 500; }
-    .item-hora    { font-family: var(--fn-mono); font-size: 0.82rem; color: var(--muted); }
-    .item-produto { font-size: 0.75rem; font-weight: 700; color: var(--orange); }
+    .item-placa     { font-family: var(--fn-mono); font-size: 1.1rem; font-weight: 500; }
+    .item-hora      { font-family: var(--fn-mono); font-size: 0.82rem; color: var(--muted); }
+    .item-produto   { font-size: 0.75rem; font-weight: 700; color: var(--orange); }
     .item-motorista { font-size: 0.78rem; color: var(--blue); font-family: var(--fn-mono); }
 
     .badge {
@@ -164,7 +167,6 @@
     .badge-finalizado    { background: #e6f4ec; color: var(--green); }
     .badge-cancelado     { background: #f0f0f0; color: var(--muted); }
 
-    /* Campos extras inline */
     .item-extras { display: flex; gap: 8px; flex-wrap: wrap; }
     .mini-campo  { display: flex; flex-direction: column; gap: 3px; min-width: 90px; flex: 1; }
     .mini-campo label {
@@ -178,7 +180,6 @@
     }
     .mini-campo input:focus { outline: none; border-color: var(--accent); }
 
-    /* Botões */
     .item-acoes { display: flex; gap: 6px; flex-wrap: wrap; }
     .btn-acao {
       border: none; padding: 7px 12px; border-radius: 4px;
@@ -193,18 +194,69 @@
     .btn-ausente       { background: #3498db; color: white; }
     .btn-salvar        { background: var(--accent); color: white; }
 
-    /* Permanência */
-    .permanencia       { font-family: var(--fn-mono); font-size: 0.75rem; color: var(--muted); margin-left: auto; }
-    .permanencia.alerta{ color: var(--red); font-weight: 700; }
+    .permanencia        { font-family: var(--fn-mono); font-size: 0.75rem; color: var(--muted); margin-left: auto; }
+    .permanencia.alerta { color: var(--red); font-weight: 700; }
+    .item-resumo        { font-size: 0.75rem; color: var(--muted); font-family: var(--fn-mono); }
 
-    /* Resumo (encerrado) */
-    .item-resumo { font-size: 0.75rem; color: var(--muted); font-family: var(--fn-mono); }
-
-    /* Vazio */
     .lista-vazia {
       text-align: center; padding: 32px; color: var(--muted);
       font-size: 0.8rem; font-family: var(--fn-mono); letter-spacing: 0.08em;
     }
+
+    /* ── ANOMALIA ────────────────────────────── */
+    .fotos-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+      margin-top: 4px;
+    }
+
+    .foto-slot {
+      aspect-ratio: 1; border: 2px dashed var(--border); border-radius: 6px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 6px; cursor: pointer; position: relative; overflow: hidden;
+      background: var(--bg); transition: border-color 0.15s, background 0.15s;
+    }
+    .foto-slot:hover { border-color: var(--accent); background: #f0f5f0; }
+    .foto-slot.tem-foto { border-style: solid; border-color: var(--accent); }
+
+    .foto-slot img {
+      width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0;
+    }
+    .foto-slot .icone-camera {
+      font-size: 1.8rem; color: var(--muted); pointer-events: none;
+    }
+    .foto-slot .label-camera {
+      font-size: 0.65rem; color: var(--muted); font-family: var(--fn-mono);
+      letter-spacing: 0.08em; pointer-events: none;
+    }
+    .foto-slot .btn-remover-foto {
+      position: absolute; top: 4px; right: 4px;
+      background: rgba(181,42,42,0.85); color: white; border: none;
+      border-radius: 50%; width: 22px; height: 22px; font-size: 0.65rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      z-index: 2; font-weight: 700;
+    }
+    .foto-slot input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+
+    .anomalia-status {
+      text-align: center; padding: 20px; border-radius: 6px;
+      font-family: var(--fn-mono); font-size: 0.88rem;
+      display: none;
+    }
+    .anomalia-status.enviando  { background: #e8f0fb; color: var(--blue);  display: block; }
+    .anomalia-status.sucesso   { background: #e6f4ec; color: var(--green); display: block; }
+    .anomalia-status.erro      { background: #f4e6e6; color: var(--red);   display: block; }
+
+    .btn-anomalia-enviar {
+      background: var(--red); color: white; border: none;
+      padding: 13px 24px; border-radius: 4px; font-family: var(--fn-body);
+      font-weight: 700; font-size: 0.95rem; cursor: pointer;
+      width: 100%; margin-top: 6px; transition: opacity 0.15s;
+      letter-spacing: 0.03em;
+    }
+    .btn-anomalia-enviar:hover    { opacity: 0.85; }
+    .btn-anomalia-enviar:disabled { opacity: 0.4; cursor: not-allowed; }
 
     /* Mensagem flutuante */
     #mensagem {
@@ -231,8 +283,9 @@
 
   <!-- ABAS -->
   <div class="abas">
-    <button class="aba ativa" onclick="trocarAba('descarga')">⬇ Descarga · Transferência</button>
-    <button class="aba"       onclick="trocarAba('carga')">⬆ Carga · CIF / FOB</button>
+    <button class="aba ativa" onclick="trocarAba('descarga')">⬇ Descarga</button>
+    <button class="aba"       onclick="trocarAba('carga')">⬆ Carga CIF/FOB</button>
+    <button class="aba"       onclick="trocarAba('anomalia')">🚨 Anomalia</button>
   </div>
 
   <!-- ═══ PAINEL DESCARGA ═══ -->
@@ -271,17 +324,16 @@
         <div class="campo">
           <label>Veículo / Transportadora</label>
           <select id="cif-transp-tipo" onchange="toggleTransp()">
-          <option value="proprio">Próprio (FOB)</option>
-          <option value="transportadora">Transportadora</option>
-</select>
+            <option value="proprio">Próprio (FOB)</option>
+            <option value="transportadora">Transportadora</option>
+          </select>
         </div>
 
-        <div class="campo" id="campo-transp-nome">
+        <div class="campo" id="campo-transp-nome" style="display:none;">
           <label>Nome da Transportadora</label>
           <input type="text" id="cif-transportadora" placeholder="Nome da transportadora">
         </div>
 
-        <!-- PRODUTOS DINÂMICOS -->
         <div class="campo full">
           <label>Produtos</label>
           <div class="produtos-lista" id="produtos-lista"></div>
@@ -302,8 +354,81 @@
 
   </div>
 
+  <!-- ═══ PAINEL ANOMALIA ═══ -->
+  <div class="painel" id="painel-anomalia">
+
+    <div class="card">
+      <div class="card-titulo">Registrar anomalia operacional</div>
+
+      <div class="form-grid">
+
+        <div class="campo full">
+          <label>Tipo de anomalia</label>
+          <select id="anom-tipo">
+            <option value="">Selecione o tipo...</option>
+            <option value="Avaria na carga">Avaria na carga</option>
+            <option value="Avaria operacional">Avaria operacional</option>
+            <option value="Problema no veículo">Problema no veículo</option>
+            <option value="Acidente / Incidente">Acidente / Incidente</option>
+            <option value="Produto fora de especificação">Produto fora de especificação</option>
+            <option value="Erro de nota fiscal">Erro de nota fiscal</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+
+        <div class="campo full">
+          <label>Descrição do ocorrido</label>
+          <textarea id="anom-descricao" placeholder="Descreva o que aconteceu com o máximo de detalhes possível..."></textarea>
+        </div>
+
+        <!-- FOTOS -->
+        <div class="campo full">
+          <label>Fotos (até 3) — toque para tirar foto ou escolher da galeria</label>
+          <div class="fotos-grid">
+
+            <div class="foto-slot" id="slot-0">
+              <span class="icone-camera">📷</span>
+              <span class="label-camera">FOTO 1</span>
+              <input type="file" id="foto-0" accept="image/*" capture="environment"
+                onchange="previewFoto(0, this)">
+            </div>
+
+            <div class="foto-slot" id="slot-1">
+              <span class="icone-camera">📷</span>
+              <span class="label-camera">FOTO 2</span>
+              <input type="file" id="foto-1" accept="image/*" capture="environment"
+                onchange="previewFoto(1, this)">
+            </div>
+
+            <div class="foto-slot" id="slot-2">
+              <span class="icone-camera">📷</span>
+              <span class="label-camera">FOTO 3</span>
+              <input type="file" id="foto-2" accept="image/*" capture="environment"
+                onchange="previewFoto(2, this)">
+            </div>
+
+          </div>
+        </div>
+
+        <!-- STATUS DE ENVIO -->
+        <div class="campo full">
+          <div class="anomalia-status" id="anom-status"></div>
+        </div>
+
+        <div class="campo full">
+          <button class="btn-anomalia-enviar" id="btn-enviar-anomalia" onclick="enviarAnomalia()">
+            🚨 Enviar registro de anomalia
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
   <script>
-    const API_URL = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
+    const API_URL      = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
+    const ANOMALIA_URL = 'https://agenda-backend-production-5b72.up.railway.app/anomalia';
 
     const PRODUTOS_OPCOES = [
       { value: "CPIII-32-RS-SC-V",   label: "CPIII"  },
@@ -312,7 +437,6 @@
       { value: "CPII-F-32-SC-25-MA", label: "M25KG"  },
       { value: "CPV-ARI-SC-40-V",    label: "CPV"    },
     ];
-
     const PRODUTOS_MAP = PRODUTOS_OPCOES;
 
     function simplificarProduto(produto) {
@@ -359,13 +483,16 @@
 
     // ── ABAS ──────────────────────────────────
     function trocarAba(aba) {
+      const nomes = ['descarga', 'carga', 'anomalia'];
       document.querySelectorAll(".aba").forEach((b, i) => {
-        b.classList.toggle("ativa",
-          (i === 0 && aba === "descarga") || (i === 1 && aba === "carga")
-        );
+        b.classList.remove("ativa", "ativa-alerta");
+        if (nomes[i] === aba) {
+          b.classList.add(aba === 'anomalia' ? 'ativa-alerta' : 'ativa');
+        }
       });
-      document.getElementById("painel-descarga").classList.toggle("ativo", aba === "descarga");
-      document.getElementById("painel-carga").classList.toggle("ativo",    aba === "carga");
+      nomes.forEach(n => {
+        document.getElementById(`painel-${n}`).classList.toggle("ativo", n === aba);
+      });
     }
 
     // ── TOGGLE TRANSPORTADORA ─────────────────
@@ -422,7 +549,7 @@
     function coletarProdutos() {
       const linhas = document.querySelectorAll("[id^='prod-linha-']");
       return Array.from(linhas).map(linha => {
-        const id  = linha.id.replace("prod-linha-", "");
+        const id = linha.id.replace("prod-linha-", "");
         return {
           produto:    document.getElementById(`prod-${id}`)?.value || "",
           quantidade: document.getElementById(`qtd-${id}`)?.value  || "",
@@ -435,11 +562,11 @@
       ["cif-placa","cif-motorista","cif-transportadora"].forEach(id => {
         document.getElementById(id).value = "";
       });
-      document.getElementById("cif-transp-tipo").value = "transportadora";
-      document.getElementById("campo-transp-nome").style.display = "flex";
+      document.getElementById("cif-transp-tipo").value = "proprio";
+      document.getElementById("campo-transp-nome").style.display = "none";
       document.getElementById("produtos-lista").innerHTML = "";
       contadorProduto = 0;
-      adicionarProduto(); // começa com uma linha
+      adicionarProduto();
     }
 
     // ── MENSAGEM ──────────────────────────────
@@ -465,7 +592,6 @@
       });
       return res.ok;
     }
-
 
     // ── RENDERIZAR DESCARGA ───────────────────
     async function renderizarDescarga() {
@@ -581,7 +707,6 @@
           ? `<span class="permanencia ${perm.alerta ? 'alerta' : ''}">⏱ ${perm.texto}</span>`
           : "";
 
-        // Produtos: pode ser JSON array ou string simples
         let produtosHTML = "";
         try {
           const prods = JSON.parse(item.produto || "[]");
@@ -607,12 +732,8 @@
               <span class="badge" style="background:#e8f0fb;color:#1a4a7a;">${item.tipo_operacao}</span>
               ${permHTML}
             </div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-              ${produtosHTML}
-            </div>
-            <div class="item-resumo">
-              ${item.transportadora ? `${item.transportadora}` : ''}
-            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">${produtosHTML}</div>
+            <div class="item-resumo">${item.transportadora || ''}</div>
             <div class="item-acoes">
               ${item.status === 'agendado' ?
                 `<button class="btn-acao btn-chamar" onclick="acao('${item.id}','chamar')">CHAMAR TV</button>` : ''}
@@ -630,7 +751,6 @@
     async function acao(id, tipo) {
       const campos = {};
       const agora  = horaAgora();
-
       if (tipo === 'chamar')        { campos.status = 'chamando';      campos.hora_entrada = agora; }
       if (tipo === 'descarregando') { campos.status = 'descarregando'; }
       if (tipo === 'finalizar')     { campos.status = 'finalizado';    campos.hora_saida   = agora; }
@@ -689,8 +809,6 @@
 
       const agora = horaAgora();
       const hoje  = new Date().toISOString().split("T")[0];
-
-      // Primeiro produto como campo principal, restante em JSON
       const primeiroProd = produtos[0];
 
       const payload = {
@@ -713,7 +831,6 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
-
         if (res.ok) {
           mostrarMensagem("Veículo registrado!", "sucesso");
           limparFormularioCif();
@@ -723,6 +840,124 @@
         }
       } catch (e) {
         mostrarMensagem("Erro de conexão.", "erro");
+      }
+    }
+
+    // ── ANOMALIA: PREVIEW FOTO ─────────────────
+    function previewFoto(idx, input) {
+      const slot = document.getElementById(`slot-${idx}`);
+      if (!input.files || !input.files[0]) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        // Remove ícones, mantém input
+        slot.querySelector('.icone-camera')?.remove();
+        slot.querySelector('.label-camera')?.remove();
+
+        // Remove preview anterior se existir
+        slot.querySelector('img')?.remove();
+        slot.querySelector('.btn-remover-foto')?.remove();
+
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        slot.insertBefore(img, slot.querySelector('input'));
+
+        const btn = document.createElement('button');
+        btn.className = 'btn-remover-foto';
+        btn.textContent = '✕';
+        btn.onclick = (ev) => { ev.preventDefault(); removerFoto(idx); };
+        slot.appendChild(btn);
+
+        slot.classList.add('tem-foto');
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+
+    function removerFoto(idx) {
+      const slot  = document.getElementById(`slot-${idx}`);
+      const input = document.getElementById(`foto-${idx}`);
+
+      slot.querySelector('img')?.remove();
+      slot.querySelector('.btn-remover-foto')?.remove();
+      slot.classList.remove('tem-foto');
+      input.value = '';
+
+      // Reinsere ícones
+      if (!slot.querySelector('.icone-camera')) {
+        const ic = document.createElement('span');
+        ic.className = 'icone-camera'; ic.textContent = '📷';
+        slot.insertBefore(ic, input);
+      }
+      if (!slot.querySelector('.label-camera')) {
+        const lb = document.createElement('span');
+        lb.className = 'label-camera'; lb.textContent = `FOTO ${idx + 1}`;
+        slot.insertBefore(lb, input);
+      }
+    }
+
+    // ── ANOMALIA: ENVIAR ──────────────────────
+    async function enviarAnomalia() {
+      const tipo      = document.getElementById("anom-tipo").value;
+      const descricao = document.getElementById("anom-descricao").value.trim();
+      const statusEl  = document.getElementById("anom-status");
+      const btnEnviar = document.getElementById("btn-enviar-anomalia");
+
+      if (!tipo) {
+        statusEl.textContent = "⚠ Selecione o tipo de anomalia.";
+        statusEl.className   = "anomalia-status erro";
+        return;
+      }
+      if (!descricao) {
+        statusEl.textContent = "⚠ Descreva o ocorrido antes de enviar.";
+        statusEl.className   = "anomalia-status erro";
+        return;
+      }
+
+      // Monta FormData com texto + fotos
+      const formData = new FormData();
+      formData.append("tipo",      tipo);
+      formData.append("descricao", descricao);
+
+      let totalFotos = 0;
+      for (let i = 0; i < 3; i++) {
+        const input = document.getElementById(`foto-${i}`);
+        if (input.files && input.files[0]) {
+          formData.append("fotos", input.files[0]);
+          totalFotos++;
+        }
+      }
+
+      // Feedback visual
+      btnEnviar.disabled   = true;
+      statusEl.textContent = `⏳ Enviando registro${totalFotos > 0 ? ` com ${totalFotos} foto(s)` : ''}...`;
+      statusEl.className   = "anomalia-status enviando";
+
+      try {
+        const res  = await fetch(ANOMALIA_URL, { method: "POST", body: formData });
+        const json = await res.json();
+
+        if (res.ok && json.sucesso) {
+          statusEl.textContent = "✅ Anomalia registrada! E-mail enviado com sucesso.";
+          statusEl.className   = "anomalia-status sucesso";
+
+          // Limpa formulário após 3 segundos
+          setTimeout(() => {
+            document.getElementById("anom-tipo").value      = "";
+            document.getElementById("anom-descricao").value = "";
+            for (let i = 0; i < 3; i++) removerFoto(i);
+            statusEl.className = "anomalia-status";
+            btnEnviar.disabled = false;
+          }, 3000);
+
+        } else {
+          throw new Error(json.erro || "Erro desconhecido");
+        }
+
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = `❌ Erro ao enviar: ${err.message}. Tente novamente.`;
+        statusEl.className   = "anomalia-status erro";
+        btnEnviar.disabled   = false;
       }
     }
 
@@ -742,15 +977,8 @@
     setInterval(atualizarTudo, 10000);
 
     atualizarRelogio();
-
-    // Inicia com uma linha de produto já aberta
     adicionarProduto();
     atualizarTudo();
-
-
-
-
-
   </script>
 </body>
 </html>
