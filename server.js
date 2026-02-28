@@ -7,7 +7,7 @@ const path       = require("path");
 const basicAuth  = require('express-basic-auth');
 const multer     = require('multer');
 const fs         = require('fs');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 const app = express();
 app.use(cors());
@@ -35,15 +35,9 @@ const upload = multer({
 });
 
 // ========================================================
-// 📧 NODEMAILER
+// 📧 RESEND (HTTP — funciona no Railway)
 // ========================================================
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ========================================================
 // 🗄️ BANCO DE DADOS
@@ -222,10 +216,18 @@ app.post('/anomalia',
         minute: '2-digit'
       });
 
-      await transporter.sendMail({
-        from:    `"CD Itaboraí — Anomalias" <${process.env.EMAIL_USER}>`,
-        to:      process.env.EMAIL_USER,
-        subject: `🚨 Nova Anomalia Operacional — ${tipo}`,
+      // Lê fotos como buffer para o Resend (API HTTP, sem SMTP)
+      const attachments = fotos.map((foto, i) => ({
+        filename:    `foto-${i + 1}.jpg`,
+        content:     fs.readFileSync(foto.path),
+        contentType: 'image/jpeg'
+      }));
+
+      const { error: resendError } = await resend.emails.send({
+        from:        'CD Itaboraí — Anomalias <onboarding@resend.dev>',
+        to:          [process.env.EMAIL_USER],
+        subject:     `🚨 Nova Anomalia Operacional — ${tipo}`,
+        attachments,
         html: `
           <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
             <div style="background:#b52a2a;padding:20px 24px;border-radius:6px 6px 0 0;">
@@ -260,12 +262,10 @@ app.post('/anomalia',
               CD Itaboraí · Sistema de Gestão Logística
             </p>
           </div>
-        `,
-        attachments: fotos.map(foto => ({
-          filename: foto.originalname || foto.filename,
-          path:     foto.path
-        }))
+        `
       });
+
+      if (resendError) throw new Error(resendError.message);
 
       // Apaga fotos temporárias após envio
       fotos.forEach(foto => {
