@@ -19,6 +19,39 @@ const pool = new Pool({
 });
 
 // ========================================================
+// 🗄️ ANOMALIAS
+// ========================================================
+
+const multer = require('multer')
+const fs = require('fs')
+
+// Garante que a pasta exista
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads')
+}
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/')
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname))
+  }
+})
+
+const upload = multer({ storage })
+
+const nodemailer = require('nodemailer')
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+})
+
+// ========================================================
 // 🔑 HIERARQUIA DE PERFIS
 // Quanto maior o número, mais acesso.
 // admin(4) > relatorio(3) > portaria(2) > operacao(1)
@@ -172,6 +205,59 @@ app.get("/criar-banco", async (req, res) => {
         res.status(500).send("Erro: " + error.message);
     }
 });
+
+// ========================================================
+// 🚀 ANOMALIAS
+// ========================================================
+app.post('/anomalia',
+  auth(1, 'Registro de Anomalia'),
+  upload.array('fotos', 3),
+  async (req, res) => {
+
+    try {
+      const { tipo, descricao } = req.body
+      const fotos = req.files || []
+
+      // 👇 AQUI entra o sendMail
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: 'emaildestino@empresa.com',
+        subject: 'Nova Anomalia Operacional',
+        text: `
+🚨 NOVA ANOMALIA OPERACIONAL
+
+Tipo: ${tipo}
+
+Descrição:
+${descricao}
+
+Registrado em: ${new Date().toLocaleString()}
+Usuário: ${req.auth.user}
+`,
+        attachments: fotos.map(foto => ({
+          filename: foto.filename,
+          path: foto.path
+        }))
+      })
+
+      res.json({ success: true })
+
+    } catch (err) {
+      console.error(err)
+      res.status(500).json({ error: 'Erro ao registrar anomalia' })
+    }
+})
+
+await transporter.sendMail({...})
+
+// limpa as fotos
+fotos.forEach(foto => {
+  fs.unlink(foto.path, err => {
+    if (err) console.error("Erro ao deletar arquivo:", err)
+  })
+})
+
+
 
 // ========================================================
 // 🚏 ROTAS — AGENDAMENTOS
