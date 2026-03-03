@@ -7,7 +7,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
   <style>
-
     /* ─── VARIÁVEIS ─────────────────────────────────────────── */
     :root {
       --bg:           #0a0a0a;
@@ -18,7 +17,7 @@
       --green:        #00e676;
       --orange:       #ff6d00;
       --blue:         #4fc3f7;
-      --muted:        #555;
+      --muted:        #888888; /* Contraste melhorado de #555 para #888 */
       --text:         #e0e0e0;
       --font-display: 'Source Sans 3', sans-serif;
     }
@@ -41,7 +40,21 @@
         "inferior  fila";
     }
 
-    /* ─── TOPO ──────────────────────────────────────────────── */
+    /* ─── OVERLAY DE INÍCIO (Desbloqueio de Som) ─────────────── */
+    #overlay-inicio {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    /* ─── TOPO E HEARTBEAT ───────────────────────────────────── */
     .topo {
       position: fixed;
       top: 0; left: 0; right: 0;
@@ -54,764 +67,272 @@
       border-bottom: 1px solid var(--border);
       z-index: 10;
     }
-    .titulo-cd {
-      color: var(--accent);
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      font-size: 0.95rem;
-      text-transform: uppercase;
+    .status-conexao {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
-    .relogio {
-      font-family: var(--font-display);
-      color: #888;
-      font-size: 0.95rem;
-      letter-spacing: 0.08em;
-    }
-
-    /* ─── SEPARADORES ───────────────────────────────────────── */
-    .area-principal,
-    .area-inferior { border-right: 1px solid var(--border); }
-    .area-principal { border-bottom: 1px solid var(--border); }
-
-    /* ─── LABEL ─────────────────────────────────────────────── */
-    .label {
-      font-size: 0.62rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 10px;
+    #ponto-conexao {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      transition: background 0.3s;
     }
 
-    /* ═══════════════════════════════════════════════════════
-       ÁREA PRINCIPAL
-    ═══════════════════════════════════════════════════════ */
+    /* ─── ÁREA PRINCIPAL E PLACA ────────────────────────────── */
     .area-principal {
       grid-area: principal;
       padding: 80px 36px 28px;
       display: flex;
       flex-direction: column;
       justify-content: center;
-      align-items: flex-start;
-      position: relative;
-      overflow: hidden;
-    }
-
-    #painel-principal {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
       align-items: center;
-      justify-content: center;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
     }
 
-    /* aguardando */
-    .aguardando-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      opacity: 0.85;
-    }
-    .radar {
-      width: 14px; height: 14px;
-      border-radius: 50%;
-      background: #00ff99;
-      position: relative;
-    }
-    .radar::after {
-      content: "";
-      position: absolute;
-      width: 14px; height: 14px;
-      border-radius: 50%;
-      border: 2px solid #00ff99;
-      top: 0; left: 0;
-      animation: pulse 2s infinite ease-out;
-      opacity: 0.6;
-    }
-    @keyframes pulse {
-      0%   { transform: scale(1); opacity: 0.6; }
-      100% { transform: scale(3); opacity: 0; }
-    }
-
-    /* chamando */
-    .chamando-wrap {
-      background: #151203;
-      border: 1px solid var(--accent);
-      border-radius: 4px;
-      padding: 20px 28px;
-      animation: pulsar 1.6s ease-in-out infinite;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-    }
-    @keyframes pulsar {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(240,180,41,0); }
-      50%       { box-shadow: 0 0 0 10px rgba(240,180,41,0.08); }
-    }
-
-    /* placa mercosul */
     .placa-mercosul {
       background: white;
-      border-radius: 8px;
-      border: 3px solid #222;
-      display: inline-block;
+      border-radius: 12px;
+      border: 4px solid #222;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
       overflow: hidden;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
-      max-width: 100%;
     }
     .placa-topo {
       background: #1a3a8f;
       color: white;
-      font-size: clamp(0.55rem, 1.2vw, 0.75rem);
+      font-size: 1.2rem;
       font-weight: 700;
-      letter-spacing: 0.25em;
+      letter-spacing: 0.3em;
       text-align: center;
-      padding: 4px 16px;
+      padding: 6px 20px;
       font-family: 'Roboto Condensed', sans-serif;
     }
     .placa-numero {
       color: #111;
       font-family: 'Roboto Condensed', sans-serif;
-      font-size: clamp(3rem, 8vw, 6.7rem);
+      font-size: 8rem;
       font-weight: 700;
-      letter-spacing: 0.12em;
-      padding: 6px 24px 10px;
-      line-height: 1;
-      white-space: nowrap;
-    }
-
-    .hora-chamando {
-      font-size: 2.6rem;
-      color: var(--accent);
-      margin-top: 4px;
-    }
-    .aviso-epi { margin-top: 18px; display: flex; flex-direction: column; gap: 6px; }
-    .aviso-linha {
-      font-size: 0.75rem; letter-spacing: 0.12em;
-      color: var(--accent); opacity: 0.85;
-    }
-    .aviso-linha.destaque {
-      font-weight: 700; font-size: 0.85rem;
-      letter-spacing: 0.18em; opacity: 1;
-    }
-
-    .aviso-sonoro {
-      position: absolute;
-      bottom: 10px; left: 14px;
-      font-size: 0.7rem; color: #333;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       ÁREA INFERIOR
-    ═══════════════════════════════════════════════════════ */
-    .area-inferior {
-      grid-area: inferior;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-    }
-
-    .box-proximo {
-      padding: 20px 24px;
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-    .placa-proximo {
-      font-family: var(--font-display);
-      font-size: 3.8rem;
-      color: #fff;
+      padding: 10px 40px;
       line-height: 1;
     }
-    .hora-proximo {
-      font-size: 1.5rem;
-      color: var(--muted);
-      margin-top: 4px;
-    }
 
-    .box-status {
-      padding: 16px 18px;
-      background: #0d1a0f;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-    }
-    .item-status {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 7px 0;
-      border-bottom: 1px solid #1c1c1c;
-      font-size: 0.95rem;
-    }
-    .item-status:last-child { border-bottom: none; }
-
-    .badge {
-      font-size: 0.6rem; font-weight: 700;
-      letter-spacing: 0.12em;
-      padding: 3px 7px; border-radius: 2px;
-    }
-    .badge-descarregando { background: var(--orange); color: #000; }
-    .badge-carregando    { background: var(--blue);   color: #000; }
-    .badge-finalizado    { background: var(--green);  color: #000; }
-
-    /* ═══════════════════════════════════════════════════════
-       ÁREA FILA — DIVIDIDA EM DUAS SEÇÕES
-    ═══════════════════════════════════════════════════════ */
-    .area-fila {
-      grid-area: fila;
-      background: var(--surface);
-      padding: 64px 0 0;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    /* duas colunas internas */
-    .fila-colunas {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      flex: 1;
-      overflow: hidden;
-      border-top: 1px solid var(--border);
-    }
-
-    .fila-secao {
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      padding: 14px 14px 14px;
-    }
-    .fila-secao:first-child {
-      border-right: 1px solid var(--border);
-    }
-
-    .fila-secao-titulo {
-      font-size: 0.58rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      font-weight: 700;
-      margin-bottom: 10px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .fila-secao-titulo.descarga { color: var(--orange); }
-    .fila-secao-titulo.carga    { color: var(--blue); }
-
-    .fila-secao-titulo .dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .descarga .dot { background: var(--orange); }
-    .carga .dot    { background: var(--blue); }
-
-    .lista-fila {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      overflow-y: auto;
-      flex: 1;
-    }
-
-    /* ─── ITEM DE FILA ──────────────────────────────────────── */
-    .item-fila {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      transition: background 0.2s;
-
-      /* animação de entrada */
-      animation: entrarFila 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
-    @keyframes entrarFila {
-      from {
-        opacity: 0;
-        transform: translateX(18px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-
-    .item-fila:hover { background: #202020; }
-
-    .item-fila.primeiro {
-      background: linear-gradient(to right, #1a1200, #151515);
-      border-left: 3px solid var(--accent);
-    }
-    .item-fila.primeiro-carga {
-      background: linear-gradient(to right, #001a24, #151515);
-      border-left: 3px solid var(--blue);
-    }
-
-    .fila-linha-topo {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .placa-fila {
-      font-size: 1.25rem;
-      color: #fff;
-      letter-spacing: 0.05em;
-      font-weight: 700;
-    }
-    .hora-fila {
-      color: var(--accent);
-      font-size: 0.8rem;
-      font-weight: 700;
-    }
-    .hora-fila.carga-hora { color: var(--blue); }
-
-    .produto-fila {
-      font-size: 0.65rem;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-      text-transform: uppercase;
-    }
-
-    .fila-vazia {
-      color: var(--muted);
-      text-align: center;
-      font-size: 0.75rem;
-      margin-top: 16px;
-      letter-spacing: 0.1em;
-      opacity: 0.5;
-    }
+    /* ─── FILA E STATUS ─────────────────────────────────────── */
+    .area-fila { grid-area: fila; background: var(--surface); padding-top: 64px; display: flex; flex-direction: column; }
+    .fila-colunas { display: grid; grid-template-columns: 1fr 1fr; flex: 1; border-top: 1px solid var(--border); }
+    .fila-secao { padding: 15px; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+    .item-fila { background: var(--surface2); padding: 12px; margin-bottom: 8px; border-radius: 4px; border: 1px solid var(--border); }
+    
+    /* Estilo para TVs (Fonte grande) */
+    .placa-fila { font-size: 1.4rem; color: #fff; font-weight: 700; }
+    .hora-fila { color: var(--accent); font-weight: 700; }
 
     /* ─── MODO DESCANSO ─────────────────────────────────────── */
     .modo-descanso {
-      position: fixed;
-      inset: 0;
-      background: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--font-display);
-      color: #222;
-      font-size: 1rem;
-      letter-spacing: 0.2em;
-      z-index: 9999;
-      animation: leveMovimento 20s infinite alternate ease-in-out;
+      position: fixed; inset: 0; background: #000;
+      display: flex; align-items: center; justify-content: center;
+      color: #333; font-size: 1.5rem; letter-spacing: 0.3em; z-index: 9999;
     }
-    @keyframes leveMovimento {
-      from { transform: translateY(0px); }
-      to   { transform: translateY(10px); }
-    }
-
-    /* ─── SCROLLBAR ─────────────────────────────────────────── */
-    ::-webkit-scrollbar { width: 3px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   </style>
-
-  <link rel="icon" type="image/png" sizes="72x72" href="icon-72.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 </head>
 <body>
 
+  <div id="overlay-inicio" onclick="iniciarPainel()">
+    <div style="border: 2px solid var(--accent); padding: 40px; border-radius: 10px;">
+      <h1 style="color: var(--accent); margin-bottom: 20px;">PAINEL LOGÍSTICO</h1>
+      <p style="color: white; font-size: 1.2rem;">Toque ou clique para ativar o áudio da TV</p>
+    </div>
+  </div>
+
   <div class="topo">
     <div class="titulo-cd">CD — Itaboraí</div>
-    <div class="relogio" id="relogio"></div>
+    <div class="status-conexao">
+      <div id="ponto-conexao"></div>
+      <div class="relogio" id="relogio">00:00</div>
+    </div>
   </div>
 
-  <!-- PRINCIPAL -->
   <div class="area-principal" id="area-principal">
     <div id="painel-principal">
-      <div class="aguardando-wrapper">
-        <div class="radar"></div>
-        <span>Aguardando chamada...</span>
-      </div>
-    </div>
-    <span class="aviso-sonoro">[SOM] Clique na tela para ativar o som</span>
-  </div>
-
-  <!-- INFERIOR -->
-  <div class="area-inferior">
-    <div class="box-proximo" id="painel-proximo">
-      <div class="label">Próximo Veículo</div>
-      <div style="font-size:1rem;color:var(--muted);">--</div>
-    </div>
-    <div class="box-status">
-      <div class="label">Status Pátio</div>
-      <div id="painel-status"></div>
+      <div style="opacity: 0.5;">Carregando dados...</div>
     </div>
   </div>
 
-  <!-- FILA DIVIDIDA -->
+  <div class="area-inferior" style="grid-area: inferior; display: grid; grid-template-columns: 1fr 1fr; border-right: 1px solid var(--border);">
+    <div id="painel-proximo" style="padding: 20px; border-right: 1px solid var(--border);">
+      <div style="font-size: 0.7rem; color: var(--muted); text-transform: uppercase;">Próximo</div>
+      <div style="font-size: 3rem; font-weight: 700;">--</div>
+    </div>
+    <div id="painel-status" style="padding: 20px; background: #0d1a0f;">
+      <div style="font-size: 0.7rem; color: var(--muted); text-transform: uppercase;">Pátio</div>
+    </div>
+  </div>
+
   <div class="area-fila">
     <div class="fila-colunas">
-
-      <!-- DESCARGA -->
       <div class="fila-secao">
-        <div class="fila-secao-titulo descarga">
-          <span class="dot"></span>
-          [v] Descarga
-        </div>
-        <div class="lista-fila" id="fila-descarga"></div>
+        <div style="color: var(--orange); font-size: 0.7rem; font-weight: 700; margin-bottom: 10px;">[V] DESCARGA</div>
+        <div id="fila-descarga"></div>
       </div>
-
-      <!-- CARGA CIF/FOB -->
       <div class="fila-secao">
-        <div class="fila-secao-titulo carga">
-          <span class="dot"></span>
-          [^] Carga
-        </div>
-        <div class="lista-fila" id="fila-carga"></div>
+        <div style="color: var(--blue); font-size: 0.7rem; font-weight: 700; margin-bottom: 10px;">[^] CARGA</div>
+        <div id="fila-carga"></div>
       </div>
-
     </div>
   </div>
 
-  <audio id="som-alerta"
-    src="https://agenda-backend-production-5b72.up.railway.app/msn-wizz-sound.ogg?v=2">
-  </audio>
+  <audio id="som-alerta" src="https://agenda-backend-production-5b72.up.railway.app/msn-wizz-sound.ogg?v=2"></audio>
+
+  
 
   <script>
-    if ("serviceWorker" in navigator && !location.pathname.includes("tv.html")) {
-      navigator.serviceWorker.register("sw.js");
-    }
-  </script>
-
-  <script>
-    // --- CONFIG ---
-    var API_URL   = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
-    var POLL_MS   = 5000;
-    var BIPS_MAX  = 3;
-    var BIP_DELAY = 2500;
-
-    // --- ESTADO ---
+    // --- CONFIGURAÇÕES (VAR para ES5) ---
+    var API_URL = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
+    var POLL_MS = 5000;
+    
+    // --- ESTADO DO SISTEMA ---
     var ultimoChamadoID = null;
-    var contadorBips    = 0;
+    var ultimaPlacaVoz = ""; // Para não repetir a voz no mesmo ciclo
     var tempoSemChamada = 0;
-    var descansoAtivo   = false;
+    var descansoAtivo = false;
+    var falhasConexao = 0;
 
-    // IDs conhecidos nas filas (arrays simples, compatível ES5)
-    var idsDescarga = [];
-    var idsCarga    = [];
-
-    // --- HELPERS ---
-    function ordenarPorHora(arr) {
-      var copia = arr.slice();
-      copia.sort(function(a, b) {
-        return new Date(a.data + ' ' + a.hora) - new Date(b.data + ' ' + b.hora);
-      });
-      return copia;
-    }
-
-    function formatarData(data) {
-      if (!data) return '';
-      var partes = data.split('-');
-      return partes[2] + '/' + partes[1];
-    }
-
-    function ehCargaCifFob(item) {
-      var tipo = (item.tipo_operacao || '').toUpperCase();
-      return tipo === 'CIF' || tipo === 'FOB';
-    }
-
-    function simplificarNome(p) {
-      var s = (p || '').toUpperCase();
-      if (s.indexOf('CPIII') !== -1 || s.indexOf('CP-III') !== -1 || s.indexOf('RS-SC') !== -1) return 'CPIII';
-      if (s.indexOf('MAUA')  !== -1 || s.indexOf('F-32-SC-V-MA') !== -1) return 'MAUA';
-      if (s.indexOf('E32')   !== -1 || s.indexOf('E-32') !== -1) return 'E32';
-      if (s.indexOf('M25')   !== -1 || s.indexOf('25-MA') !== -1) return 'M25KG';
-      if (s.indexOf('CPV')   !== -1 || s.indexOf('ARI') !== -1) return 'CPV';
-      return p || '';
-    }
-
-    function simplificarProduto(produto) {
-      if (!produto) return '';
-      try {
-        var parsed = JSON.parse(produto);
-        if (parsed && typeof parsed === 'object' && parsed.length) {
-          var nomes = [];
-          for (var i = 0; i < parsed.length; i++) {
-            var n = simplificarNome(parsed[i].produto);
-            if (n) nomes.push(n);
-          }
-          return nomes.join(' / ');
-        }
-      } catch (e) {}
-      return simplificarNome(produto);
-    }
-
-    function contemId(arr, id) {
-      for (var i = 0; i < arr.length; i++) {
-        if (arr[i] === id) return true;
-      }
-      return false;
-    }
-
-    function extrairIds(lista) {
-      var ids = [];
-      for (var i = 0; i < lista.length; i++) ids.push(lista[i].id);
-      return ids;
-    }
-
-    // --- DESCANSO ---
-    function ativarDescanso() {
-      if (descansoAtivo) return;
-      descansoAtivo = true;
-      var div = document.createElement('div');
-      div.className = 'modo-descanso';
-      div.id = 'modoDescanso';
-      div.innerHTML = 'PAINEL EM ESPERA';
-      document.body.appendChild(div);
-    }
-
-    function desativarDescanso() {
-      var tela = document.getElementById('modoDescanso');
-      if (tela && tela.parentNode) tela.parentNode.removeChild(tela);
-      descansoAtivo   = false;
-      tempoSemChamada = 0;
-    }
-
-    // --- RENDER PRINCIPAL ---
-    function renderPrincipal(chamando) {
-      var painel = document.getElementById('painel-principal');
-      if (chamando) {
-        var topoChamada = chamando.motorista
-          ? '[!] Chamando motorista ' + chamando.motorista
-          : 'CHAMANDO AGORA';
-        var horaLinha = chamando.hora + (chamando.motorista ? ' &bull; ' + chamando.motorista : '');
-        painel.innerHTML =
-          '<div class="chamando-wrap">' +
-            '<div class="placa-mercosul">' +
-              '<div class="placa-topo">' + topoChamada + '</div>' +
-              '<div class="placa-numero">' + chamando.placa + '</div>' +
-            '</div>' +
-            '<div class="hora-chamando" style="margin-top:16px;">' + horaLinha + '</div>' +
-            '<div class="aviso-epi">' +
-              '<div class="aviso-linha">Desligue o motor &bull; Calce as rodas &bull; Entregue as chaves</div>' +
-              '<div class="aviso-linha destaque">[!] Uso obrigatorio de EPIs</div>' +
-            '</div>' +
-          '</div>';
-      } else {
-        painel.innerHTML =
-          '<div class="aguardando-wrapper">' +
-            '<div class="radar"></div>' +
-            '<span>Aguardando chamada...</span>' +
-          '</div>';
-      }
-    }
-
-    // --- RENDER PROXIMO ---
-    function renderProximo(proximo) {
-      var el = document.getElementById('painel-proximo');
-      if (proximo) {
-        el.innerHTML =
-          '<div class="label">Proximo Veiculo</div>' +
-          '<div class="placa-proximo">' + proximo.placa + '</div>' +
-          '<div class="hora-proximo">' + proximo.hora + ' - ' + formatarData(proximo.data) + '</div>';
-      } else {
-        el.innerHTML =
-          '<div class="label">Proximo Veiculo</div>' +
-          '<div style="font-size:2rem;color:#555">--</div>';
-      }
-    }
-
-    // --- RENDER FILA DIVIDIDA ---
-    function renderFilaDividida(ativos) {
-      var agendados    = [];
-      var listaDescarga = [];
-      var listaCarga    = [];
-
-      for (var i = 0; i < ativos.length; i++) {
-        if (ativos[i].status === 'agendado') agendados.push(ativos[i]);
-      }
-      for (var j = 0; j < agendados.length; j++) {
-        if (ehCargaCifFob(agendados[j])) listaCarga.push(agendados[j]);
-        else listaDescarga.push(agendados[j]);
-      }
-
-      renderSecao('fila-descarga', listaDescarga, idsDescarga, false);
-      renderSecao('fila-carga',    listaCarga,    idsCarga,    true);
-
-      idsDescarga = extrairIds(listaDescarga);
-      idsCarga    = extrairIds(listaCarga);
-    }
-
-    function renderSecao(elId, lista, idsAntigos, isCarga) {
-      var el = document.getElementById(elId);
-      if (!lista.length) {
-        el.innerHTML = '<div class="fila-vazia">Sem veiculos</div>';
-        return;
-      }
-
-      var html = '';
-      for (var i = 0; i < lista.length; i++) {
-        var item      = lista[i];
-        var isNovo    = !contemId(idsAntigos, item.id);
-        var classeItem = 'item-fila';
-        if (i === 0) classeItem += isCarga ? ' primeiro-carga' : ' primeiro';
-
-        var animStyle = isNovo ? 'animation-delay:' + (i * 60) + 'ms' : 'animation:none';
-        var produto   = simplificarProduto(item.produto);
-        var horaClasse = isCarga ? 'hora-fila carga-hora' : 'hora-fila';
-        var prodHTML  = produto ? '<div class="produto-fila">' + produto + '</div>' : '';
-
-        html +=
-          '<div class="' + classeItem + '" style="' + animStyle + '">' +
-            '<div class="fila-linha-topo">' +
-              '<span class="placa-fila">' + item.placa + '</span>' +
-              '<span class="' + horaClasse + '">' + item.hora + '</span>' +
-            '</div>' +
-            prodHTML +
-          '</div>';
-      }
-      el.innerHTML = html;
-    }
-
-    // --- RENDER STATUS ---
-    function renderStatus(dados) {
-      var el          = document.getElementById('painel-status');
-      var descarregando = [];
-      var finalizados   = [];
-
-      for (var i = 0; i < dados.length; i++) {
-        if (dados[i].status === 'descarregando') descarregando.push(dados[i]);
-        if (dados[i].status === 'finalizado')    finalizados.push(dados[i]);
-      }
-
-      finalizados.sort(function(a, b) { return b.id - a.id; });
-      finalizados = finalizados.slice(0, 3);
-
-      var html = '';
-      for (var j = 0; j < descarregando.length; j++) {
-        var isCIF  = ehCargaCifFob(descarregando[j]);
-        var label  = isCIF ? 'Carregando' : 'Descarregando';
-        var classe = isCIF ? 'badge-carregando' : 'badge-descarregando';
-        html +=
-          '<div class="item-status">' +
-            '<span>' + descarregando[j].placa + '</span>' +
-            '<span class="badge ' + classe + '">' + label + '</span>' +
-          '</div>';
-      }
-      for (var k = 0; k < finalizados.length; k++) {
-        html +=
-          '<div class="item-status">' +
-            '<span>' + finalizados[k].placa + '</span>' +
-            '<span class="badge badge-finalizado">Finalizado</span>' +
-          '</div>';
-      }
-
-      el.innerHTML = html || '<div class="fila-vazia">Patio vazio</div>';
-    }
-
-    // --- SOM ---
-    function tocarSom() {
-      if (contadorBips >= BIPS_MAX) return;
+    // --- FUNÇÃO INICIAL (Desbloqueio) ---
+    function iniciarPainel() {
+      document.getElementById('overlay-inicio').style.display = 'none';
       var audio = document.getElementById('som-alerta');
-      audio.currentTime = 0;
-      try { audio.play(); } catch(e) {}
-      contadorBips++;
-      setTimeout(tocarSom, BIP_DELAY);
+      audio.play(); // Toca e pausa para ganhar permissão
+      setTimeout(function() { audio.pause(); audio.currentTime = 0; }, 100);
+      
+      // Inicia os loops
+      setInterval(atualizarTV, POLL_MS);
+      setInterval(atualizarRelogio, 1000);
+      atualizarTV();
     }
 
-    // --- VOZ ---
-    function anunciarVeiculo(placa, motorista) {
-      if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
-      try {
-        var placaFalada = placa.split('').join(' ');
-        var trechoMot   = motorista ? motorista + ' ' : '';
-        var texto = 'Atencao, motorista ' + trechoMot + 'da placa ' + placaFalada + '. Dirija-se a area de descarga.';
-        var fala  = new SpeechSynthesisUtterance(texto);
-        fala.lang = 'pt-BR'; fala.rate = 0.9; fala.pitch = 1; fala.volume = 1;
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(fala);
-      } catch(e) {}
+    // --- HELPERS COMPATÍVEIS (Sem Arrow Functions) ---
+    function pad(n) { return n < 10 ? '0' + n : n; }
+
+    function formatarDataSimples(dataStr) {
+      if (!dataStr) return '';
+      var p = dataStr.split('-');
+      return p[2] + '/' + p[1];
     }
 
-    // --- POLLING via XMLHttpRequest ---
+    // --- LÓGICA DE VOZ (Melhorada para não cortar) ---
+    function anunciarVoz(placa, motorista) {
+      if (!window.speechSynthesis || placa === ultimaPlacaVoz) return;
+      
+      ultimaPlacaVoz = placa;
+      var placaSoletrada = placa.split('').join(' ');
+      var texto = 'Atenção motorista ' + (motorista || '') + ' da placa ' + placaSoletrada + '. Dirija-se à área de descarga.';
+      
+      var msg = new SpeechSynthesisUtterance(texto);
+      msg.lang = 'pt-BR';
+      msg.rate = 0.8;
+      
+      window.speechSynthesis.cancel(); // Limpa fila anterior
+      window.speechSynthesis.speak(msg);
+    }
+
+    // --- POLLING COM XMLHttpRequest (ES5) ---
     function atualizarTV() {
       var xhr = new XMLHttpRequest();
       xhr.open('GET', API_URL, true);
       xhr.onreadystatechange = function() {
-        if (xhr.readyState !== 4) return;
-        if (xhr.status !== 200) return;
-
-        var dados;
-        try { dados = JSON.parse(xhr.responseText); } catch(e) { return; }
-
-        var semFinalizado = [];
-        for (var i = 0; i < dados.length; i++) {
-          if (dados[i].status !== 'finalizado') semFinalizado.push(dados[i]);
-        }
-
-        var ativos   = ordenarPorHora(semFinalizado);
-        var chamando = null;
-        var proximo  = null;
-
-        for (var j = 0; j < ativos.length; j++) {
-          if (!chamando && ativos[j].status === 'chamando') chamando = ativos[j];
-          if (!proximo  && ativos[j].status === 'agendado') proximo  = ativos[j];
-        }
-
-        renderPrincipal(chamando);
-        renderProximo(proximo);
-        renderFilaDividida(ativos);
-        renderStatus(dados);
-
-        if (chamando) {
-          tempoSemChamada = 0;
-          if (descansoAtivo) desativarDescanso();
-        } else {
-          tempoSemChamada += POLL_MS;
-          if (tempoSemChamada >= 1800000 && !descansoAtivo) ativarDescanso();
-        }
-
-        if (chamando && ultimoChamadoID !== chamando.id) {
-          ultimoChamadoID = chamando.id;
-          contadorBips    = 0;
-          tocarSom();
-          anunciarVeiculo(chamando.placa, chamando.motorista);
+        if (xhr.readyState === 4) {
+          var ponto = document.getElementById('ponto-conexao');
+          
+          if (xhr.status === 200) {
+            falhasConexao = 0;
+            ponto.style.background = '#00e676'; // Verde
+            processarDados(JSON.parse(xhr.responseText));
+          } else {
+            falhasConexao++;
+            if (falhasConexao > 2) ponto.style.background = '#ff0000'; // Vermelho (Erro)
+          }
         }
       };
       xhr.send();
     }
 
-    // --- RELOGIO ---
-    function atualizarRelogio() {
-      var agora = new Date();
-      var h = agora.getHours();
-      var m = agora.getMinutes();
-      if (h < 10) h = '0' + h;
-      if (m < 10) m = '0' + m;
-      document.getElementById('relogio').textContent = h + ':' + m;
+    function processarDados(dados) {
+      var chamando = null;
+      var proximo = null;
+      var listaAgendados = [];
+      var listaPatio = [];
+
+      // Filtra e Ordena (ES5)
+      for (var i = 0; i < dados.length; i++) {
+        var item = dados[i];
+        if (item.status === 'chamando') chamando = item;
+        if (item.status === 'agendado') listaAgendados.push(item);
+        if (item.status === 'descarregando' || item.status === 'finalizado') listaPatio.push(item);
+      }
+
+      // Render Principal
+      var painel = document.getElementById('painel-principal');
+      if (chamando) {
+        painel.innerHTML = 
+          '<div class="placa-mercosul">' +
+            '<div class="placa-topo">CHAMANDO AGORA</div>' +
+            '<div class="placa-numero">' + chamando.placa + '</div>' +
+          '</div>' +
+          '<div style="font-size: 3rem; color: var(--accent); margin-top: 20px;">' + chamando.hora + '</div>';
+        
+        // Dispara Alerta Sonoro e Voz
+        if (ultimoChamadoID !== chamando.id) {
+          ultimoChamadoID = chamando.id;
+          document.getElementById('som-alerta').play();
+          anunciarVoz(chamando.placa, chamando.motorista);
+        }
+        tempoSemChamada = 0;
+      } else {
+        painel.innerHTML = '<div style="font-size: 2rem; color: var(--muted);">Aguardando Chamada...</div>';
+        tempoSemChamada += POLL_MS;
+        ultimaPlacaVoz = ""; // Reseta para próxima chamada
+      }
+
+      // Render Fila (Descarga vs Carga)
+      var htmlDescarga = "";
+      var htmlCarga = "";
+      for (var j = 0; j < listaAgendados.length; j++) {
+        var ag = listaAgendados[j];
+        var card = '<div class="item-fila">' +
+                     '<div style="display:flex; justify-content:space-between">' +
+                       '<span class="placa-fila">' + ag.placa + '</span>' +
+                       '<span class="hora-fila">' + ag.hora + '</span>' +
+                     '</div>' +
+                   '</div>';
+        
+        if (ag.tipo_operacao === 'CIF' || ag.tipo_operacao === 'FOB') htmlCarga += card;
+        else htmlDescarga += card;
+        
+        if (!proximo) proximo = ag;
+      }
+      document.getElementById('fila-descarga').innerHTML = htmlDescarga || '<div style="color:#444">Fila vazia</div>';
+      document.getElementById('fila-carga').innerHTML = htmlCarga || '<div style="color:#444">Fila vazia</div>';
+
+      // Render Próximo
+      if (proximo) {
+        document.getElementById('painel-proximo').innerHTML = 
+          '<div style="font-size: 0.7rem; color: var(--muted); text-transform: uppercase;">Próximo</div>' +
+          '<div style="font-size: 3.5rem; font-weight: 700; color:#fff">' + proximo.placa + '</div>' +
+          '<div style="font-size: 1.5rem; color: var(--accent)">' + proximo.hora + '</div>';
+      }
+
+      // Anti Burn-in (Leve movimento a cada 5 min)
+      if (new Date().getMinutes() % 5 === 0) {
+        var offset = Math.floor(Math.random() * 5);
+        document.body.style.transform = 'translate(' + offset + 'px, ' + offset + 'px)';
+      }
     }
 
-    // --- INIT ---
-    document.body.onclick = function() {
-      var audio = document.getElementById('som-alerta');
-      try {
-        audio.play();
-        setTimeout(function() { audio.pause(); audio.currentTime = 0; }, 100);
-      } catch(e) {}
-      document.body.onclick = null;
-    };
-
-    setInterval(atualizarTV,    POLL_MS);
-    setInterval(atualizarRelogio, 1000);
-    atualizarRelogio();
-    atualizarTV();
-
-    // anti burn-in
-    setInterval(function() {
-      var ox = Math.floor(Math.random() * 3) - 1;
-      var oy = Math.floor(Math.random() * 3) - 1;
-      document.body.style.transition = 'transform 1s ease-in-out';
-      document.body.style.transform  = 'translate(' + ox + 'px, ' + oy + 'px)';
-    }, 300000);
-
+    function atualizarRelogio() {
+      var d = new Date();
+      document.getElementById('relogio').innerHTML = pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
   </script>
 </body>
 </html>
