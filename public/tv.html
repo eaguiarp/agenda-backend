@@ -4,189 +4,33 @@
   <meta charset="UTF-8">
   <title>Painel Logístico - CD Itaboraí</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
-<style> 
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
+  <style>
 
-
-  /* ─── TITULO ─────────────────────────────────────────── */
-.topo {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 52px;
-  padding: 0 36px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: linear-gradient(to bottom, #111, #0a0a0a);
-  border-bottom: 1px solid var(--border);
-  z-index: 10;
-  backdrop-filter: blur(4px);
-}
-
-.titulo-cd {
-  color: var(--accent);
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  font-size: 0.95rem;
-  text-transform: uppercase;
-}
-
-.relogio {
-  font-family: var(--font-display);
-  color: #888;             
-  font-size: 0.95rem;
-  letter-spacing: 0.08em;
-}
-
-/* ─── DECORAÇÃO FILA ─────────────────────────────────────────── */
-
-
-.placa-mercosul {
-  background: white;
-  border-radius: 8px;
-  border: 3px solid #222;
-  display: inline-block;
-  overflow: hidden;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
-  max-width: 100%;  /* não estoura o container */
-}
-
-.placa-topo {
-  background: #1a3a8f;
-  color: white;
-    font-size: clamp(0.55rem, 1.2vw, 0.75rem);
-  font-weight: 700;
-  letter-spacing: 0.25em;
-  text-align: center;
-  padding: 4px 16px;
-  font-family: 'Roboto Condensed', sans-serif;
-}
-
-.placa-numero {
-  color: #111;
-  font-family: 'Roboto Condensed', sans-serif;
-  font-size: clamp(3rem, 8vw, 6.7rem); /* se ajusta ao tamanho da tela */
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  padding: 6px 24px 10px;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.item-fila {
-  position: relative;
-  gap: 18px;
-}
-
-.numero-fila {
-  color: var(--muted);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.2rem;
-  width: 30px;
-}
-
-.item-fila.primeiro {
-  background: linear-gradient(to right, #2a1f05, #151515);
-  border-left: 4px solid var(--accent);
-}
-
-.item-fila.primeiro .numero-fila {
-  color: var(--accent);
-}
-
-  /* ─── VARIÁVEIS ─────────────────────────────────────────── */
+    /* ─── VARIÁVEIS ─────────────────────────────────────────── */
     :root {
-      --bg:        #0a0a0a;
-      --surface:   #111111;
-      --surface2:  #181818;
-      --border:    #2a2a2a;
-      --accent:    #f0b429;
-      --green:     #00e676;
-      --orange:    #ff6d00;
-      --muted:     #555;
-      --text:      #e0e0e0;
+      --bg:           #0a0a0a;
+      --surface:      #111111;
+      --surface2:     #181818;
+      --border:       #2a2a2a;
+      --accent:       #f0b429;
+      --green:        #00e676;
+      --orange:       #ff6d00;
+      --blue:         #4fc3f7;
+      --muted:        #555;
+      --text:         #e0e0e0;
       --font-display: 'Source Sans 3', sans-serif;
-    
-     
     }
-/*// radar ____________ //*/
 
-  body {
-  font-family: var(--font-display);
-
-  font-variant-numeric: tabular-nums;
-}
-.aguardando-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  opacity: 0.85;
-}
-
-.radar {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #00ff99;
-  position: relative;
-}
-
-.radar::after {
-  content: "";
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 2px solid #00ff99;
-  top: 0;
-  left: 0;
-  animation: pulse 2s infinite ease-out;
-  opacity: 0.6;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-    opacity: 0.6;
-  }
-  100% {
-    transform: scale(3);
-    opacity: 0;
-  }
-}
-
-/* ─── DESCANSO ────────────────────────────────────────────── */
-.modo-descanso {
-  position: fixed;
-  inset: 0;
-  background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  color: #333;
-  font-size: 1rem;
-  letter-spacing: 0.2em;
-  z-index: 9999;
-  animation: leveMovimento 20s infinite alternate ease-in-out;
-}
-
-@keyframes leveMovimento {
-  from { transform: translateY(0px); }
-  to   { transform: translateY(10px); }
-}
-
-    /* ─── RESET ────────────────────────────────────────────── */
+    /* ─── RESET ─────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       background: var(--bg);
       color: var(--text);
       font-family: var(--font-display);
+      font-variant-numeric: tabular-nums;
       height: 100vh;
       overflow: hidden;
       display: grid;
@@ -197,27 +41,49 @@
         "inferior  fila";
     }
 
-    /* ─── SEPARADORES ──────────────────────────────────────── */
-    .area-principal,
-    .area-inferior {
-      border-right: 1px solid var(--border);
-    }
-    .area-principal {
+    /* ─── TOPO ──────────────────────────────────────────────── */
+    .topo {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 52px;
+      padding: 0 36px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(to bottom, #111, #0a0a0a);
       border-bottom: 1px solid var(--border);
+      z-index: 10;
+    }
+    .titulo-cd {
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+    }
+    .relogio {
+      font-family: var(--font-display);
+      color: #888;
+      font-size: 0.95rem;
+      letter-spacing: 0.08em;
     }
 
-    /* ─── HEADER LABELS ────────────────────────────────────── */
+    /* ─── SEPARADORES ───────────────────────────────────────── */
+    .area-principal,
+    .area-inferior { border-right: 1px solid var(--border); }
+    .area-principal { border-bottom: 1px solid var(--border); }
+
+    /* ─── LABEL ─────────────────────────────────────────────── */
     .label {
-      font-family: var(--font-display);
-      font-size: 0.65rem;
+      font-size: 0.62rem;
       letter-spacing: 0.2em;
       text-transform: uppercase;
       color: var(--muted);
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     /* ═══════════════════════════════════════════════════════
-       ÁREA PRINCIPAL — CHAMANDO AGORA
+       ÁREA PRINCIPAL
     ═══════════════════════════════════════════════════════ */
     .area-principal {
       grid-area: principal;
@@ -230,19 +96,44 @@
       overflow: hidden;
     }
 
-   
-   
-
-   /* painel de chamada */
     #painel-principal {
       width: 100%;
-      display: flex;             /* Adicionado para flexibilizar o container */
+      display: flex;
       flex-direction: column;
-      align-items: center;       /* Centraliza horizontalmente o radar e o wrap */
+      align-items: center;
       justify-content: center;
     }
 
-   .chamando-wrap {
+    /* aguardando */
+    .aguardando-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      opacity: 0.85;
+    }
+    .radar {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #00ff99;
+      position: relative;
+    }
+    .radar::after {
+      content: "";
+      position: absolute;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: 2px solid #00ff99;
+      top: 0; left: 0;
+      animation: pulse 2s infinite ease-out;
+      opacity: 0.6;
+    }
+    @keyframes pulse {
+      0%   { transform: scale(1); opacity: 0.6; }
+      100% { transform: scale(3); opacity: 0; }
+    }
+
+    /* chamando */
+    .chamando-wrap {
       background: #151203;
       border: 1px solid var(--accent);
       border-radius: 4px;
@@ -250,59 +141,64 @@
       animation: pulsar 1.6s ease-in-out infinite;
       display: flex;
       flex-direction: column;
-      align-items: center;       /* ← centraliza a placa */
-      text-align: center;        /* ← Garante que os avisos de EPI fiquem centralizados */
+      align-items: center;
+      text-align: center;
     }
     @keyframes pulsar {
       0%, 100% { box-shadow: 0 0 0 0 rgba(240,180,41,0); }
       50%       { box-shadow: 0 0 0 10px rgba(240,180,41,0.08); }
     }
 
- .placa-gigante {
-  font-family: var(--font-display);
-  font-size: 6.8rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+    /* placa mercosul */
+    .placa-mercosul {
+      background: white;
+      border-radius: 8px;
+      border: 3px solid #222;
+      display: inline-block;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+      max-width: 100%;
+    }
+    .placa-topo {
+      background: #1a3a8f;
+      color: white;
+      font-size: clamp(0.55rem, 1.2vw, 0.75rem);
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      text-align: center;
+      padding: 4px 16px;
+      font-family: 'Roboto Condensed', sans-serif;
+    }
+    .placa-numero {
+      color: #111;
+      font-family: 'Roboto Condensed', sans-serif;
+      font-size: clamp(3rem, 8vw, 6.7rem);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      padding: 6px 24px 10px;
+      line-height: 1;
+      white-space: nowrap;
     }
 
     .hora-chamando {
-      font-family: var(--font-display);
       font-size: 2.6rem;
       color: var(--accent);
       margin-top: 4px;
     }
-
-    .aviso-epi {
-      margin-top: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+    .aviso-epi { margin-top: 18px; display: flex; flex-direction: column; gap: 6px; }
     .aviso-linha {
-      font-size: 0.75rem;
-      letter-spacing: 0.12em;
-      color: var(--accent);
-      opacity: 0.85;
+      font-size: 0.75rem; letter-spacing: 0.12em;
+      color: var(--accent); opacity: 0.85;
     }
     .aviso-linha.destaque {
-      font-weight: 700;
-      font-size: 0.85rem;
-      letter-spacing: 0.18em;
-      opacity: 1;
+      font-weight: 700; font-size: 0.85rem;
+      letter-spacing: 0.18em; opacity: 1;
     }
 
-    .idle-msg {
-      color: var(--muted);
-      font-size: 1.4rem;
-      margin-top: 14px;
-    }
-
-    /* rodapé */
     .aviso-sonoro {
       position: absolute;
       bottom: 10px; left: 14px;
-      font-size: 0.7rem;
-      color: #333;
+      font-size: 0.7rem; color: #333;
     }
 
     /* ═══════════════════════════════════════════════════════
@@ -314,7 +210,6 @@
       grid-template-columns: 1fr 1fr;
     }
 
-    /* BOX: Próximo Veículo */
     .box-proximo {
       padding: 20px 24px;
       border-right: 1px solid var(--border);
@@ -322,22 +217,18 @@
       flex-direction: column;
       justify-content: center;
     }
-
     .placa-proximo {
       font-family: var(--font-display);
       font-size: 3.8rem;
       color: #fff;
       line-height: 1;
     }
-
     .hora-proximo {
-      font-family: var(--font-display);
       font-size: 1.5rem;
       color: var(--muted);
       margin-top: 4px;
     }
 
-    /* BOX: Status Pátio */
     .box-status {
       padding: 16px 18px;
       background: #0d1a0f;
@@ -345,7 +236,6 @@
       display: flex;
       flex-direction: column;
     }
-
     .item-status {
       display: flex;
       justify-content: space-between;
@@ -357,103 +247,198 @@
     .item-status:last-child { border-bottom: none; }
 
     .badge {
-      font-size: 0.6rem;
-      font-weight: 700;
+      font-size: 0.6rem; font-weight: 700;
       letter-spacing: 0.12em;
-      padding: 3px 7px;
-      border-radius: 2px;
+      padding: 3px 7px; border-radius: 2px;
     }
     .badge-descarregando { background: var(--orange); color: #000; }
+    .badge-carregando    { background: var(--blue);   color: #000; }
     .badge-finalizado    { background: var(--green);  color: #000; }
 
     /* ═══════════════════════════════════════════════════════
-       ÁREA FILA
+       ÁREA FILA — DIVIDIDA EM DUAS SEÇÕES
     ═══════════════════════════════════════════════════════ */
     .area-fila {
       grid-area: fila;
       background: var(--surface);
-      padding: 24px 20px;
+      padding: 64px 0 0;
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
 
+    /* duas colunas internas */
+    .fila-colunas {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      flex: 1;
+      overflow: hidden;
+      border-top: 1px solid var(--border);
+    }
+
+    .fila-secao {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 14px 14px 14px;
+    }
+    .fila-secao:first-child {
+      border-right: 1px solid var(--border);
+    }
+
+    .fila-secao-titulo {
+      font-size: 0.58rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .fila-secao-titulo.descarga { color: var(--orange); }
+    .fila-secao-titulo.carga    { color: var(--blue); }
+
+    .fila-secao-titulo .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .descarga .dot { background: var(--orange); }
+    .carga .dot    { background: var(--blue); }
+
     .lista-fila {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
       overflow-y: auto;
       flex: 1;
     }
 
+    /* ─── ITEM DE FILA ──────────────────────────────────────── */
     .item-fila {
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 3px;
-      padding: 14px 16px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      transition: background 0.2s;
+
+      /* animação de entrada */
+      animation: entrarFila 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes entrarFila {
+      from {
+        opacity: 0;
+        transform: translateX(18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .item-fila:hover { background: #202020; }
+
+    .item-fila.primeiro {
+      background: linear-gradient(to right, #1a1200, #151515);
+      border-left: 3px solid var(--accent);
+    }
+    .item-fila.primeiro-carga {
+      background: linear-gradient(to right, #001a24, #151515);
+      border-left: 3px solid var(--blue);
+    }
+
+    .fila-linha-topo {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 1.4rem;
-      transition: background 0.2s;
     }
-    .item-fila:hover { background: #202020; }
-
-    .item-fila .placa-fila {
-      font-family: var(--font-display);
-      font-size: 1.6rem;
+    .placa-fila {
+      font-size: 1.25rem;
       color: #fff;
       letter-spacing: 0.05em;
-    }
-
-    .item-fila .hora-fila {
-      font-family: var(--font-display);
-      color: var(--accent);
-      font-size: 1rem;
       font-weight: 700;
     }
+    .hora-fila {
+      color: var(--accent);
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .hora-fila.carga-hora { color: var(--blue); }
 
-    /* linha vazia */
+    .produto-fila {
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
     .fila-vazia {
       color: var(--muted);
       text-align: center;
-      font-size: 0.85rem;
-      margin-top: 20px;
+      font-size: 0.75rem;
+      margin-top: 16px;
       letter-spacing: 0.1em;
+      opacity: 0.5;
     }
 
-    /* ─── SCROLLBAR ─────────────────────────────────────── */
-    ::-webkit-scrollbar { width: 4px; }
+    /* ─── MODO DESCANSO ─────────────────────────────────────── */
+    .modo-descanso {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      color: #222;
+      font-size: 1rem;
+      letter-spacing: 0.2em;
+      z-index: 9999;
+      animation: leveMovimento 20s infinite alternate ease-in-out;
+    }
+    @keyframes leveMovimento {
+      from { transform: translateY(0px); }
+      to   { transform: translateY(10px); }
+    }
+
+    /* ─── SCROLLBAR ─────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 3px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   </style>
 
   <link rel="icon" type="image/png" sizes="72x72" href="icon-72.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 </head>
 <body>
 
-    <div class="topo">
-    <div class="titulo-cd">CD - Itaboraí</div>
+  <div class="topo">
+    <div class="titulo-cd">CD — Itaboraí</div>
     <div class="relogio" id="relogio"></div>
-    </div>
-  
+  </div>
+
   <!-- PRINCIPAL -->
   <div class="area-principal" id="area-principal">
-  <div id="painel-principal">
-    <div class="aguardando-wrapper">
-      <div class="radar"></div>
-      <span>Aguardando chamada...</span>
+    <div id="painel-principal">
+      <div class="aguardando-wrapper">
+        <div class="radar"></div>
+        <span>Aguardando chamada...</span>
+      </div>
     </div>
+    <span class="aviso-sonoro">🔊 Clique na tela para ativar o som</span>
   </div>
-  <span class="aviso-sonoro">🔊 Clique na tela para ativar o som</span>
-</div>
 
   <!-- INFERIOR -->
   <div class="area-inferior">
     <div class="box-proximo" id="painel-proximo">
       <div class="label">Próximo Veículo</div>
-      <div class="idle-msg" style="font-size:1rem;">--</div>
+      <div style="font-size:1rem;color:var(--muted);">--</div>
     </div>
     <div class="box-status">
       <div class="label">Status Pátio</div>
@@ -461,96 +446,143 @@
     </div>
   </div>
 
-  <!-- FILA -->
+  <!-- FILA DIVIDIDA -->
   <div class="area-fila">
-    <div class="label">Próximos da Fila</div>
-    <div class="lista-fila" id="painel-fila"></div>
+    <div class="fila-colunas">
+
+      <!-- DESCARGA -->
+      <div class="fila-secao">
+        <div class="fila-secao-titulo descarga">
+          <span class="dot"></span>
+          ⬇ Descarga
+        </div>
+        <div class="lista-fila" id="fila-descarga"></div>
+      </div>
+
+      <!-- CARGA CIF/FOB -->
+      <div class="fila-secao">
+        <div class="fila-secao-titulo carga">
+          <span class="dot"></span>
+          ⬆ Carga
+        </div>
+        <div class="lista-fila" id="fila-carga"></div>
+      </div>
+
+    </div>
   </div>
 
   <audio id="som-alerta"
     src="https://agenda-backend-production-5b72.up.railway.app/msn-wizz-sound.ogg?v=2">
   </audio>
 
-
-<script>
-if ("serviceWorker" in navigator && !location.pathname.includes("tv.html")) {
-  navigator.serviceWorker.register("sw.js")
-}
-</script>
+  <script>
+    if ("serviceWorker" in navigator && !location.pathname.includes("tv.html")) {
+      navigator.serviceWorker.register("sw.js");
+    }
+  </script>
 
   <script>
-    // ─── CONFIGURAÇÃO ────────────────────────────────────────
-    const API_URL     = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
-    const POLL_MS     = 5000;   // intervalo de atualização
-    const BIPS_MAX    = 3;      // quantas vezes o som toca por chamada
-    const BIP_DELAY   = 2500;   // ms entre bips
+    // ─── CONFIG ──────────────────────────────────────────────
+    const API_URL  = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
+    const POLL_MS  = 5000;
+    const BIPS_MAX = 3;
+    const BIP_DELAY = 2500;
 
-    // ─── ESTADO ─────────────────────────────────────────────
-    let ultimoChamadoID = null;
-    let contadorBips    = 0;
+    // ─── ESTADO ──────────────────────────────────────────────
+    let ultimoChamadoID  = null;
+    let contadorBips     = 0;
+    let tempoSemChamada  = 0;
+    let descansoAtivo    = false;
 
-
-    // ─── descanso ─────────────────────────────────────────────
-    let tempoSemChamada = 0;
-let descansoAtivo = false;
-
-function ativarDescanso() {
-  if (descansoAtivo) return;
-
-  descansoAtivo = true;
-
-  const div = document.createElement("div");
-  div.className = "modo-descanso";
-  div.id = "modoDescanso";
-  div.innerHTML = "PAINEL EM ESPERA";
-  document.body.appendChild(div);
-}
-
-function desativarDescanso() {
-  const tela = document.getElementById("modoDescanso");
-  if (tela) tela.remove();
-  descansoAtivo = false;
-  tempoSemChamada = 0;
-}
+    // IDs já renderizados em cada lista (para animar apenas novos)
+    let idsDescarga = new Set();
+    let idsCarga    = new Set();
 
     // ─── HELPERS ─────────────────────────────────────────────
-    /** Ordena agendamentos por data+hora */
     const ordenarPorHora = (arr) =>
       [...arr].sort((a, b) =>
         new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`)
       );
 
-    // ─── RENDERIZADORES ──────────────────────────────────────
-      function formatarData(data) { if (!data) return '';  const [ano, mes, dia] = data.split('-');  return `${dia}/${mes}`;}
+    function formatarData(data) {
+      if (!data) return '';
+      const [ano, mes, dia] = data.split('-');
+      return `${dia}/${mes}`;
+    }
 
-    
+    function ehCargaCifFob(item) {
+      return ["CIF", "FOB"].includes((item.tipo_operacao || "").toUpperCase());
+    }
+
+    function simplificarProduto(produto) {
+      if (!produto) return '';
+      try {
+        const parsed = JSON.parse(produto);
+        if (Array.isArray(parsed)) {
+          return parsed.map(p => simplificarNome(p.produto)).filter(Boolean).join(' · ');
+        }
+      } catch (e) {}
+      return simplificarNome(produto);
+    }
+
+    function simplificarNome(p) {
+      const s = (p || '').toUpperCase();
+      if (s.includes('CPIII') || s.includes('CP-III') || s.includes('RS-SC')) return 'CPIII';
+      if (s.includes('MAUA')  || s.includes('MAÚA')  || s.includes('F-32-SC-V-MA')) return 'MAUA';
+      if (s.includes('E32')   || s.includes('E-32'))  return 'E32';
+      if (s.includes('M25')   || s.includes('25-MA')) return 'M25KG';
+      if (s.includes('CPV')   || s.includes('ARI'))   return 'CPV';
+      return p || '';
+    }
+
+    // ─── DESCANSO ─────────────────────────────────────────────
+    function ativarDescanso() {
+      if (descansoAtivo) return;
+      descansoAtivo = true;
+      const div = document.createElement("div");
+      div.className = "modo-descanso";
+      div.id = "modoDescanso";
+      div.innerHTML = "PAINEL EM ESPERA";
+      document.body.appendChild(div);
+    }
+
+    function desativarDescanso() {
+      const tela = document.getElementById("modoDescanso");
+      if (tela) tela.remove();
+      descansoAtivo = false;
+      tempoSemChamada = 0;
+    }
+
+    // ─── RENDER PRINCIPAL ────────────────────────────────────
     function renderPrincipal(chamando) {
-  const area   = document.getElementById('area-principal');
-  const painel = document.getElementById('painel-principal');
+      const painel = document.getElementById('painel-principal');
+      if (chamando) {
+        painel.innerHTML = `
+          <div class="chamando-wrap">
+            <div class="placa-mercosul">
+              <div class="placa-topo">${chamando.motorista
+                ? `⚠ Chamando motorista ${chamando.motorista}`
+                : 'CHAMANDO AGORA'}</div>
+              <div class="placa-numero">${chamando.placa}</div>
+            </div>
+            <div class="hora-chamando" style="margin-top:16px;">
+              ${chamando.hora}${chamando.motorista ? ` &bull; ${chamando.motorista}` : ''}
+            </div>
+            <div class="aviso-epi">
+              <div class="aviso-linha">Desligue o motor &bull; Calce as rodas &bull; Entregue as chaves</div>
+              <div class="aviso-linha destaque">&#9888;&#65039; Uso obrigatório de EPIs</div>
+            </div>
+          </div>`;
+      } else {
+        painel.innerHTML = `
+          <div class="aguardando-wrapper">
+            <div class="radar"></div>
+            <span>Aguardando chamada...</span>
+          </div>`;
+      }
+    }
 
-  if (chamando) {
-    area.classList.add('ativo');
-    painel.innerHTML = `
-      <div class="chamando-wrap">
-        <div class="placa-mercosul">
-          <div class="placa-topo">${chamando.motorista ? `⚠ Chamando motorista ${chamando.motorista}` : `CHAMANDO AGORA`}</div>
-          <div class="placa-numero">${chamando.placa}</div>
-        </div>
-        <div class="hora-chamando" style="margin-top:16px;">${chamando.hora}${chamando.motorista ? ` &bull; ${chamando.motorista}` : ''}</div>
-        <div class="aviso-epi">
-          <div class="aviso-linha">Desligue o motor &bull; Calce as rodas &bull; Entregue as chaves</div>
-          <div class="aviso-linha destaque">&#9888;&#65039; Uso obrigatório de EPIs</div>
-        </div>
-      </div>`;
-  } else {
-    area.classList.remove('ativo');
-    painel.innerHTML = `
-      <div class="aguardando-wrapper">
-        <div class="radar"></div>
-        <span>Aguardando chamada...</span>
-      </div>`;
-  }
-}
+    // ─── RENDER PRÓXIMO ──────────────────────────────────────
     function renderProximo(proximo) {
       const el = document.getElementById('painel-proximo');
       el.innerHTML = proximo
@@ -558,23 +590,58 @@ function desativarDescanso() {
            <div class="placa-proximo">${proximo.placa}</div>
            <div class="hora-proximo">${proximo.hora} · ${formatarData(proximo.data)}</div>`
         : `<div class="label">Próximo Veículo</div>
-           <div class="idle-msg" style="font-size:2rem;">--</div>`;
+           <div style="font-size:2rem;color:var(--muted)">--</div>`;
     }
 
-    function renderFila(fila) {
-      const el = document.getElementById('painel-fila');
-      if (!fila.length) {
-        el.innerHTML = `<div class="fila-vazia">Sem fila de espera</div>`;
+    // ─── RENDER FILA DIVIDIDA ────────────────────────────────
+    function renderFilaDividida(ativos) {
+      const agendados = ativos.filter(a => a.status === 'agendado');
+
+      const listaDescarga = agendados.filter(a => !ehCargaCifFob(a));
+      const listaCarga    = agendados.filter(a =>  ehCargaCifFob(a));
+
+      renderSecao('fila-descarga', listaDescarga, idsDescarga, false);
+      renderSecao('fila-carga',    listaCarga,    idsCarga,    true);
+
+      // Atualiza sets de IDs conhecidos
+      idsDescarga = new Set(listaDescarga.map(i => i.id));
+      idsCarga    = new Set(listaCarga.map(i => i.id));
+    }
+
+    function renderSecao(elId, lista, idsAntigos, isCarga) {
+      const el = document.getElementById(elId);
+
+      if (!lista.length) {
+        el.innerHTML = `<div class="fila-vazia">Sem veículos</div>`;
         return;
       }
-     el.innerHTML = fila.map((item, index) => `
-  <div class="item-fila ${index === 0 ? 'primeiro' : ''}">
-    <span class="numero-fila">${index + 2}</span>
-    <span class="placa-fila">${item.placa}</span>
-    <span class="hora-fila">${item.hora} · ${formatarData(item.data)}</span>
-  </div>`).join('');
+
+      el.innerHTML = lista.map((item, idx) => {
+        const isNovo     = !idsAntigos.has(item.id);
+        const isPrimeiro = idx === 0;
+        const classeItem = isPrimeiro
+          ? (isCarga ? 'item-fila primeiro-carga' : 'item-fila primeiro')
+          : 'item-fila';
+
+        const produto = simplificarProduto(item.produto);
+
+        // Delay escalonado na animação — só anima se for novo item
+        const animStyle = isNovo
+          ? `animation-delay: ${idx * 60}ms`
+          : 'animation: none';
+
+        return `
+          <div class="${classeItem}" style="${animStyle}">
+            <div class="fila-linha-topo">
+              <span class="placa-fila">${item.placa}</span>
+              <span class="hora-fila ${isCarga ? 'carga-hora' : ''}">${item.hora}</span>
+            </div>
+            ${produto ? `<div class="produto-fila">${produto}</div>` : ''}
+          </div>`;
+      }).join('');
     }
 
+    // ─── RENDER STATUS ───────────────────────────────────────
     function renderStatus(dados) {
       const el = document.getElementById('painel-status');
 
@@ -586,14 +653,15 @@ function desativarDescanso() {
 
       const linhas = [
         ...descarregando.map(i => {
-  const isCIF = ["CIF","FOB"].includes((i.tipo_operacao||"").toUpperCase());
-  const label = isCIF ? "Carregando" : "Descarregando";
-  return `
-    <div class="item-status">
-      <span>${i.placa}</span>
-      <span class="badge badge-descarregando">${label}</span>
-    </div>`;
-}),
+          const isCIF  = ehCargaCifFob(i);
+          const label  = isCIF ? 'Carregando' : 'Descarregando';
+          const classe = isCIF ? 'badge-carregando' : 'badge-descarregando';
+          return `
+            <div class="item-status">
+              <span>${i.placa}</span>
+              <span class="badge ${classe}">${label}</span>
+            </div>`;
+        }),
         ...finalizados.map(i => `
           <div class="item-status">
             <span>${i.placa}</span>
@@ -607,141 +675,88 @@ function desativarDescanso() {
     }
 
     // ─── SOM & VOZ ───────────────────────────────────────────
-
-
     function tocarSom() {
       if (contadorBips >= BIPS_MAX) return;
       const audio = document.getElementById('som-alerta');
       audio.currentTime = 0;
-      audio.play().catch(() => {/* aguardando interação do usuário */});
+      audio.play().catch(() => {});
       contadorBips++;
       setTimeout(tocarSom, BIP_DELAY);
     }
 
     function anunciarVeiculo(placa, motorista) {
-  if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
-    console.log("Voz não suportada neste dispositivo.");
-    return; 
-  }
+      if (!('speechSynthesis' in window)) return;
+      try {
+        const placaFalada = placa.split('').join(' ');
+        const trechoMotorista = motorista ? `${motorista} ` : '';
+        const texto = `Atenção, motorista ${trechoMotorista}da placa ${placaFalada}. Dirija-se à área de descarga.`;
+        const fala  = new SpeechSynthesisUtterance(texto);
+        fala.lang = 'pt-BR'; fala.rate = 0.9; fala.pitch = 1; fala.volume = 1;
+        speechSynthesis.cancel();
+        speechSynthesis.speak(fala);
+      } catch (err) {}
+    }
 
-  try {
-    const placaFalada = placa.split('').join(' ');
-    
-    // Lógica para montar o texto: se tiver motorista, fala o nome. Se não, fala só a placa.
-    const trechoMotorista = motorista ? `${motorista} ` : '';
-    const texto = `Atenção, motorista ${trechoMotorista}da placa ${placaFalada}. Dirija-se à área de descarga.`;
-    
-    const fala  = new SpeechSynthesisUtterance(texto);
-    fala.lang   = 'pt-BR';
-    fala.rate   = 0.9; // Mantive 0.9 para ele falar a placa pausadamente
-    fala.pitch  = 1;
-    fala.volume = 1;
-    speechSynthesis.cancel();
-    speechSynthesis.speak(fala);
-  } catch (err) {
-    console.log("Erro ao tentar falar: ", err);
-  }
-}
+    // ─── POLLING ─────────────────────────────────────────────
+    async function atualizarTV() {
+      try {
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error("Erro na API");
+        const dados = await res.json();
 
-    // ─── POLLING PRINCIPAL ───────────────────────────────────
-
-   async function atualizarTV() {
-  try {
-    
-
-   const res = await fetch(API_URL);
-
-if (!res.ok) {
-  throw new Error("Erro na resposta da API");
-}
-
-
-    const dados = await res.json();
-
-    const ativos = ordenarPorHora(
-      dados.filter(a => a.status !== 'finalizado')
-    );
-
-      const chamando = ativos.find(a => a.status === 'chamando') || null;
-const proximo  = ativos.find(a => a.status === 'agendado') || null;
-
-const fila = ativos
-  .filter(a => {
-    // Se o status for agendado...
-    if (a.status !== 'agendado') return false;
-    // E se existir um próximo, garante que não é o mesmo ID
-    if (proximo && a.id === proximo.id) return false;
-    
-    return true;
-  })
-  .slice(0, 5);
+        const ativos   = ordenarPorHora(dados.filter(a => a.status !== 'finalizado'));
+        const chamando = ativos.find(a => a.status === 'chamando') || null;
+        const proximo  = ativos.find(a => a.status === 'agendado') || null;
 
         renderPrincipal(chamando);
         renderProximo(proximo);
-        renderFila(fila);
+        renderFilaDividida(ativos);
         renderStatus(dados);
 
-if (chamando) {
-  tempoSemChamada = 0;
+        if (chamando) {
+          tempoSemChamada = 0;
+          if (descansoAtivo) desativarDescanso();
+        } else {
+          tempoSemChamada += POLL_MS;
+          if (tempoSemChamada >= 1800000 && !descansoAtivo) ativarDescanso();
+        }
 
-  if (descansoAtivo) {
-    desativarDescanso();
-  }
-
-} else {
-  tempoSemChamada += POLL_MS;
-
-  if (tempoSemChamada >= 1800000 && !descansoAtivo) {
-    ativarDescanso();
-  }
-}
-
-        // Dispara som/voz apenas em nova chamada
         if (chamando && ultimoChamadoID !== chamando.id) {
           ultimoChamadoID = chamando.id;
           contadorBips    = 0;
           tocarSom();
-          anunciarVeiculo(chamando.placa);
+          anunciarVeiculo(chamando.placa, chamando.motorista);
         }
 
       } catch (err) {
-        console.error('[Painel] Erro ao buscar dados:', err);
+        console.error('[Painel] Erro:', err);
       }
     }
 
-  
-    // ─── INIT ────────────────────────────────────────────────
+    // ─── RELÓGIO ─────────────────────────────────────────────
+    function atualizarRelogio() {
+      document.getElementById("relogio").textContent =
+        new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    }
 
-    // Libera contexto de áudio no primeiro clique
+    // ─── INIT ─────────────────────────────────────────────────
     document.body.addEventListener('click', () => {
       const audio = document.getElementById('som-alerta');
       audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
     }, { once: true });
 
     setInterval(atualizarTV, POLL_MS);
+    setInterval(atualizarRelogio, 1000);
+    atualizarRelogio();
     atualizarTV();
 
-function atualizarRelogio() {
-  const agora = new Date();
-  const hora = agora.toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-  document.getElementById("relogio").textContent = hora;
-}
-
-setInterval(atualizarRelogio, 1000);
-atualizarRelogio();
-
-setInterval(() => {
-  const offsetX = Math.floor(Math.random() * 3) - 1;
-  const offsetY = Math.floor(Math.random() * 3) - 1;
-
-  document.body.style.transition = "transform 1s ease-in-out";
-  document.body.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
-}, 300000);
-
-
+    // micro-movimento anti burn-in
+    setInterval(() => {
+      const ox = Math.floor(Math.random() * 3) - 1;
+      const oy = Math.floor(Math.random() * 3) - 1;
+      document.body.style.transition = "transform 1s ease-in-out";
+      document.body.style.transform  = `translate(${ox}px, ${oy}px)`;
+    }, 300000);
   </script>
 </body>
 </html>
