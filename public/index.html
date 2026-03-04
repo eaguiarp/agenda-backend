@@ -33,8 +33,10 @@
       <input type="date" id="data" required>
 
       <select id="hora" required>
-        <option value="">Selecione o horário</option>
-      </select>
+  <option value="" disabled selected hidden>
+    Selecione o horário
+  </option>
+</select>
 
       <div class="input-group">
         <label for="produto">Produto / Origem</label>
@@ -67,7 +69,9 @@
         <input type="text" id="nota_fiscal" placeholder="Nota Fiscal" autocomplete="off">
       </div>
 
-      <button type="submit">Salvar</button>
+    <button type="submit" class="btn btn-full btn-primary">
+  Salvar
+</button>
     </form>
   </section>
 
@@ -82,7 +86,9 @@
     <div class="filtros">
       <label for="filtro-data">Filtrar por dia:</label>
       <input type="date" id="filtro-data">
-      <button id="btn-limpar" type="button">Ver Tudo</button>
+<button type="button" class="btn btn-primary btn-full">
+    Ver Tudo
+</button>
     </div>
 
     <div class="filtros">

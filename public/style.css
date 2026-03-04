@@ -57,7 +57,7 @@ body {
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-item-agendamento:hover {
+.item-agendamento:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 15px rgba(0,0,0,0.08);
 }
@@ -146,13 +146,37 @@ label {
   color: #444;
 }
 
-form button[type="submit"] {
-    margin-top: 10px;
-    background-color: #5a6b5c;
-    color: white;
-    font-weight: 600;
-}
+
 
 form button[type="submit"]:hover {
     opacity: 0.9;
+}
+
+.btn {
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: none;
+  box-sizing: border-box;
+  transition: opacity 0.2s ease, transform 0.1s ease;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-full {
+  width: 100%;
+}
+
+.btn-primary {
+  background-color: #5a6b5c;
+  color: white;
+  font-weight: 600;
+}
+
+.btn-secundario {
+  background-color: #e9ecef;
+  color: #333;
 }
