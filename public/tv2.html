@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Painel Logístico - CD Itaboraí</title>
+
+<style>
+body {
+  margin: 0;
+  background: #0a0a0a;
+  color: #e0e0e0;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+.topo {
+  height: 50px;
+  background: #111;
+  border-bottom: 1px solid #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  font-size: 14px;
+}
+
+.titulo-cd {
+  color: #f0b429;
+  font-weight: bold;
+}
+
+.relogio {
+  color: #888;
+}
+
+.layout {
+  display: flex;
+  height: calc(100vh - 50px);
+}
+
+.esquerda {
+  width: 60%;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #333;
+}
+
+.direita {
+  width: 40%;
+  background: #111;
+  display: flex;
+  flex-direction: column;
+}
+
+.area-principal {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 1px solid #333;
+  text-align: center;
+}
+
+.area-inferior {
+  height: 35%;
+  display: flex;
+}
+
+.box {
+  flex: 1;
+  padding: 15px;
+  border-right: 1px solid #333;
+}
+
+.box:last-child {
+  border-right: none;
+}
+
+.fila {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+}
+
+.item {
+  background: #1a1a1a;
+  padding: 10px;
+  margin-bottom: 8px;
+  border: 1px solid #333;
+}
+
+.placa {
+  font-size: 48px;
+  font-weight: bold;
+}
+
+.label {
+  font-size: 12px;
+  color: #777;
+  margin-bottom: 8px;
+}
+
+.modo-descanso {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #000;
+  color: #222;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  z-index: 9999;
+}
+</style>
+</head>
+
+<body>
+
+<div class="topo">
+  <div class="titulo-cd">CD — Itaboraí</div>
+  <div class="relogio" id="relogio"></div>
+</div>
+
+<div class="layout">
+
+  <div class="esquerda">
+
+    <div class="area-principal" id="painel-principal">
+      Aguardando chamada...
+    </div>
+
+    <div class="area-inferior">
+      <div class="box">
+        <div class="label">Próximo Veículo</div>
+        <div id="painel-proximo">--</div>
+      </div>
+      <div class="box">
+        <div class="label">Status</div>
+        <div id="painel-status"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="direita">
+    <div class="fila">
+      <div class="label">Fila</div>
+      <div id="fila"></div>
+    </div>
+  </div>
+
+</div>
+
+<audio id="som-alerta"
+src="https://agenda-backend-production-5b72.up.railway.app/msn-wizz-sound.ogg?v=2">
+</audio>
+
+<script>
+
+var API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
+var POLL_MS = 5000;
+var ultimoChamadoID = null;
+var tempoSemChamada = 0;
+var descansoAtivo = false;
+
+function atualizarRelogio() {
+  var agora = new Date();
+  var h = agora.getHours();
+  var m = agora.getMinutes();
+  if (h < 10) h = "0" + h;
+  if (m < 10) m = "0" + m;
+  document.getElementById("relogio").innerHTML = h + ":" + m;
+}
+
+function ativarDescanso() {
+  if (descansoAtivo) return;
+  descansoAtivo = true;
+  var div = document.createElement("div");
+  div.className = "modo-descanso";
+  div.id = "modoDescanso";
+  div.innerHTML = "PAINEL EM ESPERA";
+  document.body.appendChild(div);
+}
+
+function desativarDescanso() {
+  var el = document.getElementById("modoDescanso");
+  if (el) document.body.removeChild(el);
+  descansoAtivo = false;
+  tempoSemChamada = 0;
+}
+
+function atualizarTV() {
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", API_URL, true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    if (xhr.status !== 200) return;
+
+    var dados;
+    try {
+      dados = JSON.parse(xhr.responseText);
+    } catch(e) {
+      return;
+    }
+
+    var chamando = null;
+    var proximo = null;
+    var fila = [];
+
+    for (var i = 0; i < dados.length; i++) {
+      if (!chamando && dados[i].status === "chamando") {
+        chamando = dados[i];
+      }
+      if (!proximo && dados[i].status === "agendado") {
+        proximo = dados[i];
+      }
+      if (dados[i].status === "agendado") {
+        fila.push(dados[i]);
+      }
+    }
+
+    var painel = document.getElementById("painel-principal");
+
+    if (chamando) {
+      painel.innerHTML =
+        '<div>' +
+        '<div class="placa">' + chamando.placa + '</div>' +
+        '<div>' + chamando.hora + '</div>' +
+        '</div>';
+
+      tempoSemChamada = 0;
+      if (descansoAtivo) desativarDescanso();
+
+      if (ultimoChamadoID !== chamando.id) {
+        ultimoChamadoID = chamando.id;
+        var audio = document.getElementById("som-alerta");
+        try { audio.play(); } catch(e) {}
+      }
+
+    } else {
+      painel.innerHTML = "Aguardando chamada...";
+      tempoSemChamada += POLL_MS;
+      if (tempoSemChamada >= 1800000) ativarDescanso();
+    }
+
+    if (proximo) {
+      document.getElementById("painel-proximo").innerHTML =
+        proximo.placa + " - " + proximo.hora;
+    } else {
+      document.getElementById("painel-proximo").innerHTML = "--";
+    }
+
+    var filaHTML = "";
+    for (var j = 0; j < fila.length; j++) {
+      filaHTML +=
+        '<div class="item">' +
+        fila[j].placa + " - " + fila[j].hora +
+        '</div>';
+    }
+    document.getElementById("fila").innerHTML = filaHTML;
+
+  };
+  xhr.send();
+}
+
+document.body.onclick = function() {
+  var audio = document.getElementById("som-alerta");
+  try {
+    audio.play();
+    setTimeout(function() {
+      audio.pause();
+      audio.currentTime = 0;
+    }, 100);
+  } catch(e) {}
+  document.body.onclick = null;
+};
+
+setInterval(atualizarRelogio, 1000);
+setInterval(atualizarTV, POLL_MS);
+
+atualizarRelogio();
+atualizarTV();
+
+</script>
+
+</body>
+</html>
