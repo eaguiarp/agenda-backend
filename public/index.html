@@ -5,60 +5,74 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CD Itaboraí | Logística</title>
 
-
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#5a6b5c">
-<link rel="apple-touch-icon" href="icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="stylesheet" href="style.css">
-<link rel="icon" type="image/png" sizes="72x72" href="icon-72.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-
+  <link rel="icon" type="image/png" sizes="72x72"  href="icon-72.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 </head>
 
 <body>
 <div class="container">
-        <div class="header">
-            <h1 style="text-transform: uppercase; letter-spacing: 2px;">
-                CD ITABORAÍ 
-            </h1>
-            <p style="color: #666; font-size: 0.9rem;">Sistema de agendamento de descarga</p>
-        </div>
 
-        <div id="mensagem" style="display: none;"></div>
-        
+  <div class="header">
+    <h1 style="text-transform: uppercase; letter-spacing: 2px;">CD ITABORAÍ</h1>
+    <p style="color: #666; font-size: 0.9rem;">Sistema de agendamento de descarga</p>
+  </div>
+
+  <div id="mensagem" style="display: none;"></div>
 
   <section>
     <h2>Novo agendamento</h2>
 
     <form id="form-agendamento">
-      <input type="date" id="data" required>
 
+      <input type="date" id="data" required>
 
       <select id="hora" required>
         <option value="">Selecione o horário</option>
       </select>
 
       <div class="input-group">
-    <label for="produto">Produto / Origem</label>
-    <select id="produto" required style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ccc;">
-        <option value="CPIII-32-RS-SC-V">CPIII-32-RS-SC-V (UPV/ARARÁ/URIO)</option>
-        <option value="CPII-F-32-SC-V-MA">CPII-F-32-SC-V-MA (CANTAGALO)</option>
-        <option value="CPII-E-32-SC-V">CPII-E-32-SC-V (CANTAGALO)</option>
-        <option value="CPII-F-32-SC-25-MA">CPII-F-32-SC-25-MA (CANTAGALO)</option>
-        <option value="CPV-ARI-SC-40-V">CPV-ARI-SC-40-V (CANTAGALO)</option>
-    </select>
-</div>
+        <label for="produto">Produto / Origem</label>
+        <select id="produto" required style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ccc;">
+          <option value="CPIII-32-RS-SC-V">CPIII-32-RS-SC-V (UPV/ARARÁ/URIO)</option>
+          <option value="CPII-F-32-SC-V-MA">CPII-F-32-SC-V-MA (CANTAGALO)</option>
+          <option value="CPII-E-32-SC-V">CPII-E-32-SC-V (CANTAGALO)</option>
+          <option value="CPII-F-32-SC-25-MA">CPII-F-32-SC-25-MA (CANTAGALO)</option>
+          <option value="CPV-ARI-SC-40-V">CPV-ARI-SC-40-V (CANTAGALO)</option>
+        </select>
+      </div>
 
-      <input type="text" id="placa" placeholder="Placa do veículo" required autocomplete="off">
+      <div class="input-group">
+        <label for="placa">Placa do Veículo *</label>
+        <input type="text" id="placa" placeholder="ABC1D23" required autocomplete="off" maxlength="8">
+      </div>
+
+      <div class="input-group">
+        <label for="motorista">Nome do Motorista</label>
+        <input type="text" id="motorista" placeholder="Ex: João Silva" autocomplete="off">
+      </div>
+
+      <div class="input-group">
+        <label for="quantidade">Quantidade *</label>
+     <input type="number" id="quantidade" placeholder="Ex: 770" required>
+      </div>
+
+      <div class="input-group">
+        <label for="nota_fiscal">Número da NF</label>
+        <input type="text" id="nota_fiscal" placeholder="Nota Fiscal" autocomplete="off">
+      </div>
 
       <button type="submit">Salvar</button>
     </form>
   </section>
 
   <hr>
-
+<h2>Buscar agendados</h2>
   <section id="dashboard">
     <div class="contadores">
       <p>Total Hoje: <span id="count-total">0</span></p>
@@ -66,7 +80,7 @@
     </div>
 
     <div class="filtros">
-      <label for="filtro-data">Filtrar por dia:</label> 
+      <label for="filtro-data">Filtrar por dia:</label>
       <input type="date" id="filtro-data">
       <button id="btn-limpar" type="button">Ver Tudo</button>
     </div>
@@ -78,15 +92,15 @@
 
     <section>
       <h2>Agendamentos</h2>
-      <ul id="lista-agendamentos">
-        </ul>
+      <ul id="lista-agendamentos"></ul>
     </section>
-  </section> 
+  </section>
 
+</div> <!-- fecha .container -->
 
   <script>
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("sw.js").catch(err => console.log("SW falhou:", err));
+      navigator.serviceWorker.register("sw.js").catch(function(err) { console.log("SW falhou:", err); });
     }
   </script>
 
