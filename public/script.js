@@ -340,7 +340,7 @@ async function renderizarOpcoesHorario() {
     }
 
     const HORARIOS_EXCLUSIVOS = [
-        2*60+40, 7*60+30, 9*60+40, 13*60, 15*60, 17*60+40, 21*60
+        2*60+40, 7*60+30, 9*60+30, 13*60, 15*60, 17*60+40, 21*60
     ];
 
     if (diaSemana >= 1 && diaSemana <= 5) {
