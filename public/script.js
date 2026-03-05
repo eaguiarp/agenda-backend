@@ -365,7 +365,8 @@ async function renderizarOpcoesHorario() {
         const pesoOcupado = naMesmaHora.reduce((acc, a) =>
             acc + classificarVeiculo(a.quantidade).peso, 0
         );
-        const cheio = pesoOcupado >= 1820;
+        const ocupadoDireto = naMesmaHora.some(function(a) { return !a.quantidade; });
+        const cheio = ocupadoDireto || pesoOcupado >= 1820;
 
         if (!passado && !bloqueado && !cheio) {
             const option = document.createElement("option");
