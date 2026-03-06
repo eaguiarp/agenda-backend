@@ -23,7 +23,8 @@
 
     /* --- OVERLAY --- */
     #overlay-inicio {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 10000;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.95); z-index: 10000;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       cursor: pointer; text-align: center;
     }
@@ -38,11 +39,12 @@
     .status-conexao { display: flex; align-items: center; gap: 10px; }
     #ponto-conexao { width: 8px; height: 8px; border-radius: 50%; background: var(--green); transition: background 0.3s; }
 
-    /* --- AREAS --- */
+    /* --- AREA PRINCIPAL --- */
     .area-principal {
       grid-area: principal; padding: 80px 36px 28px;
       display: flex; flex-direction: column; justify-content: center; align-items: center;
       border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      position: relative; overflow: hidden;
     }
 
     /* --- PLACA MERCOSUL --- */
@@ -62,28 +64,57 @@
 
     /* --- AVISO EPI --- */
     .aviso-epi {
-      margin-top: 22px;
-      background: #1a1200;
-      border: 1px solid #f0b429;
-      border-radius: 6px;
-      padding: 14px 28px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+      margin-top: 22px; background: #1a1200; border: 1px solid #f0b429;
+      border-radius: 6px; padding: 14px 28px; text-align: center;
+      display: flex; flex-direction: column; gap: 6px;
     }
-    .aviso-linha {
-      font-size: 0.85rem;
-      letter-spacing: 0.1em;
-      color: #f0b429;
-      opacity: 0.85;
+    .aviso-linha { font-size: 0.85rem; letter-spacing: 0.1em; color: #f0b429; opacity: 0.85; }
+    .aviso-linha.destaque { font-weight: 700; font-size: 1rem; letter-spacing: 0.15em; opacity: 1; }
+
+    /* --- VIDEO PLAYER --- */
+    #video-container {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: #000; display: none; align-items: center; justify-content: center;
     }
-    .aviso-linha.destaque {
-      font-weight: 700;
-      font-size: 1rem;
-      letter-spacing: 0.15em;
-      opacity: 1;
+    #video-container.ativo { display: flex; }
+    #player-video {
+      width: 100%; height: 100%; object-fit: contain; background: #000;
     }
+
+    /* --- TELA INFO (clima/transito) --- */
+    #info-container {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: #0a0a0a; display: none;
+      flex-direction: column; align-items: center; justify-content: center;
+      padding: 40px;
+    }
+    #info-container.ativo { display: flex; }
+
+    /* clima */
+    .clima-wrap { text-align: center; }
+    .clima-titulo { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: #555; margin-bottom: 16px; }
+    .clima-temp { font-size: 6rem; font-weight: 700; color: #f0b429; line-height: 1; }
+    .clima-desc { font-size: 1.4rem; color: #ccc; margin-top: 8px; }
+    .clima-vento { font-size: 0.9rem; color: #555; margin-top: 6px; letter-spacing: 0.1em; }
+
+    /* transito */
+    .transito-wrap { width: 100%; }
+    .transito-titulo { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: #555; margin-bottom: 20px; text-align: center; }
+    .transito-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 20px; margin-bottom: 10px;
+      background: #111; border-radius: 6px; border: 1px solid #2a2a2a;
+    }
+    .transito-destino { font-size: 1.1rem; font-weight: 700; color: #fff; }
+    .transito-tempo   { font-size: 0.9rem; color: #888; margin-top: 3px; }
+    .transito-badge {
+      font-size: 0.75rem; font-weight: 700; padding: 4px 12px;
+      border-radius: 3px; letter-spacing: 0.1em;
+    }
+    .badge-livre    { background: #00e676; color: #000; }
+    .badge-moderado { background: #f0b429; color: #000; }
+    .badge-intenso  { background: #ff3d00; color: #fff; }
+    .badge-semDados { background: #444;    color: #aaa; }
 
     /* --- FILA --- */
     .area-fila {
@@ -103,52 +134,47 @@
       text-transform: uppercase; margin-bottom: 10px;
       padding-bottom: 8px; border-bottom: 1px solid var(--border);
     }
-
-    /* --- ITEM FILA --- */
     .item-fila {
-      background: var(--surface2); padding: 10px 12px;
-      margin-bottom: 8px; border-radius: 4px;
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--border);
+      background: var(--surface2); padding: 10px 12px; margin-bottom: 8px;
+      border-radius: 4px; border: 1px solid var(--border); border-left: 3px solid var(--border);
     }
     .item-fila.tipo-descarga { border-left-color: #ff6d00; }
     .item-fila.tipo-carga    { border-left-color: #4fc3f7; }
     .item-fila.primeiro      { background: #1a1200; border-left-color: #f0b429; }
-
-    .fila-linha-topo {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 5px;
-    }
-    .placa-fila { font-size: 1.35rem; color: #fff; font-weight: 700; }
-    .hora-fila  { color: #f0b429; font-weight: 700; font-size: 0.9rem; }
+    .fila-linha-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+    .placa-fila      { font-size: 1.35rem; color: #fff; font-weight: 700; }
+    .hora-fila       { color: #f0b429; font-weight: 700; font-size: 0.9rem; }
     .hora-fila-carga { color: #4fc3f7; font-weight: 700; font-size: 0.9rem; }
 
     /* --- BADGES GERAIS --- */
-    .label {
-      font-size: 0.65rem; letter-spacing: 0.15em;
-      text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
-    }
-    .badge {
-      font-size: 0.6rem; font-weight: 700;
-      padding: 2px 6px; border-radius: 2px; letter-spacing: 0.08em;
-    }
+    .label { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+    .badge { font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 2px; letter-spacing: 0.08em; }
     .badge-descarregando { background: #ff6d00; color: #000; }
     .badge-carregando    { background: #4fc3f7; color: #000; }
     .badge-finalizado    { background: #00e676; color: #000; }
 
-    /* --- BADGES DE PRODUTO --- */
+    /* --- BADGES PRODUTO --- */
     .badge-produto {
-      display: inline-block;
-      font-size: 0.65rem; font-weight: 700;
-      padding: 2px 8px; border-radius: 2px;
-      letter-spacing: 0.08em; margin-right: 3px;
+      display: inline-block; font-size: 0.65rem; font-weight: 700;
+      padding: 2px 8px; border-radius: 2px; letter-spacing: 0.08em;
+      margin-right: 3px; text-transform: uppercase;
     }
-    .badge-cpiii { background-color: #800080; color: white; }
+    .badge-cpiii { background-color: #1A4A92; color: white; }
     .badge-cpii  { background-color: #4A773C; color: white; }
     .badge-cpv   { background-color: #C62828; color: white; }
-    .badge-maua  { background-color: #009440; color: white; }
+    .badge-maua  { background-color: #0D214F; color: white; }
     .badge-m25   { background-color: #E67E22; color: black; }
     .badge-geral { background-color: #444;    color: #ccc;  }
+
+    /* --- INFERIOR --- */
+    .area-inferior-grid {
+      grid-area: inferior; display: grid; grid-template-columns: 1fr 1fr;
+      border-right: 1px solid var(--border);
+    }
+    .box-proximo { padding: 20px; border-right: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; }
+    .box-status  { padding: 20px; background: #0d1a0f; overflow-y: auto; }
+    .item-status { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid #1c1c1c; font-size: 0.95rem; }
+    .item-status:last-child { border-bottom: none; }
 
     /* --- MODO DESCANSO --- */
     .modo-descanso {
@@ -165,6 +191,7 @@
 </head>
 <body>
 
+  <!-- OVERLAY INICIO -->
   <div id="overlay-inicio" onclick="iniciarPainel()">
     <div style="border: 2px solid #f0b429; padding: 40px; border-radius: 10px;">
       <h1 style="color: #f0b429; margin-bottom: 20px; font-family: 'Source Sans 3', sans-serif;">PAINEL LOGISTICO</h1>
@@ -172,6 +199,7 @@
     </div>
   </div>
 
+  <!-- TOPO -->
   <div class="topo">
     <div style="color: #f0b429; font-weight: 700; letter-spacing: 0.12em; font-size: 0.95rem;">CD &mdash; ITABORAI</div>
     <div class="status-conexao">
@@ -182,32 +210,53 @@
 
   <!-- PRINCIPAL -->
   <div class="area-principal">
+
+    <!-- Painel de chamada (placa Mercosul) -->
     <div id="painel-principal">
       <div style="font-size: 2rem; color: #555; opacity: 0.5;">Aguardando Chamada...</div>
     </div>
+
+    <!-- Player de vídeo (ociosa) -->
+    <div id="video-container">
+      <video id="player-video" preload="auto"></video>
+    </div>
+
+    <!-- Tela de info: clima / trânsito -->
+    <div id="info-container">
+      <div id="info-conteudo"></div>
+    </div>
+
   </div>
 
   <!-- INFERIOR -->
-  <div style="grid-area: inferior; display: grid; grid-template-columns: 1fr 1fr; border-right: 1px solid #2a2a2a;">
-    <div id="painel-proximo" style="padding: 20px; border-right: 1px solid #2a2a2a;"></div>
-    <div id="painel-status"  style="padding: 20px; background: #0d1a0f; overflow-y: auto;"></div>
+  <div class="area-inferior-grid">
+    <div class="box-proximo" id="painel-proximo">
+      <div class="label">Proximo</div>
+      <div style="font-size:2rem; color:#555;">--</div>
+    </div>
+    <div class="box-status">
+      <div class="label">Status Patio</div>
+      <div id="painel-status"></div>
+    </div>
   </div>
 
-  <!-- FILA DIVIDIDA -->
+  <!-- FILA -->
   <div class="area-fila">
     <div class="fila-colunas">
       <div class="fila-secao">
-        <div class="fila-secao-titulo" style="color: #ff6d00;">[v] DESCARGA</div>
+        <div class="fila-secao-titulo" style="color:#ff6d00;">[v] DESCARGA</div>
         <div id="fila-descarga"></div>
       </div>
       <div class="fila-secao">
-        <div class="fila-secao-titulo" style="color: #4fc3f7;">[^] CARGA</div>
+        <div class="fila-secao-titulo" style="color:#4fc3f7;">[^] CARGA</div>
         <div id="fila-carga"></div>
       </div>
     </div>
   </div>
 
+  <!-- AUDIO -->
   <audio id="som-alerta" src="https://agenda-backend-production-5b72.up.railway.app/msn-wizz-sound.ogg?v=2"></audio>
+  <audio id="musica-fundo" src="/Sony Xperia.mp3" loop></audio>
 
   <script>
     var API_URL         = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
@@ -217,15 +266,44 @@
     var tempoSemChamada = 0;
     var descansoAtivo   = false;
 
+    // ── PLAYLIST ─────────────────────────────────────────────
+    var playlist = [
+      '/video1.mp4',
+      '/video2.mp4',
+      '/video3.mp4',
+      '/video4.mp4',
+      '/video5.mp4'
+    ];
+    var indiceVideo    = 0;
+    var modoOcioso     = false;   // true = rodando playlist
+    var modoInfo       = false;   // true = mostrando clima/transito
+    var timerInfo      = null;
+    var indiceInfo     = 0;       // 0 = clima, 1 = transito
+    var dadosClima     = null;
+    var dadosTransito  = null;
+
     // ── INICIO ───────────────────────────────────────────────
     function iniciarPainel() {
       document.getElementById('overlay-inicio').style.display = 'none';
-      var audio = document.getElementById('som-alerta');
-      try { audio.play(); } catch(e) {}
-      setTimeout(function() { audio.pause(); audio.currentTime = 0; }, 100);
+
+      var alerta = document.getElementById('som-alerta');
+      try { alerta.play(); } catch(e) {}
+      setTimeout(function() { alerta.pause(); alerta.currentTime = 0; }, 100);
+
+      // inicia musica de fundo
+      var musica = document.getElementById('musica-fundo');
+      musica.volume = 0.18;
+      try { musica.play(); } catch(e) {}
+
+      // configura video player
+      var video = document.getElementById('player-video');
+      video.addEventListener('ended', function() { proximoVideo(); });
+
       setInterval(atualizarTV,      POLL_MS);
       setInterval(atualizarRelogio, 1000);
+      setInterval(atualizarDados,   600000); // clima e transito a cada 10 min
       atualizarRelogio();
+      atualizarDados();
       atualizarTV();
     }
 
@@ -237,6 +315,129 @@
       if (h < 10) h = '0' + h;
       if (m < 10) m = '0' + m;
       document.getElementById('relogio').innerHTML = h + ':' + m;
+    }
+
+    // ── DADOS CLIMA E TRANSITO ────────────────────────────────
+    function atualizarDados() {
+      // clima
+      var xhrW = new XMLHttpRequest();
+      xhrW.open('GET', '/api/weather', true);
+      xhrW.onreadystatechange = function() {
+        if (xhrW.readyState !== 4 || xhrW.status !== 200) return;
+        try { dadosClima = JSON.parse(xhrW.responseText); } catch(e) {}
+      };
+      xhrW.send();
+
+      // transito
+      var xhrT = new XMLHttpRequest();
+      xhrT.open('GET', '/api/traffic', true);
+      xhrT.onreadystatechange = function() {
+        if (xhrT.readyState !== 4 || xhrT.status !== 200) return;
+        try { dadosTransito = JSON.parse(xhrT.responseText); } catch(e) {}
+      };
+      xhrT.send();
+    }
+
+    // ── MODO OCIOSO: inicia playlist ──────────────────────────
+    function iniciarModoOcioso() {
+      if (modoOcioso) return;
+      modoOcioso = true;
+      document.getElementById('painel-principal').style.display = 'none';
+      tocarVideo(indiceVideo);
+    }
+
+    function encerrarModoOcioso() {
+      modoOcioso = false;
+      modoInfo   = false;
+      if (timerInfo) { clearTimeout(timerInfo); timerInfo = null; }
+
+      document.getElementById('video-container').className = '';
+      document.getElementById('info-container').className  = '';
+      document.getElementById('painel-principal').style.display = '';
+
+      var video = document.getElementById('player-video');
+      video.pause();
+    }
+
+    // ── PLAYLIST: vídeo → info → próximo vídeo ────────────────
+    function tocarVideo(idx) {
+      modoInfo = false;
+      document.getElementById('info-container').className  = '';
+      document.getElementById('video-container').className = 'ativo';
+
+      var video = document.getElementById('player-video');
+      video.src = playlist[idx % playlist.length];
+      video.load();
+      video.play();
+    }
+
+    function proximoVideo() {
+      // após cada vídeo, mostra info por 20 segundos antes do próximo
+      indiceVideo = (indiceVideo + 1) % playlist.length;
+      mostrarInfo();
+    }
+
+    function mostrarInfo() {
+      modoInfo = true;
+      document.getElementById('video-container').className = '';
+      document.getElementById('info-container').className  = 'ativo';
+
+      // alterna entre clima (0) e transito (1)
+      if (indiceInfo === 0) {
+        renderInfoClima();
+      } else {
+        renderInfoTransito();
+      }
+      indiceInfo = (indiceInfo + 1) % 2;
+
+      // após 20 segundos toca próximo vídeo
+      timerInfo = setTimeout(function() {
+        if (modoOcioso) tocarVideo(indiceVideo);
+      }, 20000);
+    }
+
+    // ── RENDER CLIMA ──────────────────────────────────────────
+    function renderInfoClima() {
+      var el = document.getElementById('info-conteudo');
+      if (!dadosClima) {
+        el.innerHTML = '<div class="clima-wrap"><div class="clima-titulo">CLIMA — ITABORAI</div><div class="clima-desc" style="color:#444;">Carregando...</div></div>';
+        return;
+      }
+      el.innerHTML =
+        '<div class="clima-wrap">' +
+          '<div class="clima-titulo">CLIMA ATUAL &mdash; ITABORAI / RJ</div>' +
+          '<div class="clima-temp">' + dadosClima.temperatura + '&deg;C</div>' +
+          '<div class="clima-desc">' + dadosClima.descricao + '</div>' +
+          '<div class="clima-vento">Vento: ' + dadosClima.vento + ' km/h</div>' +
+        '</div>';
+    }
+
+    // ── RENDER TRANSITO ───────────────────────────────────────
+    function renderInfoTransito() {
+      var el = document.getElementById('info-conteudo');
+      if (!dadosTransito) {
+        el.innerHTML = '<div class="transito-wrap"><div class="transito-titulo">TRANSITO</div><div style="color:#444; text-align:center;">Carregando...</div></div>';
+        return;
+      }
+      var html = '<div class="transito-wrap"><div class="transito-titulo">TRANSITO A PARTIR DE ITABORAI</div>';
+      for (var i = 0; i < dadosTransito.length; i++) {
+        var d = dadosTransito[i];
+        var classBadge = 'badge-semDados';
+        if (d.cor === 'green')  classBadge = 'badge-livre';
+        if (d.cor === 'yellow') classBadge = 'badge-moderado';
+        if (d.cor === 'red')    classBadge = 'badge-intenso';
+        var tempoHtml = d.tempo ? '<div class="transito-tempo">' + d.tempo + ' min c/ transito</div>' : '';
+        html +=
+          '<div class="transito-item">' +
+            '<div>' +
+              '<div class="transito-destino">' + d.destino + '</div>' +
+              tempoHtml +
+            '</div>' +
+            '<span class="transito-badge ' + classBadge + '">' + d.status + '</span>' +
+          '</div>';
+      }
+      html += '</div>';
+      el.innerHTML = html;
     }
 
     // ── VOZ ──────────────────────────────────────────────────
@@ -262,9 +463,7 @@
       if (s.indexOf('CPII')   !== -1 || s.indexOf('CP-II') !== -1) return 'CPII';
       return p || '';
     }
-
-    function classeProduto(nome) {
-      var n = (nome || '').toUpperCase();
+    function classeProduto(n) {
       if (n === 'CPIII') return 'badge-cpiii';
       if (n === 'MAUA')  return 'badge-maua';
       if (n === 'E32')   return 'badge-cpii';
@@ -273,12 +472,11 @@
       if (n === 'CPII')  return 'badge-cpii';
       return 'badge-geral';
     }
-
-    function badgesProduto(produtoRaw) {
-      if (!produtoRaw) return '';
+    function badgesProduto(raw) {
+      if (!raw) return '';
       var nomes = [];
       try {
-        var parsed = JSON.parse(produtoRaw);
+        var parsed = JSON.parse(raw);
         if (parsed && parsed.length) {
           for (var i = 0; i < parsed.length; i++) {
             var n = simplificarNome(parsed[i].produto);
@@ -286,10 +484,9 @@
           }
         }
       } catch(e) {
-        var nome = simplificarNome(produtoRaw);
-        if (nome) nomes.push(nome);
+        var n2 = simplificarNome(raw);
+        if (n2) nomes.push(n2);
       }
-      if (!nomes.length) return '';
       var html = '';
       for (var j = 0; j < nomes.length; j++) {
         html += '<span class="badge-produto ' + classeProduto(nomes[j]) + '">' + nomes[j] + '</span>';
@@ -318,12 +515,10 @@
     function processarDados(dados) {
       var chamando       = null;
       var listaAgendados = [];
-
       for (var i = 0; i < dados.length; i++) {
         if (dados[i].status === 'chamando') chamando = dados[i];
         if (dados[i].status === 'agendado') listaAgendados.push(dados[i]);
       }
-
       listaAgendados.sort(function(a, b) {
         return new Date(a.data + ' ' + a.hora) - new Date(b.data + ' ' + b.hora);
       });
@@ -336,16 +531,25 @@
       renderStatus(dados);
 
       if (chamando) {
+        // há chamada: encerra modo ocioso, silencia musica levemente
+        if (modoOcioso) encerrarModoOcioso();
+        document.getElementById('musica-fundo').volume = 0.05;
+
         if (ultimoChamadoID !== chamando.id) {
           ultimoChamadoID = chamando.id;
           try { document.getElementById('som-alerta').play(); } catch(e) {}
           anunciarVoz(chamando.placa, chamando.motorista);
         }
         tempoSemChamada = 0;
+        ultimaPlacaVoz  = '';
         if (descansoAtivo) desativarDescanso();
       } else {
         tempoSemChamada += POLL_MS;
-        ultimaPlacaVoz = '';
+        ultimaPlacaVoz   = '';
+        document.getElementById('musica-fundo').volume = 0.18;
+
+        // inicia playlist após 30 segundos sem chamada
+        if (tempoSemChamada >= 30000 && !modoOcioso) iniciarModoOcioso();
         if (tempoSemChamada >= 1800000 && !descansoAtivo) ativarDescanso();
       }
     }
@@ -357,7 +561,6 @@
         var topoChamada = chamando.motorista
           ? '[!] Chamando: ' + chamando.motorista
           : 'CHAMANDO AGORA';
-
         painel.innerHTML =
           '<div class="placa-mercosul">' +
             '<div class="placa-topo">' + topoChamada + '</div>' +
@@ -385,9 +588,7 @@
           '<div style="font-size:1.5rem; color:#f0b429; margin:4px 0;">' + proximo.hora + '</div>' +
           (badges ? '<div style="margin-top:6px;">' + badges + '</div>' : '');
       } else {
-        el.innerHTML =
-          '<div class="label">Proximo</div>' +
-          '<div style="font-size:2rem; color:#555;">--</div>';
+        el.innerHTML = '<div class="label">Proximo</div><div style="font-size:2rem;color:#555;">--</div>';
       }
     }
 
@@ -403,12 +604,8 @@
         var badges  = badgesProduto(item.produto);
 
         var classeItem;
-        if (!isCarga && primeiroDesc) {
-          classeItem = 'item-fila primeiro';
-          primeiroDesc = false;
-        } else {
-          classeItem = 'item-fila ' + (isCarga ? 'tipo-carga' : 'tipo-descarga');
-        }
+        if (!isCarga && primeiroDesc) { classeItem = 'item-fila primeiro'; primeiroDesc = false; }
+        else { classeItem = 'item-fila ' + (isCarga ? 'tipo-carga' : 'tipo-descarga'); }
 
         var horaHtml = isCarga
           ? '<span class="hora-fila-carga">' + item.hora + '</span>'
@@ -417,8 +614,7 @@
         var card =
           '<div class="' + classeItem + '">' +
             '<div class="fila-linha-topo">' +
-              '<span class="placa-fila">' + item.placa + '</span>' +
-              horaHtml +
+              '<span class="placa-fila">' + item.placa + '</span>' + horaHtml +
             '</div>' +
             (badges ? '<div style="margin-top:4px;">' + badges + '</div>' : '') +
           '</div>';
@@ -428,17 +624,16 @@
       }
 
       document.getElementById('fila-descarga').innerHTML =
-        htmlDescarga || '<div style="color:#444; font-size:0.8rem; margin-top:8px;">Fila vazia</div>';
+        htmlDescarga || '<div style="color:#444;font-size:0.8rem;margin-top:8px;">Fila vazia</div>';
       document.getElementById('fila-carga').innerHTML =
-        htmlCarga || '<div style="color:#444; font-size:0.8rem; margin-top:8px;">Fila vazia</div>';
+        htmlCarga    || '<div style="color:#444;font-size:0.8rem;margin-top:8px;">Fila vazia</div>';
     }
 
     // ── RENDER STATUS ────────────────────────────────────────
     function renderStatus(dados) {
-      var el         = document.getElementById('painel-status');
+      var el = document.getElementById('painel-status');
       var emOperacao = null;
       var historico  = [];
-
       for (var i = 0; i < dados.length; i++) {
         if (dados[i].status === 'descarregando' || dados[i].status === 'carregando') emOperacao = dados[i];
         if (dados[i].status === 'finalizado') historico.push(dados[i]);
@@ -446,32 +641,26 @@
       historico.sort(function(a, b) { return b.id - a.id; });
       var ultimos = historico.slice(0, 2);
 
-      var html =
-        '<div style="margin-bottom:15px; border-bottom:1px solid #2a2a2a; padding-bottom:10px;">' +
-          '<div class="label">Em Operacao (Vaga 01)</div>';
-
+      var html = '<div style="margin-bottom:15px;border-bottom:1px solid #2a2a2a;padding-bottom:10px;">' +
+                 '<div class="label">Em Operacao</div>';
       if (emOperacao) {
         var isCIF   = (emOperacao.tipo_operacao === 'CIF' || emOperacao.tipo_operacao === 'FOB');
-        var badgeOp = isCIF ? 'badge-carregando' : 'badge-descarregando';
-        var labelOp = isCIF ? 'CARREGANDO' : 'DESCARREGANDO';
         var bdProd  = badgesProduto(emOperacao.produto);
         html +=
-          '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-            '<span style="font-size:1.8rem; font-weight:700; color:#fff;">' + emOperacao.placa + '</span>' +
-            '<span class="badge ' + badgeOp + '">' + labelOp + '</span>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+            '<span style="font-size:1.8rem;font-weight:700;color:#fff;">' + emOperacao.placa + '</span>' +
+            '<span class="badge ' + (isCIF ? 'badge-carregando' : 'badge-descarregando') + '">' +
+              (isCIF ? 'CARREGANDO' : 'DESCARREGANDO') + '</span>' +
           '</div>' +
           (bdProd ? '<div style="margin-top:4px;">' + bdProd + '</div>' : '');
       } else {
-        html += '<div style="color:#555; font-style:italic;">Vaga disponivel</div>';
+        html += '<div style="color:#555;font-style:italic;">Vaga disponivel</div>';
       }
-
       html += '</div><div><div class="label">Ultimos Finalizados</div>';
       for (var k = 0; k < ultimos.length; k++) {
-        html +=
-          '<div style="display:flex; justify-content:space-between; margin-bottom:5px; opacity:0.7;">' +
-            '<span>' + ultimos[k].placa + '</span>' +
-            '<span class="badge badge-finalizado">OK</span>' +
-          '</div>';
+        html += '<div style="display:flex;justify-content:space-between;margin-bottom:5px;opacity:0.7;">' +
+                '<span>' + ultimos[k].placa + '</span>' +
+                '<span class="badge badge-finalizado">OK</span></div>';
       }
       el.innerHTML = html;
     }
@@ -481,17 +670,14 @@
       if (descansoAtivo) return;
       descansoAtivo = true;
       var div = document.createElement('div');
-      div.className = 'modo-descanso';
-      div.id = 'modoDescanso';
+      div.className = 'modo-descanso'; div.id = 'modoDescanso';
       div.innerHTML = 'PAINEL EM ESPERA';
       document.body.appendChild(div);
     }
-
     function desativarDescanso() {
       var el = document.getElementById('modoDescanso');
       if (el && el.parentNode) el.parentNode.removeChild(el);
-      descansoAtivo   = false;
-      tempoSemChamada = 0;
+      descansoAtivo = false; tempoSemChamada = 0;
     }
 
   </script>

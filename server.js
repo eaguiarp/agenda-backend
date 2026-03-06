@@ -448,6 +448,85 @@ app.delete("/usuarios/:id", async (req, res) => {
 });
 
 // ========================================================
+// 🌤️ ROTA — CLIMA (Open-Meteo, sem chave)
+// ========================================================
+app.get("/api/weather", async (req, res) => {
+  const https = require("https");
+  const url = "https://api.open-meteo.com/v1/forecast?latitude=-22.779214&longitude=-42.935105&current_weather=true";
+  https.get(url, function(resp) {
+    let data = "";
+    resp.on("data", function(chunk) { data += chunk; });
+    resp.on("end", function() {
+      try {
+        const w = JSON.parse(data).current_weather;
+        const codigos = {
+          0:"Céu limpo", 1:"Quase limpo", 2:"Parcialmente nublado", 3:"Nublado",
+          45:"Neblina", 48:"Neblina com geada", 51:"Garoa leve", 53:"Garoa moderada",
+          55:"Garoa intensa", 61:"Chuva leve", 63:"Chuva moderada", 65:"Chuva forte",
+          80:"Pancadas leves", 81:"Pancadas moderadas", 82:"Pancadas fortes",
+          95:"Tempestade", 96:"Tempestade c/ granizo", 99:"Tempestade c/ granizo forte"
+        };
+        res.json({
+          temperatura: w.temperature,
+          vento:       w.windspeed,
+          descricao:   codigos[w.weathercode] || "Condição " + w.weathercode
+        });
+      } catch(e) { res.status(500).json({ erro: "Erro ao processar clima" }); }
+    });
+  }).on("error", function() { res.status(500).json({ erro: "Erro ao obter clima" }); });
+});
+
+// ========================================================
+// 🚗 ROTA — TRÂNSITO (Google Distance Matrix)
+// ========================================================
+app.get("/api/traffic", async (req, res) => {
+  const https  = require("https");
+  const apiKey = process.env.MAPS_API_KEY;
+  const origin = "-22.779214,-42.935105";
+  const dests  = ["-22.7482,-42.9225", "-22.9194,-42.8186", "-22.7122,-42.6300"].join("|");
+  const labels = ["Niteroi/SG", "Marica", "Regiao dos Lagos"];
+  const url = "https://maps.googleapis.com/maps/api/distancematrix/json" +
+    "?origins=" + origin +
+    "&destinations=" + encodeURIComponent(dests) +
+    "&departure_time=now" +
+    "&key=" + apiKey;
+
+  https.get(url, function(resp) {
+    let data = "";
+    resp.on("data", function(chunk) { data += chunk; });
+    resp.on("end", function() {
+      try {
+        const elements = JSON.parse(data).rows[0].elements;
+        const resultado = elements.map(function(el, i) {
+          if (el.status !== "OK") return { destino: labels[i], status: "SEM DADOS", cor: "gray" };
+          const comTrafico = el.duration_in_traffic.value / 60;
+          const normal     = el.duration.value / 60;
+          const atraso     = comTrafico - normal;
+          var status = "LIVRE";   var cor = "green";
+          if (atraso > 15) { status = "INTENSO";  cor = "red";    }
+          else if (atraso > 5) { status = "MODERADO"; cor = "yellow"; }
+          return { destino: labels[i], tempo: Math.round(comTrafico), atraso: Math.round(atraso), status: status, cor: cor };
+        });
+        res.json(resultado);
+      } catch(e) { res.status(500).json({ erro: "Erro ao processar transito" }); }
+    });
+  }).on("error", function() { res.status(500).json({ erro: "Erro ao obter transito" }); });
+});
+
+// ========================================================
+// 🎬 ROTA — LISTA DE VÍDEOS
+// ========================================================
+app.get("/api/videos", function(req, res) {
+  res.json([
+    { nome: "Video 1", arquivo: "/video1.mp4" },
+    { nome: "Video 2", arquivo: "/video2.mp4" },
+    { nome: "Video 3", arquivo: "/video3.mp4" },
+    { nome: "Video 4", arquivo: "/video4.mp4" },
+    { nome: "Video 5", arquivo: "/video5.mp4" }
+  ]);
+});
+
+// ========================================================
 // 🖥️ ROTAS DE PÁGINAS
 // ========================================================
 app.get("/tv",        (req, res) => res.sendFile(__dirname + "/public/tv.html"));
