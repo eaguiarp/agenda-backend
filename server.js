@@ -518,11 +518,11 @@ app.get("/api/traffic", async (req, res) => {
 // ========================================================
 app.get("/api/videos", function(req, res) {
   res.json([
-    { nome: "Video 1", arquivo: "/video1.mp4" },
-    { nome: "Video 2", arquivo: "/video2.mp4" },
-    { nome: "Video 3", arquivo: "/video3.mp4" },
-    { nome: "Video 4", arquivo: "/video4.mp4" },
-    { nome: "Video 5", arquivo: "/video5.mp4" }
+    { nome: "Video 1", arquivo: "/video 1.mp4" },
+    { nome: "Video 2", arquivo: "/video 2.mp4" },
+    { nome: "Video 3", arquivo: "/video 3.mp4" },
+    { nome: "Video 4", arquivo: "/video 4.mp4" },
+    { nome: "Video 5", arquivo: "/video 5.mp4" }
   ]);
 });
 
