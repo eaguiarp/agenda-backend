@@ -286,13 +286,14 @@
     function iniciarPainel() {
       document.getElementById('overlay-inicio').style.display = 'none';
 
+      // prepara som de alerta
       var alerta = document.getElementById('som-alerta');
       try { alerta.play(); } catch(e) {}
       setTimeout(function() { alerta.pause(); alerta.currentTime = 0; }, 100);
 
-      // inicia musica de fundo
+      // música começa muda — só toca nas telas de clima/trânsito
       var musica = document.getElementById('musica-fundo');
-      musica.volume = 0.18;
+      musica.volume = 0;
       try { musica.play(); } catch(e) {}
 
       // configura video player
@@ -301,9 +302,14 @@
 
       setInterval(atualizarTV,      POLL_MS);
       setInterval(atualizarRelogio, 1000);
-      setInterval(atualizarDados,   600000); // clima e transito a cada 10 min
+      setInterval(atualizarDados,   600000);
       atualizarRelogio();
       atualizarDados();
+
+      // inicia vídeos imediatamente sem esperar polling
+      modoOcioso = true;
+      tocarVideo(0);
+
       atualizarTV();
     }
 
@@ -355,6 +361,9 @@
       document.getElementById('info-container').className  = '';
       document.getElementById('painel-principal').style.display = '';
 
+      // silencia música
+      document.getElementById('musica-fundo').volume = 0;
+
       var video = document.getElementById('player-video');
       video.pause();
     }
@@ -364,6 +373,10 @@
       modoInfo = false;
       document.getElementById('info-container').className  = '';
       document.getElementById('video-container').className = 'ativo';
+      document.getElementById('painel-principal').style.display = 'none';
+
+      // silencia música durante vídeo
+      document.getElementById('musica-fundo').volume = 0;
 
       var video = document.getElementById('player-video');
       video.src = playlist[idx % playlist.length];
@@ -372,7 +385,6 @@
     }
 
     function proximoVideo() {
-      // após cada vídeo, mostra info por 20 segundos antes do próximo
       indiceVideo = (indiceVideo + 1) % playlist.length;
       mostrarInfo();
     }
@@ -382,7 +394,9 @@
       document.getElementById('video-container').className = '';
       document.getElementById('info-container').className  = 'ativo';
 
-      // alterna entre clima (0) e transito (1)
+      // liga música suave nas telas de info
+      document.getElementById('musica-fundo').volume = 0.18;
+
       if (indiceInfo === 0) {
         renderInfoClima();
       } else {
@@ -531,26 +545,24 @@
       renderStatus(dados);
 
       if (chamando) {
-        // há chamada: encerra modo ocioso, silencia musica levemente
+        // há chamada: para vídeos e exibe placa
         if (modoOcioso) encerrarModoOcioso();
-        document.getElementById('musica-fundo').volume = 0.05;
 
         if (ultimoChamadoID !== chamando.id) {
           ultimoChamadoID = chamando.id;
           try { document.getElementById('som-alerta').play(); } catch(e) {}
           anunciarVoz(chamando.placa, chamando.motorista);
         }
-        tempoSemChamada = 0;
-        ultimaPlacaVoz  = '';
-        if (descansoAtivo) desativarDescanso();
+        ultimaPlacaVoz = '';
       } else {
-        tempoSemChamada += POLL_MS;
-        ultimaPlacaVoz   = '';
-        document.getElementById('musica-fundo').volume = 0.18;
+        ultimaPlacaVoz  = '';
+        ultimoChamadoID = null;
 
-        // inicia playlist após 30 segundos sem chamada
-        if (tempoSemChamada >= 30000 && !modoOcioso) iniciarModoOcioso();
-        if (tempoSemChamada >= 1800000 && !descansoAtivo) ativarDescanso();
+        // sem chamada: retoma vídeos imediatamente se não estiver rodando
+        if (!modoOcioso) {
+          modoOcioso = true;
+          tocarVideo(indiceVideo);
+        }
       }
     }
 

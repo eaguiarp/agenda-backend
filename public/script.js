@@ -349,39 +349,49 @@ async function renderizarOpcoesHorario() {
             : horarios.filter(h => !HORARIOS_EXCLUSIVOS.includes(h));
     }
 
-    horarios.forEach(m => {
-        const horarioFormatado = String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
+    horarios.forEach(function(m) {
+    var horarioFormatado = String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
 
-        const naMesmaHora = agendamentos.filter(a =>
-            a.data === dataSelecionada &&
-            a.hora === horarioFormatado &&
-            !STATUS_ENCERRADOS.includes(a.status)
-        );
-
-        const passado   = (dataSelecionada === hojeData && m < minutosAgora);
-        const bloqueado = horarioBloqueado(dataSelecionada, m, bloqueios);
-
-        // Calcula capacidade restante para mostrar horários parcialmente ocupados
-        const pesoOcupado = naMesmaHora.reduce((acc, a) =>
-            acc + classificarVeiculo(a.quantidade).peso, 0
-        );
-        const ocupadoDireto = naMesmaHora.some(function(a) { return !a.quantidade; });
-        const cheio = ocupadoDireto || pesoOcupado >= 1820;
-
-        if (!passado && !bloqueado && !cheio) {
-            const option = document.createElement("option");
-            option.value       = horarioFormatado;
-            option.textContent = horarioFormatado;
-            inputHora.appendChild(option);
-        }
+    // Agendamentos no slot exato
+    var naMesmaHora = agendamentos.filter(function(a) {
+        return a.data === dataSelecionada &&
+               a.hora === horarioFormatado &&
+               !STATUS_ENCERRADOS.includes(a.status);
     });
 
-    if (inputHora.options.length === 1) {
-        const opt = document.createElement("option");
-        opt.value = ""; opt.disabled = true;
-        opt.textContent = "Nenhum horário disponível";
-        inputHora.appendChild(opt);
+    // Agendamentos na FAIXA de 1 hora (slot atual + slot anterior de 30min)
+    var inicioFaixa = m - 30; // slot anterior
+    var fimFaixa    = m;      // slot atual
+
+    var naFaixa = agendamentos.filter(function(a) {
+        if (a.data !== dataSelecionada) return false;
+        if (STATUS_ENCERRADOS.includes(a.status)) return false;
+        var partes = a.hora.split(':');
+        var minAgend = parseInt(partes[0]) * 60 + parseInt(partes[1]);
+        return minAgend >= inicioFaixa && minAgend <= fimFaixa;
+    });
+
+    var temSemQuantidade = false;
+    for (var x = 0; x < naFaixa.length; x++) {
+        if (!naFaixa[x].quantidade) { temSemQuantidade = true; break; }
     }
+
+    var pesoFaixa = naFaixa.reduce(function(acc, a) {
+        return acc + classificarVeiculo(a.quantidade).peso;
+    }, 0);
+
+    var cheio = temSemQuantidade || pesoFaixa >= 1820 || naFaixa.length >= 4;
+
+    var passado   = (dataSelecionada === hojeData && m < minutosAgora);
+    var bloqueado = horarioBloqueado(dataSelecionada, m, bloqueios);
+
+    if (!passado && !bloqueado && !cheio) {
+        var option = document.createElement("option");
+        option.value       = horarioFormatado;
+        option.textContent = horarioFormatado;
+        inputHora.appendChild(option);
+    }
+});
 }
 
 // ===============================
