@@ -17,7 +17,7 @@
     body {
       background: var(--bg); color: var(--text); font-family: var(--font-display);
       height: 100vh; overflow: hidden; display: grid;
-      grid-template-columns: 58% 42%; grid-template-rows: 62% 38%;
+      grid-template-columns: 65% 35%; grid-template-rows: 62% 38%;
       grid-template-areas: "principal fila" "inferior fila";
     }
 
@@ -163,15 +163,19 @@
 }
 
 /* Caixa de Status (Badge à direita) */
-.card-status-box {
-    background: rgba(255, 255, 255, 0.25);
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 900;
+.card-status-box { 
+    background: rgba(0, 0, 0, 0.15); /* Fundo escuro sutil para contraste */
+    padding: 4px 10px;
+    border-radius: 4px; /* Canto menos arredondado para parecer menos com botão */
+    font-size: 0.7rem;
+    font-weight: 700;
+    min-width: 70px;
     text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    min-width: 80px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: none;
+    box-shadow: none;
+    display: inline-block;
 }
 
 /* 🚥 CORES DINÂMICAS (VINDAS DO BACKEND) */
@@ -182,9 +186,9 @@
 }
 
 /* Status: AMARELO (Moderado) */
-.card-amarelo {
-    background: linear-gradient(135deg, #fbc02d, #f9a825);
-    color: #000000; /* Texto preto para contraste no fundo amarelo */
+.card-amarelo { 
+    background: rgba(0, 0, 0, 0.08);
+    color: #000 !important;
 }
 .card-amarelo .transito-detalhe { color: #000; opacity: 0.8; }
 .card-amarelo .card-status-box { 
@@ -547,8 +551,19 @@
         if (d.cor === 'gray')   classCard = 'card-cinza';
 
         // Trata o texto de tempo e atraso
-        var infoTempo = d.tempo ? d.tempo + ' min' : '-- min';
-        var atrasoTexto = d.atraso > 0 ? ' (+' + d.atraso + ' min)' : '';
+   var infoTempo = '-- min';
+if (d.tempo) {
+    if (d.tempo >= 60) {
+        var horas = Math.floor(d.tempo / 60);
+        var mins = d.tempo % 60;
+        // Se os minutos forem 0, mostra só a hora, senão mostra 1h 38m
+        infoTempo = mins > 0 ? horas + 'h ' + mins + 'm' : horas + 'h';
+    } else {
+        infoTempo = d.tempo + ' min';
+    }
+}
+
+var atrasoTexto = d.atraso > 0 ? ' (+' + d.atraso + ' min)' : '';
 
         html +=
           '<div class="transito-card-novo ' + classCard + '">' +

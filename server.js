@@ -496,7 +496,7 @@ const labels = [
   "Arsenal",
   "Serra do Lagarto",
   "Região dos Lagos",
-  "Ponte"
+  "Niterói (final da ponte)"
 ];
   const url = "https://maps.googleapis.com/maps/api/distancematrix/json" +
     "?origins=" + origin +
