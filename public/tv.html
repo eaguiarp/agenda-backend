@@ -72,13 +72,14 @@
     .aviso-linha.destaque { font-weight: 700; font-size: 1rem; letter-spacing: 0.15em; opacity: 1; }
 
     /* --- VIDEO PLAYER --- */
-   #video-container {
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: #000; display: none; align-items: center; justify-content: center;
-}
-#player-video {
-  width: 100%; height: 100%; object-fit: contain; background: #000;
-}
+    #video-container {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: #000; display: none; align-items: center; justify-content: center;
+    }
+    #video-container.ativo { display: flex; }
+    #player-video {
+      width: 100%; height: 100%; object-fit: contain; background: #000;
+    }
 
     /* --- TELA INFO (clima/transito) --- */
     #info-container {
@@ -142,8 +143,8 @@
     .item-fila.primeiro      { background: #1a1200; border-left-color: #f0b429; }
     .fila-linha-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
     .placa-fila      { font-size: 1.35rem; color: #fff; font-weight: 700; }
-    .hora-fila       { color: #f0b429; font-weight: 700; font-size: 0.9rem; }
-    .hora-fila-carga { color: #4fc3f7; font-weight: 700; font-size: 0.9rem; }
+    .hora-fila       { color: #f0b429; font-weight: 700; font-size: 0.9rem; text-align: right; }
+    .hora-fila-carga { color: #4fc3f7; font-weight: 700; font-size: 0.9rem; text-align: right; }
 
     /* --- BADGES GERAIS --- */
     .label { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
@@ -209,22 +210,15 @@
 
   <!-- PRINCIPAL -->
   <div class="area-principal">
-
-    <!-- Painel de chamada (placa Mercosul) -->
     <div id="painel-principal">
       <div style="font-size: 2rem; color: #555; opacity: 0.5;">Aguardando Chamada...</div>
     </div>
-
-    <!-- Player de vídeo (ociosa) -->
     <div id="video-container">
       <video id="player-video" preload="auto" playsinline></video>
     </div>
-
-    <!-- Tela de info: clima / trânsito -->
     <div id="info-container">
       <div id="info-conteudo"></div>
     </div>
-
   </div>
 
   <!-- INFERIOR -->
@@ -262,10 +256,8 @@
     var POLL_MS         = 5000;
     var ultimoChamadoID = null;
     var ultimaPlacaVoz  = '';
-    var tempoSemChamada = 0;
     var descansoAtivo   = false;
 
-    // ── PLAYLIST ─────────────────────────────────────────────
     var playlist = [
       '/video1.mp4',
       '/video2.mp4',
@@ -273,29 +265,26 @@
       '/video4.mp4',
       '/video5.mp4'
     ];
-    var indiceVideo    = 0;
-    var modoOcioso     = false;   // true = rodando playlist
-    var modoInfo       = false;   // true = mostrando clima/transito
-    var timerInfo      = null;
-    var indiceInfo     = 0;       // 0 = clima, 1 = transito
-    var dadosClima     = null;
-    var dadosTransito  = null;
+    var indiceVideo   = 0;
+    var modoOcioso    = false;
+    var modoInfo      = false;
+    var timerInfo     = null;
+    var indiceInfo    = 0;
+    var dadosClima    = null;
+    var dadosTransito = null;
 
     // ── INICIO ───────────────────────────────────────────────
     function iniciarPainel() {
       document.getElementById('overlay-inicio').style.display = 'none';
 
-      // prepara som de alerta
       var alerta = document.getElementById('som-alerta');
       try { alerta.play(); } catch(e) {}
       setTimeout(function() { alerta.pause(); alerta.currentTime = 0; }, 100);
 
-      // música começa muda — só toca nas telas de clima/trânsito
       var musica = document.getElementById('musica-fundo');
       musica.volume = 0;
       try { musica.play(); } catch(e) {}
 
-      // configura video player
       var video = document.getElementById('player-video');
       video.addEventListener('ended', function() { proximoVideo(); });
 
@@ -305,10 +294,8 @@
       atualizarRelogio();
       atualizarDados();
 
-      // inicia vídeos imediatamente sem esperar polling
       modoOcioso = true;
       tocarVideo(0);
-
       atualizarTV();
     }
 
@@ -321,9 +308,9 @@
       if (m < 10) m = '0' + m;
       document.getElementById('relogio').innerHTML = h + ':' + m;
     }
-// ── DADOS CLIMA E TRANSITO ────────────────────────────────
+
+    // ── DADOS CLIMA E TRANSITO ────────────────────────────────
     function atualizarDados() {
-      // clima
       var xhrW = new XMLHttpRequest();
       xhrW.open('GET', '/api/weather', true);
       xhrW.onreadystatechange = function() {
@@ -332,7 +319,6 @@
       };
       xhrW.send();
 
-      // transito
       var xhrT = new XMLHttpRequest();
       xhrT.open('GET', '/api/traffic', true);
       xhrT.onreadystatechange = function() {
@@ -342,14 +328,7 @@
       xhrT.send();
     }
 
-    // ── MODO OCIOSO: inicia playlist ──────────────────────────
-    function iniciarModoOcioso() {
-      if (modoOcioso) return;
-      modoOcioso = true;
-      document.getElementById('painel-principal').style.display = 'none';
-      tocarVideo(indiceVideo);
-    }
-
+    // ── PLAYLIST ─────────────────────────────────────────────
     function encerrarModoOcioso() {
       modoOcioso = false;
       modoInfo   = false;
@@ -358,39 +337,30 @@
       document.getElementById('video-container').className = '';
       document.getElementById('info-container').className  = '';
       document.getElementById('painel-principal').style.display = '';
-
-      // silencia música
       document.getElementById('musica-fundo').volume = 0;
-
-      var video = document.getElementById('player-video');
-      video.pause();
+      document.getElementById('player-video').pause();
     }
 
-    // ── PLAYLIST: vídeo → info → próximo vídeo ────────────────
     function tocarVideo(idx) {
       modoInfo = false;
       document.getElementById('info-container').className  = '';
       document.getElementById('video-container').className = 'ativo';
       document.getElementById('painel-principal').style.display = 'none';
-
-      // silencia música durante vídeo
       document.getElementById('musica-fundo').volume = 0;
 
       var video = document.getElementById('player-video');
       video.src = playlist[idx % playlist.length];
       video.load();
 
-      // aguarda estar pronto para evitar bloqueio de autoplay
-      video.oncanplay = function() {
+      // FIX: setTimeout em vez de oncanplay para não interferir no evento ended
+      setTimeout(function() {
         var promise = video.play();
         if (promise !== undefined) {
           promise.catch(function() {
-            // se bloqueado, tenta após breve delay
-            setTimeout(function() { video.play(); }, 500);
+            setTimeout(function() { video.play(); }, 1000);
           });
         }
-        video.oncanplay = null;
-      };
+      }, 300);
     }
 
     function proximoVideo() {
@@ -402,18 +372,12 @@
       modoInfo = true;
       document.getElementById('video-container').className = '';
       document.getElementById('info-container').className  = 'ativo';
-
-      // liga música suave nas telas de info
       document.getElementById('musica-fundo').volume = 0.18;
 
-      if (indiceInfo === 0) {
-        renderInfoClima();
-      } else {
-        renderInfoTransito();
-      }
+      if (indiceInfo === 0) { renderInfoClima(); }
+      else                  { renderInfoTransito(); }
       indiceInfo = (indiceInfo + 1) % 2;
 
-      // após 20 segundos toca próximo vídeo
       timerInfo = setTimeout(function() {
         if (modoOcioso) tocarVideo(indiceVideo);
       }, 20000);
@@ -468,7 +432,7 @@
       if (!window.speechSynthesis || placa === ultimaPlacaVoz) return;
       ultimaPlacaVoz = placa;
       var trechoMot = motorista ? motorista + ' ' : '';
-      var texto = 'Atencao motorista ' + trechoMot + 'da placa ' + placa.split('').join(' ') + '. Dirija-se a area de descarga.';
+      var texto = 'Atenção motorista ' + trechoMot + 'da placa ' + placa.split('').join(' ') + '. Dirija-se a area de descarga.';
       var msg = new SpeechSynthesisUtterance(texto);
       msg.lang = 'pt-BR';
       window.speechSynthesis.cancel();
@@ -554,9 +518,7 @@
       renderStatus(dados);
 
       if (chamando) {
-        // há chamada: para vídeos e exibe placa
         if (modoOcioso) encerrarModoOcioso();
-
         if (ultimoChamadoID !== chamando.id) {
           ultimoChamadoID = chamando.id;
           try { document.getElementById('som-alerta').play(); } catch(e) {}
@@ -566,8 +528,6 @@
       } else {
         ultimaPlacaVoz  = '';
         ultimoChamadoID = null;
-
-        // sem chamada: retoma vídeos imediatamente se não estiver rodando
         if (!modoOcioso) {
           modoOcioso = true;
           tocarVideo(indiceVideo);
@@ -604,12 +564,12 @@
       if (proximo) {
         var badges = badgesProduto(proximo.produto);
         el.innerHTML =
-          '<div class="label">Proximo</div>' +
+          '<div class="label">Próximo</div>' +
           '<div style="font-size:3.5rem; font-weight:700; color:#fff; line-height:1;">' + proximo.placa + '</div>' +
           '<div style="font-size:1.5rem; color:#f0b429; margin:4px 0;">' + proximo.hora + '</div>' +
           (badges ? '<div style="margin-top:6px;">' + badges + '</div>' : '');
       } else {
-        el.innerHTML = '<div class="label">Proximo</div><div style="font-size:2rem;color:#555;">--</div>';
+        el.innerHTML = '<div class="label">Próximo</div><div style="font-size:2rem;color:#555;">--</div>';
       }
     }
 
@@ -629,8 +589,8 @@
         else { classeItem = 'item-fila ' + (isCarga ? 'tipo-carga' : 'tipo-descarga'); }
 
         var horaHtml = isCarga
-          ?'<span class="hora-fila-carga">' + item.hora + '<br><small style="font-size:0.75rem; opacity:0.6;">' + item.data.split('-').reverse().join('/') + '</small></span>'
-: '<span class="hora-fila">'  + item.hora + '<br><small style="font-size:0.75rem; opacity:0.6;">' + item.data.split('-').reverse().join('/') + '</small></span>'
+          ? '<span class="hora-fila-carga">' + item.hora + '<br><small style="font-size:0.75rem; opacity:0.6;">' + item.data.split('-').reverse().join('/') + '</small></span>'
+          : '<span class="hora-fila">'       + item.hora + '<br><small style="font-size:0.75rem; opacity:0.6;">' + item.data.split('-').reverse().join('/') + '</small></span>';
 
         var card =
           '<div class="' + classeItem + '">' +
@@ -665,8 +625,8 @@
       var html = '<div style="margin-bottom:15px;border-bottom:1px solid #2a2a2a;padding-bottom:10px;">' +
                  '<div class="label">Em Operacao</div>';
       if (emOperacao) {
-        var isCIF   = (emOperacao.tipo_operacao === 'CIF' || emOperacao.tipo_operacao === 'FOB');
-        var bdProd  = badgesProduto(emOperacao.produto);
+        var isCIF  = (emOperacao.tipo_operacao === 'CIF' || emOperacao.tipo_operacao === 'FOB');
+        var bdProd = badgesProduto(emOperacao.produto);
         html +=
           '<div style="display:flex;justify-content:space-between;align-items:center;">' +
             '<span style="font-size:1.8rem;font-weight:700;color:#fff;">' + emOperacao.placa + '</span>' +
@@ -698,7 +658,7 @@
     function desativarDescanso() {
       var el = document.getElementById('modoDescanso');
       if (el && el.parentNode) el.parentNode.removeChild(el);
-      descansoAtivo = false; tempoSemChamada = 0;
+      descansoAtivo = false;
     }
 
   </script>
