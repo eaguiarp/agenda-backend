@@ -87,22 +87,78 @@
   background: #000;
 }
 
-    /* --- TELA INFO (clima/transito) --- */
-    #info-container {
-      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-      background: #0a0a0a; display: none;
-      flex-direction: column; align-items: center; justify-content: center;
-      padding: 40px;
+   
+    /* --- NOVO DESIGN CLIMA --- */
+    .clima-wrap { 
+        width: 100%; 
+        max-width: 800px; 
+        text-align: center; 
+        padding: 20px;
     }
-    #info-container.ativo { display: flex; }
+    
+    .clima-titulo { 
+        font-size: 0.8rem; 
+        letter-spacing: 0.3em; 
+        text-transform: uppercase; 
+        color: var(--muted); 
+        margin-bottom: 40px; 
+    }
 
-    /* clima */
-    .clima-wrap { text-align: center; }
-    .clima-titulo { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: #555; margin-bottom: 16px; }
-    .clima-temp { font-size: 6rem; font-weight: 700; color: #f0b429; line-height: 1; }
-    .clima-desc { font-size: 1.4rem; color: #ccc; margin-top: 8px; }
-    .clima-vento { font-size: 0.9rem; color: #555; margin-top: 6px; letter-spacing: 0.1em; }
+    .clima-display-principal {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 40px;
+        margin-bottom: 30px;
+    }
 
+    .clima-icone-destaque {
+        font-size: 7rem;
+        filter: drop-shadow(0 0 15px rgba(240, 180, 41, 0.2));
+    }
+
+    .clima-temp { 
+        font-size: 9rem; 
+        font-weight: 700; 
+        color: var(--accent); 
+        line-height: 0.8;
+        font-family: 'Roboto Condensed', sans-serif;
+    }
+
+    /* Box de Informações Adicionais (estilo card) */
+    .clima-box-detalhes {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 25px;
+        display: inline-block;
+        min-width: 400px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .clima-desc { 
+        font-size: 2.2rem; 
+        color: #fff; 
+        font-weight: 600;
+        text-transform: capitalize;
+        margin-bottom: 15px;
+    }
+
+    .clima-stats {
+        display: flex;
+        justify-content: center;
+        gap: 50px;
+        border-top: 1px solid var(--border);
+        padding-top: 15px;
+    }
+
+    .clima-stat-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .clima-stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+    .clima-stat-valor { font-size: 1.3rem; color: var(--accent); font-weight: 700; }
     
 /* ========================================================
    🎨 ESTILIZAÇÃO DOS CARDS DE TRÂNSITO (MODERNO)
