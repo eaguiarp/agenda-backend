@@ -451,8 +451,18 @@
             '<span class="transito-badge ' + classBadge + '">' + d.status + '</span>' +
           '</div>';
       }
-      html += '</div>';
-      el.innerHTML = html;
+      var agora = new Date();
+var dia  = String(agora.getDate()).padStart(2,'0');
+var mes  = String(agora.getMonth()+1).padStart(2,'0');
+var ano  = agora.getFullYear();
+var hora = String(agora.getHours()).padStart(2,'0');
+var min  = String(agora.getMinutes()).padStart(2,'0');
+var seg  = String(agora.getSeconds()).padStart(2,'0');
+var dataHora = dia+'/'+mes+'/'+ano+' '+hora+':'+min+':'+seg;
+
+html += '<div style="text-align:center; margin-top:16px; font-size:0.7rem; color:#444; letter-spacing:0.1em;">Atualizado em: ' + dataHora + '</div>';
+html += '</div>';
+el.innerHTML = html;
     }
 
     // ── VOZ ──────────────────────────────────────────────────
