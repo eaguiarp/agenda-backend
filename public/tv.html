@@ -103,24 +103,114 @@
     .clima-desc { font-size: 1.4rem; color: #ccc; margin-top: 8px; }
     .clima-vento { font-size: 0.9rem; color: #555; margin-top: 6px; letter-spacing: 0.1em; }
 
-    /* transito */
-    .transito-wrap { width: 100%; }
-    .transito-titulo { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: #555; margin-bottom: 20px; text-align: center; }
-    .transito-item {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 14px 20px; margin-bottom: 10px;
-      background: #111; border-radius: 6px; border: 1px solid #2a2a2a;
-    }
-    .transito-destino { font-size: 1.1rem; font-weight: 700; color: #fff; }
-    .transito-tempo   { font-size: 0.9rem; color: #888; margin-top: 3px; }
-    .transito-badge {
-      font-size: 0.75rem; font-weight: 700; padding: 4px 12px;
-      border-radius: 3px; letter-spacing: 0.1em;
-    }
-    .badge-livre    { background: #00e676; color: #000; }
-    .badge-moderado { background: #f0b429; color: #000; }
-    .badge-intenso  { background: #ff3d00; color: #fff; }
-    .badge-semDados { background: #444;    color: #aaa; }
+    
+/* ========================================================
+   🎨 ESTILIZAÇÃO DOS CARDS DE TRÂNSITO (MODERNO)
+   ======================================================== */
+
+/* Container principal */
+.transito-wrap {
+    padding: 10px;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Espaçamento entre os cartões */
+}
+
+/* Estilo do Título da Seção */
+.transito-titulo {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #ffd700; /* Destaque em dourado/amarelo */
+    margin-bottom: 12px;
+    text-align: center;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+/* Estrutura Base do Card Novo */
+.transito-card-novo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: #ffffff;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    border-left: 8px solid rgba(0, 0, 0, 0.2); /* Detalhe lateral para profundidade */
+    transition: all 0.3s ease;
+}
+
+/* Corpo do texto dentro do card */
+.card-corpo {
+    display: flex;
+    flex-direction: column;
+}
+
+.transito-destino-novo {
+    font-weight: 800;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+}
+
+.transito-detalhe {
+    font-size: 0.9rem;
+    font-weight: 400;
+    opacity: 0.9;
+}
+
+/* Caixa de Status (Badge à direita) */
+.card-status-box {
+    background: rgba(255, 255, 255, 0.25);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 900;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    min-width: 80px;
+}
+
+/* 🚥 CORES DINÂMICAS (VINDAS DO BACKEND) */
+
+/* Status: VERDE (Livre) */
+.card-verde {
+    background: linear-gradient(135deg, #2e7d32, #1b5e20);
+}
+
+/* Status: AMARELO (Moderado) */
+.card-amarelo {
+    background: linear-gradient(135deg, #fbc02d, #f9a825);
+    color: #000000; /* Texto preto para contraste no fundo amarelo */
+}
+.card-amarelo .transito-detalhe { color: #000; opacity: 0.8; }
+.card-amarelo .card-status-box { 
+    border-color: rgba(0, 0, 0, 0.2); 
+    color: #000; 
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* Status: VERMELHO (Intenso) */
+.card-vermelho {
+    background: linear-gradient(135deg, #d32f2f, #b71c1c);
+    animation: pulse-red 2s infinite; /* Efeito de pulso para trânsito crítico */
+}
+
+/* Status: CINZA (Sem Dados) */
+.card-cinza {
+    background: #424242;
+    opacity: 0.7;
+}
+
+/* Animação para Alerta Crítico */
+@keyframes pulse-red {
+    0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
+}
 
     /* --- FILA --- */
     .area-fila {
@@ -408,24 +498,33 @@
 
   return "🌡️";
 }    
-    
     function renderInfoClima() {
-      var el = document.getElementById('info-conteudo');
-      if (!dadosClima) {
-        el.innerHTML = '<div class="clima-wrap"><div class="clima-titulo">CLIMA — ITABORAÍ</div><div class="clima-desc" style="color:#444;">Carregando...</div></div>';
-        return;
-      }
+  var el = document.getElementById('info-conteudo');
 
-      var icone = iconeClima(dadosClima.descricao);
+  if (!dadosClima) {
+    el.innerHTML =
+      '<div class="clima-wrap">' +
+        '<div class="clima-titulo">CLIMA — ITABORAÍ</div>' +
+        '<div class="clima-desc" style="color:#444;">Carregando...</div>' +
+      '</div>';
+    return;
+  }
 
-      el.innerHTML =
-        '<div class="clima-wrap">' +
-          '<div class="clima-titulo">CLIMA ATUAL &mdash; ITABORAÍ / RJ</div>' +
-          '<div class="clima-temp">' + dadosClima.temperatura + '&deg;C</div>' +
-          '<div class="clima-desc">' + icone + ' ' + dadosClima.descricao + '</div>' +
-          '<div class="clima-vento">Vento: ' + dadosClima.vento + ' km/h</div>' +
-        '</div>';
-    }
+  var icone = iconeClima(dadosClima.descricao);
+
+  el.innerHTML =
+    '<div class="clima-wrap">' +
+      '<div class="clima-titulo">CLIMA ATUAL &mdash; ITABORAÍ / RJ</div>' +
+
+      '<div class="clima-icone">' + icone + '</div>' +
+
+      '<div class="clima-temp">' + dadosClima.temperatura + '&deg;C</div>' +
+
+      '<div class="clima-desc">' + dadosClima.descricao + '</div>' +
+
+      '<div class="clima-vento">Vento: ' + dadosClima.vento + ' km/h</div>' +
+    '</div>';
+}
 
     // ── RENDER TRANSITO ───────────────────────────────────────
   
