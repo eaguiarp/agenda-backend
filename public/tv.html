@@ -41,7 +41,7 @@
 
     /* --- AREA PRINCIPAL --- */
     .area-principal {
-      grid-area: principal; padding: 80px 36px 28px;
+      grid-area: principal; padding: 60px 20px 12px;
       display: flex; flex-direction: column; justify-content: center; align-items: center;
       border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
       position: relative; overflow: hidden;
@@ -59,7 +59,7 @@
     }
     .placa-numero {
       color: #111; font-family: 'Roboto Condensed', sans-serif;
-      font-size: 8rem; font-weight: 700; padding: 10px 40px; line-height: 1;
+      font-size: 6rem; font-weight: 700; padding: 8px 30px; line-height: 1;
     }
 
     /* --- AVISO EPI --- */
@@ -338,7 +338,10 @@
       document.getElementById('info-container').className  = '';
       document.getElementById('painel-principal').style.display = '';
       document.getElementById('musica-fundo').volume = 0;
-      document.getElementById('player-video').pause();
+
+      var video = document.getElementById('player-video');
+      video.volume = 0;  // silencia antes de pausar para evitar vazamento de audio
+      video.pause();
     }
 
     function tocarVideo(idx) {
@@ -349,16 +352,19 @@
       document.getElementById('musica-fundo').volume = 0;
 
       var video = document.getElementById('player-video');
+      video.volume = 1;  // restaura volume do vídeo
       video.src = playlist[idx % playlist.length];
       video.load();
 
-      // FIX: setTimeout em vez de oncanplay para não interferir no evento ended
+      // FIX: só toca se não houver chamada ativa
       setTimeout(function() {
-        var promise = video.play();
-        if (promise !== undefined) {
-          promise.catch(function() {
-            setTimeout(function() { video.play(); }, 1000);
-          });
+        if (modoOcioso) {
+          var promise = video.play();
+          if (promise !== undefined) {
+            promise.catch(function() {
+              setTimeout(function() { if (modoOcioso) video.play(); }, 1000);
+            });
+          }
         }
       }, 300);
     }
