@@ -78,8 +78,10 @@
     }
     #video-container.ativo { display: flex; }
     #player-video {
-      width: 100%; height: 100%; object-fit: contain; background: #000;
-    }
+  max-width: 100%; max-height: 100%;
+  width: auto; height: auto;
+  object-fit: contain; background: #000;
+}
 
     /* --- TELA INFO (clima/transito) --- */
     #info-container {
@@ -201,7 +203,7 @@
 
   <!-- TOPO -->
   <div class="topo">
-    <div style="color: #f0b429; font-weight: 700; letter-spacing: 0.12em; font-size: 0.95rem;">CD &mdash; ITABORAI</div>
+    <div style="color: #f0b429; font-weight: 700; letter-spacing: 0.12em; font-size: 0.95rem;">CD &mdash; ITABORAÍ</div>
     <div class="status-conexao">
       <div id="ponto-conexao"></div>
       <div id="relogio" style="font-size: 0.95rem; letter-spacing: 0.08em; color: #888;">00:00</div>
@@ -393,12 +395,12 @@
     function renderInfoClima() {
       var el = document.getElementById('info-conteudo');
       if (!dadosClima) {
-        el.innerHTML = '<div class="clima-wrap"><div class="clima-titulo">CLIMA — ITABORAI</div><div class="clima-desc" style="color:#444;">Carregando...</div></div>';
+        el.innerHTML = '<div class="clima-wrap"><div class="clima-titulo">CLIMA — ITABORAÍ</div><div class="clima-desc" style="color:#444;">Carregando...</div></div>';
         return;
       }
       el.innerHTML =
         '<div class="clima-wrap">' +
-          '<div class="clima-titulo">CLIMA ATUAL &mdash; ITABORAI / RJ</div>' +
+          '<div class="clima-titulo">CLIMA ATUAL &mdash; ITABORAÍ / RJ</div>' +
           '<div class="clima-temp">' + dadosClima.temperatura + '&deg;C</div>' +
           '<div class="clima-desc">' + dadosClima.descricao + '</div>' +
           '<div class="clima-vento">Vento: ' + dadosClima.vento + ' km/h</div>' +
@@ -412,14 +414,14 @@
         el.innerHTML = '<div class="transito-wrap"><div class="transito-titulo">TRANSITO</div><div style="color:#444; text-align:center;">Carregando...</div></div>';
         return;
       }
-      var html = '<div class="transito-wrap"><div class="transito-titulo">TRANSITO A PARTIR DE ITABORAI</div>';
+      var html = '<div class="transito-wrap"><div class="transito-titulo">TRÂNSITO A PARTIR DE ITABORAÍ</div>';
       for (var i = 0; i < dadosTransito.length; i++) {
         var d = dadosTransito[i];
         var classBadge = 'badge-semDados';
         if (d.cor === 'green')  classBadge = 'badge-livre';
         if (d.cor === 'yellow') classBadge = 'badge-moderado';
         if (d.cor === 'red')    classBadge = 'badge-intenso';
-        var tempoHtml = d.tempo ? '<div class="transito-tempo">' + d.tempo + ' min c/ transito</div>' : '';
+        var tempoHtml = d.tempo ? '<div class="transito-tempo">' + d.tempo + ' min c/ trânsito</div>' : '';
         html +=
           '<div class="transito-item">' +
             '<div>' +
