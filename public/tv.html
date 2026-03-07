@@ -631,8 +631,8 @@
         else { classeItem = 'item-fila ' + (isCarga ? 'tipo-carga' : 'tipo-descarga'); }
 
         var horaHtml = isCarga
-          ? '<span class="hora-fila-carga">' + item.hora + '</span>'
-          : '<span class="hora-fila">'       + item.hora + '</span>';
+          ? '<span class="hora-fila-carga">' + item.data.split('-').reverse().join('/') + ' ' + item.hora + '</span>'
+          : '<span class="hora-fila">' + item.data.split('-').reverse().join('/') + ' ' + item.hora + '</span>'
 
         var card =
           '<div class="' + classeItem + '">' +
