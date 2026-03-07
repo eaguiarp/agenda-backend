@@ -218,7 +218,7 @@
 
     <!-- Player de vídeo (ociosa) -->
     <div id="video-container">
-      <video id="player-video" preload="auto"></video>
+      <video id="player-video" preload="auto" muted playsinline></video>
     </div>
 
     <!-- Tela de info: clima / trânsito -->
@@ -381,7 +381,18 @@
       var video = document.getElementById('player-video');
       video.src = playlist[idx % playlist.length];
       video.load();
-      video.play();
+
+      // aguarda estar pronto para evitar bloqueio de autoplay
+      video.oncanplay = function() {
+        var promise = video.play();
+        if (promise !== undefined) {
+          promise.catch(function() {
+            // se bloqueado, tenta após breve delay
+            setTimeout(function() { video.play(); }, 500);
+          });
+        }
+        video.oncanplay = null;
+      };
     }
 
     function proximoVideo() {
