@@ -484,7 +484,7 @@ app.get("/api/traffic", async (req, res) => {
   const apiKey = process.env.MAPS_API_KEY;
   const origin = "-22.779214,-42.935105";
   const dests = [
-  "-22.8832,-43.1034",  // Niterói Centro
+  
   "-22.8268,-43.0600",  // Arsenal
   "-22.8590,-42.8260",  // Serra do Lagarto
   "-22.8894,-42.0186",  // Região dos Lagos
@@ -492,11 +492,11 @@ app.get("/api/traffic", async (req, res) => {
 ].join("|");
 
 const labels = [
-  "Niterói Centro",
+  
   "Arsenal",
   "Serra do Lagarto",
   "Região dos Lagos",
-  "Ponte Rio–Niterói"
+  "Ponte"
 ];
   const url = "https://maps.googleapis.com/maps/api/distancematrix/json" +
     "?origins=" + origin +

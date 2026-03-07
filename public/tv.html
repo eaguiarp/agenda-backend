@@ -428,41 +428,46 @@
     }
 
     // ── RENDER TRANSITO ───────────────────────────────────────
+  
     function renderInfoTransito() {
       var el = document.getElementById('info-conteudo');
       if (!dadosTransito) {
         el.innerHTML = '<div class="transito-wrap"><div class="transito-titulo">TRANSITO</div><div style="color:#444; text-align:center;">Carregando...</div></div>';
         return;
       }
+      
       var html = '<div class="transito-wrap"><div class="transito-titulo">TRÂNSITO A PARTIR DE ITABORAÍ</div>';
+      
       for (var i = 0; i < dadosTransito.length; i++) {
         var d = dadosTransito[i];
-        var classBadge = 'badge-semDados';
-        if (d.cor === 'green')  classBadge = 'badge-livre';
-        if (d.cor === 'yellow') classBadge = 'badge-moderado';
-        if (d.cor === 'red')    classBadge = 'badge-intenso';
-        var tempoHtml = d.tempo ? '<div class="transito-tempo">' + d.tempo + ' min c/ trânsito</div>' : '';
+
+        // Define a cor do card
+        var classCard = 'card-verde';
+        if (d.cor === 'yellow') classCard = 'card-amarelo';
+        if (d.cor === 'red')    classCard = 'card-vermelho';
+        if (d.cor === 'gray')   classCard = 'card-cinza';
+
+        // Trata o texto de tempo e atraso
+        var infoTempo = d.tempo ? d.tempo + ' min' : '-- min';
+        var atrasoTexto = d.atraso > 0 ? ' (+' + d.atraso + ' min)' : '';
+
         html +=
-          '<div class="transito-item">' +
-            '<div>' +
-              '<div class="transito-destino">' + d.destino + '</div>' +
-              tempoHtml +
+          '<div class="transito-card-novo ' + classCard + '">' +
+            '<div class="card-corpo">' +
+              '<div class="transito-destino-novo">' + d.destino + '</div>' +
+              '<div class="transito-detalhe">' + infoTempo + atrasoTexto + '</div>' +
             '</div>' +
-            '<span class="transito-badge ' + classBadge + '">' + d.status + '</span>' +
+            '<div class="card-status-box">' + d.status + '</div>' +
           '</div>';
       }
-      var agora = new Date();
-var dia  = String(agora.getDate()).padStart(2,'0');
-var mes  = String(agora.getMonth()+1).padStart(2,'0');
-var ano  = agora.getFullYear();
-var hora = String(agora.getHours()).padStart(2,'0');
-var min  = String(agora.getMinutes()).padStart(2,'0');
-var seg  = String(agora.getSeconds()).padStart(2,'0');
-var dataHora = dia+'/'+mes+'/'+ano+' '+hora+':'+min+':'+seg;
 
-html += '<div style="text-align:center; margin-top:16px; font-size:0.7rem; color:#444; letter-spacing:0.1em;">Atualizado em: ' + dataHora + '</div>';
-html += '</div>';
-el.innerHTML = html;
+      // Timestamp de atualização
+      var agora = new Date();
+      var dataHora = agora.toLocaleString('pt-BR'); // Atalho para formatar data/hora em PT-BR
+
+      html += '<div style="text-align:center; margin-top:16px; font-size:0.7rem; color:#444; letter-spacing:0.1em;">Atualizado em: ' + dataHora + '</div>';
+      html += '</div>';
+      el.innerHTML = html;
     }
 
     // ── VOZ ──────────────────────────────────────────────────
