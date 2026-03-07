@@ -396,17 +396,33 @@
     }
 
     // ── RENDER CLIMA ──────────────────────────────────────────
+    
+    function iconeClima(descricao) {
+  var d = descricao.toLowerCase();
+
+  if (d.includes("sol")) return "☀️";
+  if (d.includes("nuvem")) return "⛅";
+  if (d.includes("chuva")) return "🌧️";
+  if (d.includes("tempest")) return "⛈️";
+  if (d.includes("nebl")) return "🌫️";
+
+  return "🌡️";
+}    
+    
     function renderInfoClima() {
       var el = document.getElementById('info-conteudo');
       if (!dadosClima) {
         el.innerHTML = '<div class="clima-wrap"><div class="clima-titulo">CLIMA — ITABORAÍ</div><div class="clima-desc" style="color:#444;">Carregando...</div></div>';
         return;
       }
+
+      var icone = iconeClima(dadosClima.descricao);
+
       el.innerHTML =
         '<div class="clima-wrap">' +
           '<div class="clima-titulo">CLIMA ATUAL &mdash; ITABORAÍ / RJ</div>' +
           '<div class="clima-temp">' + dadosClima.temperatura + '&deg;C</div>' +
-          '<div class="clima-desc">' + dadosClima.descricao + '</div>' +
+          '<div class="clima-desc">' + icone + ' ' + dadosClima.descricao + '</div>' +
           '<div class="clima-vento">Vento: ' + dadosClima.vento + ' km/h</div>' +
         '</div>';
     }
