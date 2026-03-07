@@ -497,8 +497,7 @@ app.get("/api/traffic", async (req, res) => {
     resp.on("end", function() {
   try {
     const parsed = JSON.parse(data);
-    console.log("TRAFFIC API RESPONSE:", JSON.stringify(parsed));
-    const elements = parsed.rows[0].elements;
+        const elements = parsed.rows[0].elements;
         const resultado = elements.map(function(el, i) {
           if (el.status !== "OK") return { destino: labels[i], status: "SEM DADOS", cor: "gray" };
           const comTrafico = el.duration_in_traffic.value / 60;
