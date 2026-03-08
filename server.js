@@ -477,40 +477,121 @@ app.get("/api/weather", async (req, res) => {
 });
 
 // ========================================================
-// 🚗 ROTA — TRÂNSITO (Google Distance Matrix)
+// 🚗 ROTA — TRÂNSITO (duas chamadas: CD e Serra como origem)
+// Chamada 1: CD → destinos diretos (Centro, Manilha, Alcântara, Niterói, Serra, Via Lagos)
+// Chamada 2: Serra → Maricá (para somar os dois trechos reais da rota)
 // ========================================================
 app.get("/api/traffic", async (req, res) => {
   const https  = require("https");
   const apiKey = process.env.MAPS_API_KEY;
-  const origin = "-22.779214,-42.935105";
-  const dests  = ["-22.7482,-42.9225", "-22.9194,-42.8186", "-22.7122,-42.6300"].join("|");
-  const labels = ["Niteroi/SG", "Marica", "Regiao dos Lagos"];
-  const url = "https://maps.googleapis.com/maps/api/distancematrix/json" +
-    "?origins=" + origin +
-    "&destinations=" + encodeURIComponent(dests) +
-    "&departure_time=now" +
-    "&key=" + apiKey;
 
-  https.get(url, function(resp) {
+  const CD    = "-22.779214,-42.935105"; // CD Itaboraí
+  const SERRA = "-22.8590,-42.8260";     // Topo da Serra do Lagarto (checkpoint)
+
+  // Destinos da Chamada 1 (saindo do CD)
+  const destsChamada1 = [
+    "-22.7471,-42.8596", // 0 — Itaboraí Centro
+    "-22.7441,-42.9754", // 1 — Manilha (Trevo)
+    "-22.8268,-43.0600", // 2 — Alcântara / RJ-104
+    "-22.8736,-43.2075", // 3 — Niterói Centro (final da Ponte)
+    "-22.8590,-42.8260", // 4 — Serra do Lagarto (trecho 1 de Maricá)
+    "-22.8461,-42.3331"  // 5 — Via Lagos (Rio Bonito)
+  ];
+  const labelsChamada1 = [
+    "ITABORAÍ (CENTRO)",
+    "MANILHA (TREVO)",
+    "ALCÂNTARA / RJ-104",
+    "NITERÓI (CENTRO)",
+    "SERRA_TRECHO1",   // interno — não vai para saída final
+    "VIA LAGOS"
+  ];
+
+  // Destino da Chamada 2 (saindo da Serra → Maricá Centro)
+  const destsChamada2 = "-22.9192,-42.8182";
+
+  function fazerChamada(origins, destinations, cb) {
+    const url = "https://maps.googleapis.com/maps/api/distancematrix/json" +
+      "?origins="      + encodeURIComponent(origins) +
+      "&destinations=" + encodeURIComponent(destinations) +
+      "&departure_time=now" +
+      "&key=" + apiKey;
     let data = "";
-    resp.on("data", function(chunk) { data += chunk; });
-    resp.on("end", function() {
-      try {
-        const elements = JSON.parse(data).rows[0].elements;
-        const resultado = elements.map(function(el, i) {
-          if (el.status !== "OK") return { destino: labels[i], status: "SEM DADOS", cor: "gray" };
-          const comTrafico = el.duration_in_traffic.value / 60;
-          const normal     = el.duration.value / 60;
-          const atraso     = comTrafico - normal;
-          var status = "LIVRE";   var cor = "green";
-          if (atraso > 15) { status = "INTENSO";  cor = "red";    }
-          else if (atraso > 5) { status = "MODERADO"; cor = "yellow"; }
-          return { destino: labels[i], tempo: Math.round(comTrafico), atraso: Math.round(atraso), status: status, cor: cor };
-        });
-        res.json(resultado);
-      } catch(e) { res.status(500).json({ erro: "Erro ao processar transito" }); }
+    https.get(url, function(resp) {
+      resp.on("data",  function(chunk) { data += chunk; });
+      resp.on("end",   function() {
+        try { cb(null, JSON.parse(data)); }
+        catch(e) { cb(e); }
+      });
+    }).on("error", function(e) { cb(e); });
+  }
+
+  // Executa chamada 1: CD → todos os destinos
+  fazerChamada(CD, destsChamada1.join("|"), function(err1, data1) {
+    if (err1) return res.status(500).json({ erro: "Erro chamada 1" });
+
+    const els1 = data1.rows[0].elements;
+
+    // Extrai trecho 1 da Serra (index 4) para somar depois
+    var serraT1 = 0, serraN1 = 0;
+    if (els1[4] && els1[4].status === "OK") {
+      serraT1 = els1[4].duration_in_traffic ? els1[4].duration_in_traffic.value / 60 : els1[4].duration.value / 60;
+      serraN1 = els1[4].duration.value / 60;
+    }
+
+    // Executa chamada 2: Serra → Maricá
+    fazerChamada(SERRA, destsChamada2, function(err2, data2) {
+      if (err2) return res.status(500).json({ erro: "Erro chamada 2" });
+
+      const el2 = data2.rows[0].elements[0];
+      var serraT2 = 0, serraN2 = 0;
+      if (el2 && el2.status === "OK") {
+        serraT2 = el2.duration_in_traffic ? el2.duration_in_traffic.value / 60 : el2.duration.value / 60;
+        serraN2 = el2.duration.value / 60;
+      }
+
+      // Monta resultado final
+      var final = [];
+
+      els1.forEach(function(el, i) {
+        var label = labelsChamada1[i];
+        if (label === "SERRA_TRECHO1") return; // ignora checkpoint interno
+
+        var comTrafico, normal;
+        if (el.status !== "OK") {
+          final.push({ destino: label, tempo: 0, atraso: 0, status: "SEM DADOS", cor: "gray" });
+          return;
+        }
+        comTrafico = el.duration_in_traffic ? el.duration_in_traffic.value / 60 : el.duration.value / 60;
+        normal     = el.duration.value / 60;
+
+        var atraso = comTrafico - normal;
+        var status = "LIVRE"; var cor = "green";
+        if (atraso > 15)     { status = "LENTO";    cor = "red";    }
+        else if (atraso > 5) { status = "MODERADO"; cor = "yellow"; }
+
+        final.push({ destino: label, tempo: Math.round(comTrafico), atraso: Math.round(atraso), status: status, cor: cor });
+      });
+
+      // Maricá = trecho1 (CD→Serra) + trecho2 (Serra→Maricá) — rota real pela Serra do Lagarto
+      var maricaTempo  = serraT1 + serraT2;
+      var maricaNormal = serraN1 + serraN2;
+      var maricaAtraso = maricaTempo - maricaNormal;
+      var maricaStatus = "LIVRE"; var maricaCor = "green";
+      if (maricaAtraso > 15)     { maricaStatus = "LENTO";    maricaCor = "red";    }
+      else if (maricaAtraso > 5) { maricaStatus = "MODERADO"; maricaCor = "yellow"; }
+
+      // Insere Maricá após Niterói (posição 4)
+      final.splice(4, 0, {
+        destino: "MARICÁ (VIA SERRA)",
+        tempo:   Math.round(maricaTempo),
+        atraso:  Math.round(maricaAtraso),
+        status:  maricaStatus,
+        cor:     maricaCor
+      });
+
+      res.json(final);
     });
-  }).on("error", function() { res.status(500).json({ erro: "Erro ao obter transito" }); });
+  });
 });
 
 // ========================================================
