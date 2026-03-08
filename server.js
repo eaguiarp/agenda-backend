@@ -466,11 +466,13 @@ app.get("/api/weather", async (req, res) => {
           80:"Pancadas leves", 81:"Pancadas moderadas", 82:"Pancadas fortes",
           95:"Tempestade", 96:"Tempestade c/ granizo", 99:"Tempestade c/ granizo forte"
         };
-        res.json({
-          temperatura: w.temperature,
-          vento:       w.windspeed,
-          descricao:   codigos[w.weathercode] || "Condição " + w.weathercode
-        });
+       res.json({
+    temperatura: w.temperature,
+    vento:       w.windspeed,
+    // Adicionamos a sensação aqui para a TV conseguir ler
+    sensacao:    w.temperature, 
+    descricao:   codigos[w.weathercode] || "Condição " + w.weathercode
+});
       } catch(e) { res.status(500).json({ erro: "Erro ao processar clima" }); }
     });
   }).on("error", function() { res.status(500).json({ erro: "Erro ao obter clima" }); });
