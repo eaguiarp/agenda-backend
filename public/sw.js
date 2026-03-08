@@ -98,3 +98,4 @@ self.addEventListener('notificationclick', (event) => {
         clients.openWindow(event.notification.data.url) // Abre a página de consulta
     );
 });
+

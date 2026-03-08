@@ -165,35 +165,35 @@
 
 /* Container principal */
 .transito-wrap {
+    width: 100%;
     padding: 10px;
-    background: transparent;
-    display: flex;
-    flex-direction: column;
-    gap: 8px; /* Espaçamento entre os cartões */
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Cria 3 colunas iguais */
+    gap: 15px; /* Espaço entre os cards */
 }
 
 /* Estilo do Título da Seção */
 .transito-titulo {
-    font-size: 0.8rem;
-    font-weight: bold;
-    color: #ffd700; /* Destaque em dourado/amarelo */
-    margin-bottom: 12px;
+    grid-column: span 3; 
     text-align: center;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    margin-bottom: 20px;
+    font-size: 0.8rem;
+    letter-spacing: 0.3em;
+    color: var(--muted);
 }
 
 /* Estrutura Base do Card Novo */
 .transito-card-novo {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
+    flex-direction: column; /* Organiza os itens de cima para baixo */
+    justify-content: space-between; /* Empurra o destino para o topo e o badge para o rodapé */
+    padding: 15px;
+    min-height: 110px; /* Aumentei um pouco para caber os 3 itens com folga */
     border-radius: 8px;
     color: #ffffff;
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    border-left: 8px solid rgba(0, 0, 0, 0.2); /* Detalhe lateral para profundidade */
+    border-left: 8px solid rgba(0, 0, 0, 0.2); 
     transition: all 0.3s ease;
 }
 
@@ -638,8 +638,7 @@ document.addEventListener('keydown', function(event) {
           </div>
         </div>`;
     }
-    // ── RENDER TRANSITO ───────────────────────────────────────
-  
+    // ── RENDER TRANSITO ATUALIZADO ───────────────────────────────────────
     function renderInfoTransito() {
       var el = document.getElementById('info-conteudo');
       if (!dadosTransito) {
@@ -651,41 +650,50 @@ document.addEventListener('keydown', function(event) {
       
       for (var i = 0; i < dadosTransito.length; i++) {
         var d = dadosTransito[i];
+        var alertaPonte = ""; // Começa vazio para cada card
 
-        // Define a cor do card
+        // 1. Lógica do Alerta da Ponte
+        if (d.destino.includes("PONTE") && d.tempo > 25) {
+            alertaPonte = `
+                <div style="margin-top: 8px; padding-top: 5px; border-top: 1px dashed rgba(255,255,255,0.1); color: #ff3d00; font-weight: 700; font-size: 0.75rem; text-align: center;">
+                    [!] TRAVESSIA LENTA
+                </div>`;
+        }
+
+        // 2. Define a cor do card
         var classCard = 'card-verde';
         if (d.cor === 'yellow') classCard = 'card-amarelo';
         if (d.cor === 'red')    classCard = 'card-vermelho';
         if (d.cor === 'gray')   classCard = 'card-cinza';
 
-        // Trata o texto de tempo e atraso
-   var infoTempo = '-- min';
-if (d.tempo) {
-    if (d.tempo >= 60) {
-        var horas = Math.floor(d.tempo / 60);
-        var mins = d.tempo % 60;
-        // Se os minutos forem 0, mostra só a hora, senão mostra 1h 38m
-        infoTempo = mins > 0 ? horas + 'h ' + mins + 'm' : horas + 'h';
-    } else {
-        infoTempo = d.tempo + ' min';
-    }
-}
+        // 3. Trata o texto de tempo (Conversão Horas/Min)
+        var infoTempo = '-- min';
+        if (d.tempo) {
+            if (d.tempo >= 60) {
+                var horas = Math.floor(d.tempo / 60);
+                var mins = d.tempo % 60;
+                infoTempo = mins > 0 ? horas + 'h ' + mins + 'm' : horas + 'h';
+            } else {
+                infoTempo = d.tempo + ' min';
+            }
+        }
 
-var atrasoTexto = d.atraso > 0 ? ' (+' + d.atraso + ' min)' : '';
+        var atrasoTexto = d.atraso > 0 ? ' (+' + d.atraso + ' min)' : '';
 
+        // 4. Montagem do HTML do Card
         html +=
           '<div class="transito-card-novo ' + classCard + '">' +
             '<div class="card-corpo">' +
               '<div class="transito-destino-novo">' + d.destino + '</div>' +
               '<div class="transito-detalhe">' + infoTempo + atrasoTexto + '</div>' +
+              alertaPonte + // <-- O ALERTA ENTRA AQUI
             '</div>' +
             '<div class="card-status-box">' + d.status + '</div>' +
           '</div>';
       }
 
-      // Timestamp de atualização
       var agora = new Date();
-      var dataHora = agora.toLocaleString('pt-BR'); // Atalho para formatar data/hora em PT-BR
+      var dataHora = agora.toLocaleString('pt-BR');
 
       html += '<div style="text-align:center; margin-top:16px; font-size:0.7rem; color:#444; letter-spacing:0.1em;">Atualizado em: ' + dataHora + '</div>';
       html += '</div>';

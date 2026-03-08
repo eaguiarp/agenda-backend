@@ -477,56 +477,91 @@ app.get("/api/weather", async (req, res) => {
 });
 
 // ========================================================
-// 🚗 ROTA — TRÂNSITO (Google Distance Matrix)
+// 🚗 ROTA — TRÂNSITO EVOLUÍDA (Com Checkpoint e 6 Destinos)
 // ========================================================
 app.get("/api/traffic", async (req, res) => {
-  const https  = require("https");
+  const https = require("https");
   const apiKey = process.env.MAPS_API_KEY;
-  const origin = "-22.779214,-42.935105";
-  const dests = [
-  
-  "-22.8268,-43.0600",  // Arsenal
-  "-22.8590,-42.8260",  // Serra do Lagarto
-  "-22.8894,-42.0186",  // Região dos Lagos
-  "-22.8736,-43.2075"   // Final da ponte (lado Rio)
-].join("|");
+  const origin = "-22.779214,-42.935105"; // CD Itaboraí
 
-const labels = [
-  
-  "Arsenal",
-  "Serra do Lagarto",
-  "Região dos Lagos",
-  "Niterói (final da ponte)"
-];
+  // 1. ENTRADA: Definimos as coordenadas estratégicas
+  const coords = [
+    "-22.7471,-42.8596", // Itaboraí Centro
+    "-22.7441,-42.9754", // Manilha (Trevo)
+    "-22.8268,-43.0600", // Alcântara (antigo Arsenal)
+    "-22.8736,-43.2075", // Final da Ponte (Niterói Centro)
+    "-22.8590,-42.8260", // CHECKPOINT: Topo da Serra do Lagarto
+    "-22.9192,-42.8182", // DESTINO FINAL: Maricá Centro
+    "-22.8461,-42.3331"  // Via Lagos (Pedágio Rio Bonito)
+  ];
+
+  const labels = [
+    "ITABORAÍ (CENTRO)",
+    "MANILHA (TREVO)",
+    "ALCÂNTARA / RJ-104",
+    "NITERÓI (CENTRO)",
+    "SERRA_CHECKPOINT", // Tag interna para cálculo
+    "MARICÁ (VIA SERRA)",
+    "VIA LAGOS"
+  ];
+
   const url = "https://maps.googleapis.com/maps/api/distancematrix/json" +
     "?origins=" + origin +
-    "&destinations=" + encodeURIComponent(dests) +
+    "&destinations=" + encodeURIComponent(coords.join("|")) +
     "&departure_time=now" +
     "&key=" + apiKey;
 
   https.get(url, function(resp) {
     let data = "";
-    resp.on("data", function(chunk) { data += chunk; });
-    resp.on("end", function() {
-  try {
-    const parsed = JSON.parse(data);
+    resp.on("data", (chunk) => { data += chunk; });
+    resp.on("end", () => {
+      try {
+        const parsed = JSON.parse(data);
         const elements = parsed.rows[0].elements;
-        const resultado = elements.map(function(el, i) {
-          if (el.status !== "OK") return { destino: labels[i], status: "SEM DADOS", cor: "gray" };
-          const comTrafico = el.duration_in_traffic.value / 60;
-          const normal     = el.duration.value / 60;
-          const atraso     = comTrafico - normal;
-          var status = "LIVRE";   var cor = "green";
-          if (atraso > 15) { status = "INTENSO";  cor = "red";    }
-          else if (atraso > 5) { status = "MODERADO"; cor = "yellow"; }
-          return { destino: labels[i], tempo: Math.round(comTrafico), atraso: Math.round(atraso), status: status, cor: cor };
+
+        // 2. PROCESSAMENTO: Mapeamos os resultados da API
+        let resultadosBrutos = elements.map((el, i) => {
+          if (el.status !== "OK") return { label: labels[i], tempo: 0, normal: 0 };
+          return {
+            label: labels[i],
+            tempo: el.duration_in_traffic.value / 60,
+            normal: el.duration.value / 60
+          };
         });
-        res.json(resultado);
+
+        // LÓGICA ESPECIAL: Soma da Serra do Lagarto
+        // Trecho 1: CD -> Topo da Serra (index 4)
+        // Trecho 2: Topo da Serra -> Maricá (Este cálculo precisaria de outra chamada ou Waypoint, 
+        // mas para simplificar agora, vamos usar a soma ponderada ou apenas o trajeto direto filtrado)
+        
+        const final = [];
+        resultadosBrutos.forEach((item, i) => {
+          // Ignoramos o checkpoint na saída final
+          if (item.label === "SERRA_CHECKPOINT") return;
+
+          const comTrafico = item.tempo;
+          const atraso = comTrafico - item.normal;
+          
+          let status = "LIVRE";
+          let cor = "green";
+          if (atraso > 15) { status = "LENTO"; cor = "red"; }
+          else if (atraso > 5) { status = "MODERADO"; cor = "yellow"; }
+
+          final.push({
+            destino: item.label,
+            tempo: Math.round(comTrafico),
+            atraso: Math.round(atraso),
+            status: status,
+            cor: cor
+          });
+        });
+
+        // 3. SAÍDA: Retorna os 6 destinos organizados
+        res.json(final);
       } catch(e) { res.status(500).json({ erro: "Erro ao processar transito" }); }
     });
-  }).on("error", function() { res.status(500).json({ erro: "Erro ao obter transito" }); });
+  }).on("error", () => { res.status(500).json({ erro: "Erro ao obter transito" }); });
 });
-
 // ========================================================
 // 🎬 ROTA — LISTA DE VÍDEOS
 // ========================================================
