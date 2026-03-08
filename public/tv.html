@@ -72,211 +72,222 @@
     .aviso-linha.destaque { font-weight: 700; font-size: 1rem; letter-spacing: 0.15em; opacity: 1; }
 
     /* --- VIDEO PLAYER --- */
-  #video-container, #info-container {
-    position: absolute; 
-    top: 52px; /* Mantém o padrão do seu cabeçalho se houver um */
-    left: 0; 
-    right: 0; 
-    bottom: 0;
-    background: #000;
-    display: none; /* Começam escondidos */
-    align-items: center; 
-    justify-content: center;
-    z-index: 10; /* Camada intermediária */
-}
-#video-container.ativo { display: flex; }
-#player-video {
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  background: #000;
-}
+    #video-container, #info-container {
+      position: absolute;
+      top: 52px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    #video-container.ativo { display: flex; }
+    #info-container.ativo  { display: flex; }
+    #player-video {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
 
-   
+    /* --- TELA ESPERA (relógio grande) --- */
+    #tela-espera {
+      position: absolute;
+      top: 52px; left: 0; right: 0; bottom: 0;
+      background: var(--bg);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9;
+      gap: 20px;
+    }
+    #tela-espera.ativo { display: flex; }
+    .espera-relogio {
+      font-family: 'Roboto Condensed', sans-serif;
+      font-size: 11rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      letter-spacing: 0.05em;
+    }
+    .espera-clima {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      color: var(--muted);
+      font-size: 2rem;
+    }
+    .espera-clima-temp { font-size: 3rem; font-weight: 700; color: var(--text); }
+    .espera-clima-icone { font-size: 3rem; }
+    .espera-data {
+      font-size: 1rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* --- MODO MADRUGADA --- */
+    #tela-madrugada {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: #000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 5000;
+      gap: 16px;
+    }
+    #tela-madrugada.ativo { display: flex; }
+    .madrugada-relogio {
+      font-family: 'Roboto Condensed', sans-serif;
+      font-size: 14rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      line-height: 1;
+    }
+    .madrugada-info {
+      font-size: 0.75rem;
+      letter-spacing: 0.3em;
+      color: #1a1a1a;
+      text-transform: uppercase;
+    }
+
     /* --- NOVO DESIGN CLIMA --- */
-    .clima-wrap { 
-        width: 100%; 
-        max-width: 800px; 
-        text-align: center; 
-        padding: 20px;
+    .clima-wrap {
+      width: 100%;
+      max-width: 800px;
+      text-align: center;
+      padding: 20px;
     }
-    
-    .clima-titulo { 
-        font-size: 0.8rem; 
-        letter-spacing: 0.3em; 
-        text-transform: uppercase; 
-        color: var(--muted); 
-        margin-bottom: 40px; 
+    .clima-titulo {
+      font-size: 0.8rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 40px;
     }
-
     .clima-display-principal {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 40px;
-        margin-bottom: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      margin-bottom: 30px;
     }
-
     .clima-icone-destaque {
-        font-size: 7rem;
-        filter: drop-shadow(0 0 15px rgba(240, 180, 41, 0.2));
+      font-size: 7rem;
+      filter: drop-shadow(0 0 15px rgba(240, 180, 41, 0.2));
     }
-
-    .clima-temp { 
-        font-size: 9rem; 
-        font-weight: 700; 
-        color: var(--accent); 
-        line-height: 0.8;
-        font-family: 'Roboto Condensed', sans-serif;
+    .clima-temp {
+      font-size: 9rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 0.8;
+      font-family: 'Roboto Condensed', sans-serif;
     }
-
-    /* Box de Informações Adicionais (estilo card) */
     .clima-box-detalhes {
-        background: var(--surface2);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 25px;
-        display: inline-block;
-        min-width: 400px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 25px;
+      display: inline-block;
+      min-width: 400px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
-
-    .clima-desc { 
-        font-size: 2.2rem; 
-        color: #fff; 
-        font-weight: 600;
-        text-transform: capitalize;
-        margin-bottom: 15px;
+    .clima-desc {
+      font-size: 2.2rem;
+      color: #fff;
+      font-weight: 600;
+      text-transform: capitalize;
+      margin-bottom: 15px;
     }
-
     .clima-stats {
-        display: flex;
-        justify-content: center;
-        gap: 50px;
-        border-top: 1px solid var(--border);
-        padding-top: 15px;
+      display: flex;
+      justify-content: center;
+      gap: 50px;
+      border-top: 1px solid var(--border);
+      padding-top: 15px;
     }
-
-    .clima-stat-item {
-    min-width: 100px; /* Garante que o texto não quebre linha */
-}
-
+    .clima-stat-item { min-width: 100px; }
     .clima-stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
     .clima-stat-valor { font-size: 1.3rem; color: var(--accent); font-weight: 700; }
-    
-/* ========================================================
-   🎨 ESTILIZAÇÃO DOS CARDS DE TRÂNSITO (MODERNO)
-   ======================================================== */
 
-/* Container principal */
-.transito-wrap {
-    width: 100%;
-    padding: 10px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr); /* Cria 3 colunas iguais */
-    gap: 15px; /* Espaço entre os cards */
-}
-
-/* Estilo do Título da Seção */
-.transito-titulo {
-    grid-column: span 3; 
-    text-align: center;
-    margin-bottom: 20px;
-    font-size: 0.8rem;
-    letter-spacing: 0.3em;
-    color: var(--muted);
-}
-
-/* Estrutura Base do Card Novo */
-.transito-card-novo {
-    display: flex;
-    flex-direction: column; /* Organiza os itens de cima para baixo */
-    justify-content: space-between; /* Empurra o destino para o topo e o badge para o rodapé */
-    padding: 15px;
-    min-height: 110px; /* Aumentei um pouco para caber os 3 itens com folga */
-    border-radius: 8px;
-    color: #ffffff;
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    border-left: 8px solid rgba(0, 0, 0, 0.2); 
-    transition: all 0.3s ease;
-}
-
-/* Corpo do texto dentro do card */
-.card-corpo {
-    display: flex;
-    flex-direction: column;
-}
-
-.transito-destino-novo {
-    font-weight: 800;
-    font-size: 1.1rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 2px;
-}
-
-.transito-detalhe {
-    font-size: 0.9rem;
-    font-weight: 400;
-    opacity: 0.9;
-}
-
-/* Caixa de Status (Badge à direita) */
-.card-status-box { 
-    background: rgba(0, 0, 0, 0.15); /* Fundo escuro sutil para contraste */
-    padding: 4px 10px;
-    border-radius: 4px; /* Canto menos arredondado para parecer menos com botão */
-    font-size: 0.7rem;
-    font-weight: 700;
-    min-width: 70px;
-    text-align: center;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border: none;
-    box-shadow: none;
-    display: inline-block;
-}
-
-/* 🚥 CORES DINÂMICAS (VINDAS DO BACKEND) */
-
-/* Status: VERDE (Livre) */
-.card-verde {
-    background: linear-gradient(135deg, #2e7d32, #1b5e20);
-}
-
-/* Status: AMARELO (Moderado) */
-.card-amarelo { 
-    background: rgba(0, 0, 0, 0.08);
-    color: #000 !important;
-}
-.card-amarelo .transito-detalhe { color: #000; opacity: 0.8; }
-.card-amarelo .card-status-box { 
-    border-color: rgba(0, 0, 0, 0.2); 
-    color: #000; 
-    background: rgba(0, 0, 0, 0.05);
-}
-
-/* Status: VERMELHO (Intenso) */
-.card-vermelho {
-    background: linear-gradient(135deg, #d32f2f, #b71c1c);
-    animation: pulse-red 2s infinite; /* Efeito de pulso para trânsito crítico */
-}
-
-/* Status: CINZA (Sem Dados) */
-.card-cinza {
-    background: #424242;
-    opacity: 0.7;
-}
-
-/* Animação para Alerta Crítico */
-@keyframes pulse-red {
-    0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
-}
+    /* --- CARDS DE TRÂNSITO --- */
+    .transito-wrap {
+      width: 100%;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+    }
+    .transito-titulo {
+      grid-column: span 3;
+      text-align: center;
+      margin-bottom: 5px;
+      font-size: 0.8rem;
+      letter-spacing: 0.3em;
+      color: var(--muted);
+    }
+    .transito-atualizado {
+      grid-column: span 3;
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      color: #333;
+    }
+    .transito-card-novo {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 15px;
+      min-height: 110px;
+      border-radius: 8px;
+      color: #ffffff;
+      font-family: 'Source Sans 3', sans-serif;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      border-left: 8px solid rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+    }
+    .card-corpo { display: flex; flex-direction: column; }
+    .transito-destino-novo {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+    }
+    .transito-detalhe { font-size: 0.9rem; font-weight: 400; opacity: 0.9; }
+    .card-status-box {
+      background: rgba(0,0,0,0.15);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      min-width: 70px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: inline-block;
+      margin-top: 8px;
+    }
+    .card-verde   { background: linear-gradient(135deg, #2e7d32, #1b5e20); }
+    .card-amarelo { background: linear-gradient(135deg, #f9a825, #f57f17); }
+    .card-vermelho {
+      background: linear-gradient(135deg, #d32f2f, #b71c1c);
+      animation: pulse-red 2s infinite;
+    }
+    .card-cinza { background: #424242; opacity: 0.7; }
+    @keyframes pulse-red {
+      0%   { box-shadow: 0 0 0 0 rgba(211,47,47,0.7); }
+      70%  { box-shadow: 0 0 0 10px rgba(211,47,47,0); }
+      100% { box-shadow: 0 0 0 0 rgba(211,47,47,0); }
+    }
 
     /* --- FILA --- */
     .area-fila {
@@ -335,15 +346,6 @@
     }
     .box-proximo { padding: 20px; border-right: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; }
     .box-status  { padding: 20px; background: #0d1a0f; overflow-y: auto; }
-    .item-status { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid #1c1c1c; font-size: 0.95rem; }
-    .item-status:last-child { border-bottom: none; }
-
-    /* --- MODO DESCANSO --- */
-    .modo-descanso {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000;
-      display: flex; align-items: center; justify-content: center;
-      color: #222; font-size: 1rem; letter-spacing: 0.2em; z-index: 9999;
-    }
 
     /* --- SCROLLBAR --- */
     ::-webkit-scrollbar { width: 3px; }
@@ -361,6 +363,12 @@
     </div>
   </div>
 
+  <!-- MODO MADRUGADA -->
+  <div id="tela-madrugada">
+    <div class="madrugada-relogio" id="madrugada-relogio">00:00</div>
+    <div class="madrugada-info">CD ITABORAÍ — PAINEL EM ESPERA</div>
+  </div>
+
   <!-- TOPO -->
   <div class="topo">
     <div style="color: #f0b429; font-weight: 700; letter-spacing: 0.12em; font-size: 0.95rem;">CD &mdash; ITABORAÍ</div>
@@ -372,15 +380,33 @@
 
   <!-- PRINCIPAL -->
   <div class="area-principal">
-    <div id="painel-principal">
+
+    <!-- Chamada ativa -->
+    <div id="painel-principal" style="display:none;">
       <div style="font-size: 2rem; color: #555; opacity: 0.5;">Aguardando Chamada...</div>
     </div>
+
+    <!-- Tela de espera: relógio grande + clima -->
+    <div id="tela-espera">
+      <div class="espera-data" id="espera-data">--</div>
+      <div class="espera-relogio" id="espera-relogio">00:00</div>
+      <div class="espera-clima">
+        <div class="espera-clima-icone" id="espera-icone">🌡️</div>
+        <div class="espera-clima-temp" id="espera-temp">--°</div>
+        <div id="espera-desc" style="font-size:1.2rem; color:var(--muted);">--</div>
+      </div>
+    </div>
+
+    <!-- Vídeo -->
     <div id="video-container">
       <video id="player-video" preload="auto" playsinline></video>
     </div>
+
+    <!-- Info (clima/trânsito) -->
     <div id="info-container">
       <div id="info-conteudo"></div>
     </div>
+
   </div>
 
   <!-- INFERIOR -->
@@ -420,20 +446,70 @@
     var ultimaPlacaVoz  = '';
     var descansoAtivo   = false;
 
-    var playlist = [
-      '/video1.mp4',
-      '/video2.mp4',
-      '/video3.mp4',
-      '/video4.mp4',
-      '/video5.mp4'
-    ];
-    var indiceVideo   = 0;
-    var modoOcioso    = false;
-    var modoInfo      = false;
-    var timerInfo     = null;
-    var indiceInfo    = 0;
-    var dadosClima    = null;
-    var dadosTransito = null;
+    var playlist = ['/video1.mp4','/video2.mp4','/video3.mp4','/video4.mp4','/video5.mp4'];
+    var indiceVideo          = 0;
+    var modoOcioso           = false;
+    var modoInfo             = false;
+    var timerInfo            = null;
+    var indiceInfo           = 0;
+    var dadosClima           = null;
+    var dadosTransito        = null;
+    var horaUltimaAtualizacao = '--:--';
+
+    // ── MADRUGADA ────────────────────────────────────────────
+    // Entre 00:00 e 05:59, o painel entra em modo escuro.
+    // O ciclo de vídeos roda apenas se houver chamada ativa.
+    // Um único ciclo de vídeos+info é permitido às 03:00 (horário de janta).
+    var cicloBonusFeito = false;   // controla se o ciclo das 03h já rodou hoje
+    var modeMadrugada   = false;
+
+    function ehMadrugada() {
+      var h = new Date().getHours();
+      return h >= 0 && h < 6;
+    }
+
+    function verificarMadrugada(chamando) {
+      if (!ehMadrugada()) {
+        // Saiu da madrugada: reseta controle do ciclo bônus
+        if (modeMadrugada) {
+          modeMadrugada   = false;
+          cicloBonusFeito = false;
+          document.getElementById('tela-madrugada').className = '';
+        }
+        return false;
+      }
+
+      // Está na madrugada E há chamada → sai do modo madrugada temporariamente
+      if (chamando) {
+        document.getElementById('tela-madrugada').className = '';
+        modeMadrugada = false;
+        return false;
+      }
+
+      // Ciclo bônus das 03:00 (só uma vez por madrugada)
+      var agora = new Date();
+      var h = agora.getHours();
+      var m = agora.getMinutes();
+      if (h === 3 && m < 5 && !cicloBonusFeito && !modoOcioso) {
+        cicloBonusFeito = true;
+        modeMadrugada   = false;
+        document.getElementById('tela-madrugada').className = '';
+        modoOcioso = true;
+        tocarVideo(indiceVideo);
+        return true; // deixa o ciclo rodar
+      }
+
+      // Modo madrugada padrão: tela escura
+      if (!modeMadrugada) {
+        modeMadrugada = true;
+        // Garante que vídeo e info estão parados
+        encerrarModoOcioso();
+        modoOcioso = false;
+        document.getElementById('tela-espera').className  = '';
+        document.getElementById('tela-madrugada').className = 'ativo';
+      }
+      return true;
+    }
 
     // ── INICIO ───────────────────────────────────────────────
     function iniciarPainel() {
@@ -452,32 +528,51 @@
 
       setInterval(atualizarTV,      POLL_MS);
       setInterval(atualizarRelogio, 1000);
-      setInterval(atualizarDados,   1800000);
+      setInterval(atualizarDados,   3600000); // trânsito a cada 1h
       atualizarRelogio();
       atualizarDados();
 
-      modoOcioso = true;
-      tocarVideo(0);
+      // Só inicia vídeo se não for madrugada
+      if (!ehMadrugada()) {
+        modoOcioso = true;
+        tocarVideo(0);
+      } else {
+        modeMadrugada = true;
+        document.getElementById('tela-madrugada').className = 'ativo';
+      }
+
       atualizarTV();
     }
 
-    // ── RELOGIO ──────────────────────────────────────────────
+    // ── RELÓGIO ──────────────────────────────────────────────
     function atualizarRelogio() {
       var d = new Date();
-      var h = d.getHours();
-      var m = d.getMinutes();
-      if (h < 10) h = '0' + h;
-      if (m < 10) m = '0' + m;
-      document.getElementById('relogio').innerHTML = h + ':' + m;
+      var h = String(d.getHours()).padStart   ? 
+              (d.getHours()   < 10 ? '0' + d.getHours()   : '' + d.getHours())   : d.getHours();
+      var m = d.getMinutes() < 10 ? '0' + d.getMinutes() : '' + d.getMinutes();
+      var hm = h + ':' + m;
+
+      document.getElementById('relogio').innerHTML          = hm;
+      document.getElementById('madrugada-relogio').innerHTML = hm;
+      document.getElementById('espera-relogio').innerHTML   = hm;
+
+      // Data por extenso na tela de espera
+      var dias   = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+      var meses  = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+      var data   = dias[d.getDay()] + ', ' + d.getDate() + ' de ' + meses[d.getMonth()];
+      document.getElementById('espera-data').innerHTML = data;
     }
 
-    // ── DADOS CLIMA E TRANSITO ────────────────────────────────
+    // ── DADOS CLIMA E TRÂNSITO ───────────────────────────────
     function atualizarDados() {
       var xhrW = new XMLHttpRequest();
       xhrW.open('GET', '/api/weather', true);
       xhrW.onreadystatechange = function() {
         if (xhrW.readyState !== 4 || xhrW.status !== 200) return;
-        try { dadosClima = JSON.parse(xhrW.responseText); } catch(e) {}
+        try {
+          dadosClima = JSON.parse(xhrW.responseText);
+          atualizarTelaEspera();
+        } catch(e) {}
       };
       xhrW.send();
 
@@ -485,71 +580,85 @@
       xhrT.open('GET', '/api/traffic', true);
       xhrT.onreadystatechange = function() {
         if (xhrT.readyState !== 4 || xhrT.status !== 200) return;
-        try { 
-            dadosTransito = JSON.parse(xhrT.responseText);
-            
-            // CAPTURA A HORA REAL AQUI
-            var agora = new Date();
-            horaUltimaAtualizacao = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            
+        try {
+          dadosTransito = JSON.parse(xhrT.responseText);
+          var agora = new Date();
+          var hh = agora.getHours()   < 10 ? '0' + agora.getHours()   : '' + agora.getHours();
+          var mm = agora.getMinutes() < 10 ? '0' + agora.getMinutes() : '' + agora.getMinutes();
+          horaUltimaAtualizacao = hh + ':' + mm;
         } catch(e) { console.error("Erro no parse do trânsito"); }
       };
       xhrT.send();
     }
 
-    // Atalho para pular durante os testes
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'n' || event.key === 'N' || event.code === 'Space') {
-        console.log("⏭️ Pulando para a próxima execução...");
-        
-        // Se estiver no vídeo, encerra e vai para info
-        if (modoOcioso && !modoInfo) {
-            proximoVideo();
-        } 
-        // Se estiver na info, limpa o timer e volta pro vídeo
-        else if (modoInfo) {
-            clearTimeout(timerInfo);
-            tocarVideo(indiceVideo);
-        }
+    // ── TELA DE ESPERA ───────────────────────────────────────
+    function atualizarTelaEspera() {
+      if (!dadosClima) return;
+      document.getElementById('espera-temp').innerHTML  = dadosClima.temperatura + '°';
+      document.getElementById('espera-desc').innerHTML  = dadosClima.descricao || '';
+      document.getElementById('espera-icone').innerHTML = iconeClima(dadosClima.descricao);
     }
-});
 
-    // ── PLAYLIST ─────────────────────────────────────────────
+    function mostrarTelaEspera() {
+      document.getElementById('video-container').style.display  = 'none';
+      document.getElementById('video-container').className      = '';
+      document.getElementById('info-container').style.display   = 'none';
+      document.getElementById('info-container').className       = '';
+      document.getElementById('painel-principal').style.display = 'none';
+      document.getElementById('tela-espera').className          = 'ativo';
+      atualizarTelaEspera();
+    }
+
+    function esconderTelaEspera() {
+      document.getElementById('tela-espera').className = '';
+    }
+
+    // ── ATALHO DE TESTE ──────────────────────────────────────
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'n' || event.key === 'N' || event.code === 'Space') {
+        if (modoOcioso && !modoInfo) { proximoVideo(); }
+        else if (modoInfo) { clearTimeout(timerInfo); tocarVideo(indiceVideo); }
+      }
+    });
+
+    // ── ENCERRAR MODO OCIOSO ─────────────────────────────────
     function encerrarModoOcioso() {
       modoOcioso = false;
       modoInfo   = false;
       if (timerInfo) { clearTimeout(timerInfo); timerInfo = null; }
 
-      document.getElementById('video-container').className = '';
-      document.getElementById('info-container').className  = '';
-      document.getElementById('painel-principal').style.display = '';
-      document.getElementById('musica-fundo').volume = 0;
+      document.getElementById('video-container').className      = '';
+      document.getElementById('video-container').style.display  = 'none';
+      document.getElementById('info-container').className       = '';
+      document.getElementById('info-container').style.display   = 'none';
+      document.getElementById('tela-espera').className          = '';
+      document.getElementById('musica-fundo').volume            = 0;
 
       var video = document.getElementById('player-video');
-      video.volume = 0;  // silencia antes de pausar para evitar vazamento de audio
+      video.volume = 0;
       video.pause();
     }
-function tocarVideo(idx) {
-      modoInfo = false;
-      
-      const infoCont = document.getElementById('info-container');
-      infoCont.style.display = 'none'; 
 
-      const videoCont = document.getElementById('video-container');
-      videoCont.style.display = 'flex'; 
+    // ── PLAYLIST ─────────────────────────────────────────────
+    function tocarVideo(idx) {
+      modoInfo = false;
+      esconderTelaEspera();
+
+      var infoCont  = document.getElementById('info-container');
+      infoCont.style.display = 'none';
+      infoCont.className     = '';
+
+      var videoCont = document.getElementById('video-container');
+      videoCont.style.display = 'flex';
       videoCont.classList.add('ativo');
 
-      // Garante que o texto de chamada continue escondido durante o vídeo
       document.getElementById('painel-principal').style.display = 'none';
-      
-      // ... resto do seu código de carregar o vídeo
-      var video = document.getElementById('player-video');
-      video.volume = 1;  
-      video.src = playlist[idx % playlist.length];
+
+      var video  = document.getElementById('player-video');
+      video.volume = 1;
+      video.src  = playlist[idx % playlist.length];
       video.load();
-      // ...
-    
-      // FIX: só toca se não houver chamada ativa
+
       setTimeout(function() {
         if (modoOcioso) {
           var promise = video.play();
@@ -568,165 +677,126 @@ function tocarVideo(idx) {
     }
 
     function mostrarInfo() {
-    modoInfo = true;
+      modoInfo = true;
 
-   // 1. ESCONDE TUDO (Vídeo e o texto de Aguardando Chamada)
       document.getElementById('video-container').style.display = 'none';
-      document.getElementById('video-container').classList.remove('ativo');
-      
-      // ESTA LINHA É A CHAVE: Esconde a mensagem de "Aguardando Chamada"
-      document.getElementById('painel-principal').style.display = 'none'; 
-      
-      // 2. PREPARA O CONTAINER DE INFO
-      const infoCont = document.getElementById('info-container');
-      infoCont.style.display = 'flex'; 
-      infoCont.classList.add('ativo');
+      document.getElementById('video-container').className     = '';
+      document.getElementById('painel-principal').style.display = 'none';
 
-      // 3. DECIDE O QUE RENDERIZAR
-      if (indiceInfo % 2 === 0) { // Usando uma lógica de índice para alternar melhor
-          console.log("Exibindo: CLIMA");
-          renderInfoClima();
-      } else {
-          console.log("Exibindo: TRÂNSITO");
-          renderInfoTransito();
-      }
-      indiceInfo++; // Incrementa para a próxima alternância
+      var infoCont = document.getElementById('info-container');
+      infoCont.style.display = 'flex';
+      infoCont.className     = 'ativo';
 
-      // 4. CONFIGURA O TIMER PARA VOLTAR AO VÍDEO
+      if (indiceInfo % 2 === 0) { renderInfoClima(); }
+      else                       { renderInfoTransito(); }
+      indiceInfo++;
+
       clearTimeout(timerInfo);
       timerInfo = setTimeout(function() {
-          if (modoOcioso) tocarVideo(indiceVideo);
-      }, 20000); 
+        if (modoOcioso) tocarVideo(indiceVideo);
+      }, 20000);
     }
-// ── AUXILIAR: ÍCONE DO CLIMA ──────────────────────────────
-   function iconeClima(descricao) {
-  if (!descricao) return "🌡️";
-  var d = descricao.toLowerCase();
 
-  if (d.includes("sol") || d.includes("limpo") || d.includes("aberto")) return "☀️";
-  if (d.includes("nublado") || d.includes("encoberto")) return "☁️";
-  if (d.includes("nuvem") || d.includes("parcial")) return "⛅";
-  if (d.includes("chuva") || d.includes("chuvisco") || d.includes("garoa")) return "🌧️";
-  if (d.includes("tempest") || d.includes("trovão")) return "⛈️";
-  if (d.includes("nebl") || d.includes("névoa")) return "🌫️";
+    // ── ÍCONE DO CLIMA ───────────────────────────────────────
+    function iconeClima(descricao) {
+      if (!descricao) return '🌡️';
+      var d = descricao.toLowerCase();
+      if (d.indexOf('sol') !== -1 || d.indexOf('limpo') !== -1 || d.indexOf('aberto') !== -1) return '☀️';
+      if (d.indexOf('nublado') !== -1 || d.indexOf('encoberto') !== -1) return '☁️';
+      if (d.indexOf('nuvem') !== -1 || d.indexOf('parcial') !== -1) return '⛅';
+      if (d.indexOf('chuva') !== -1 || d.indexOf('chuvisco') !== -1 || d.indexOf('garoa') !== -1) return '🌧️';
+      if (d.indexOf('tempest') !== -1 || d.indexOf('trovão') !== -1) return '⛈️';
+      if (d.indexOf('nebl') !== -1 || d.indexOf('névoa') !== -1) return '🌫️';
+      return '🌡️';
+    }
 
-  return "🌡️";
-}
-
-    // ── RENDER CLIMA ATUALIZADO ──────────────────────────────
+    // ── RENDER CLIMA ─────────────────────────────────────────
     function renderInfoClima() {
       var el = document.getElementById('info-conteudo');
-      
       if (!dadosClima) {
-        el.innerHTML = `
-          <div class="clima-wrap">
-            <div class="clima-titulo">CLIMA — ITABORAÍ</div>
-            <div class="clima-desc" style="color:#444;">Carregando dados meteorológicos...</div>
-          </div>`;
+        el.innerHTML = '<div class="clima-wrap"><div class="clima-titulo">CLIMA — ITABORAÍ</div><div class="clima-desc" style="color:#444;">Carregando...</div></div>';
         return;
       }
-
       var icone = iconeClima(dadosClima.descricao);
-
-      // --- LÓGICA DO ALERTA CONDICIONAL ---
-      var alertaChuva = "";
-      // Verifica se existe previsão de chuva nos dados vindos do seu backend
-      if (dadosClima.previsao && dadosClima.previsao.toLowerCase().includes("chuva")) {
-          alertaChuva = `
-            <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.1); color: #ff6d00; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.05em;">
-                [!] PREVISÃO: ${dadosClima.previsao}
-            </div>`;
+      var alertaChuva = '';
+      if (dadosClima.previsao && dadosClima.previsao.toLowerCase().indexOf('chuva') !== -1) {
+        alertaChuva = '<div style="margin-top:15px;padding-top:10px;border-top:1px dashed rgba(255,255,255,0.1);color:#ff6d00;font-weight:700;font-size:0.85rem;">[!] PREVISÃO: ' + dadosClima.previsao + '</div>';
       }
-
-      // Estrutura moderna aproveitando os 65% de largura
-      el.innerHTML = `
-        <div class="clima-wrap">
-          <div class="clima-titulo">CONDIÇÕES METEOROLÓGICAS ATUAIS</div>
-          
-          <div class="clima-display-principal">
-            <div class="clima-icone-destaque">${icone}</div>
-            <div class="clima-temp">${dadosClima.temperatura}°</div>
-          </div>
-
-          <div class="clima-box-detalhes">
-            <div class="clima-desc">${dadosClima.descricao}</div>
-            
-            <div class="clima-stats">
-              <div class="clima-stat-item">
-                <span class="clima-stat-label">Vento</span>
-                <span class="clima-stat-valor">${dadosClima.vento} km/h</span>
-              </div>
-              <div class="clima-stat-item">
-                <span class="clima-stat-label">Sensação</span>
-                <span class="clima-stat-valor">${dadosClima.sensacao || '--'}°</span>
-              </div>
-            </div>
-
-            ${alertaChuva}
-
-          </div>
-        </div>`;
+      el.innerHTML =
+        '<div class="clima-wrap">' +
+          '<div class="clima-titulo">CONDIÇÕES METEOROLÓGICAS ATUAIS</div>' +
+          '<div class="clima-display-principal">' +
+            '<div class="clima-icone-destaque">' + icone + '</div>' +
+            '<div class="clima-temp">' + dadosClima.temperatura + '°</div>' +
+          '</div>' +
+          '<div class="clima-box-detalhes">' +
+            '<div class="clima-desc">' + dadosClima.descricao + '</div>' +
+            '<div class="clima-stats">' +
+              '<div class="clima-stat-item">' +
+                '<div class="clima-stat-label">Vento</div>' +
+                '<div class="clima-stat-valor">' + dadosClima.vento + ' km/h</div>' +
+              '</div>' +
+              '<div class="clima-stat-item">' +
+                '<div class="clima-stat-label">Condição</div>' +
+                '<div class="clima-stat-valor">' + icone + '</div>' +
+              '</div>' +
+            '</div>' +
+            alertaChuva +
+          '</div>' +
+        '</div>';
     }
-    // ── RENDER TRANSITO ATUALIZADO ───────────────────────────────────────
+
+    // ── RENDER TRÂNSITO ──────────────────────────────────────
     function renderInfoTransito() {
       var el = document.getElementById('info-conteudo');
       if (!dadosTransito) {
-        el.innerHTML = '<div class="transito-wrap"><div class="transito-titulo">TRANSITO</div><div style="color:#444; text-align:center;">Carregando...</div></div>';
+        el.innerHTML = '<div class="transito-wrap"><div class="transito-titulo">TRÂNSITO</div><div style="color:#444;grid-column:span 3;text-align:center;">Carregando...</div></div>';
         return;
       }
-      
-      var html = '<div class="transito-wrap"><div class="transito-titulo">TRÂNSITO A PARTIR DE ITABORAÍ</div>';
-      
+
+      var html = '<div class="transito-wrap">' +
+        '<div class="transito-titulo">TRÂNSITO A PARTIR DE ITABORAÍ</div>' +
+        '<div class="transito-atualizado">Atualizado em: ' + horaUltimaAtualizacao + '</div>';
+
       for (var i = 0; i < dadosTransito.length; i++) {
         var d = dadosTransito[i];
-        var alertaPonte = ""; // Começa vazio para cada card
 
-        var horaUltimaAtualizacao = "--:--";
-
-        // 1. Lógica do Alerta da Ponte
-        if (d.destino.includes("PONTE") && d.tempo > 25) {
-            alertaPonte = `
-                <div style="margin-top: 8px; padding-top: 5px; border-top: 1px dashed rgba(255,255,255,0.1); color: #ff3d00; font-weight: 700; font-size: 0.75rem; text-align: center;">
-                    [!] TRAVESSIA LENTA
-                </div>`;
+        var alertaPonte = '';
+        if (d.destino.indexOf('PONTE') !== -1 && d.tempo > 25) {
+          alertaPonte = '<div style="margin-top:8px;padding-top:5px;border-top:1px dashed rgba(255,255,255,0.1);color:#ff3d00;font-weight:700;font-size:0.75rem;text-align:center;">[!] TRAVESSIA LENTA</div>';
         }
 
-        // 2. Define a cor do card
         var classCard = 'card-verde';
         if (d.cor === 'yellow') classCard = 'card-amarelo';
         if (d.cor === 'red')    classCard = 'card-vermelho';
         if (d.cor === 'gray')   classCard = 'card-cinza';
 
-        // 3. Trata o texto de tempo (Conversão Horas/Min)
         var infoTempo = '-- min';
         if (d.tempo) {
-            if (d.tempo >= 60) {
-                var horas = Math.floor(d.tempo / 60);
-                var mins = d.tempo % 60;
-                infoTempo = mins > 0 ? horas + 'h ' + mins + 'm' : horas + 'h';
-            } else {
-                infoTempo = d.tempo + ' min';
-            }
+          if (d.tempo >= 60) {
+            var horas = Math.floor(d.tempo / 60);
+            var mins  = d.tempo % 60;
+            infoTempo = mins > 0 ? horas + 'h ' + mins + 'm' : horas + 'h';
+          } else {
+            infoTempo = d.tempo + ' min';
+          }
         }
 
         var atrasoTexto = d.atraso > 0 ? ' (+' + d.atraso + ' min)' : '';
 
-        // 4. Montagem do HTML do Card
         html +=
           '<div class="transito-card-novo ' + classCard + '">' +
             '<div class="card-corpo">' +
               '<div class="transito-destino-novo">' + d.destino + '</div>' +
               '<div class="transito-detalhe">' + infoTempo + atrasoTexto + '</div>' +
-              alertaPonte + // <-- O ALERTA ENTRA AQUI
+              alertaPonte +
             '</div>' +
             '<div class="card-status-box">' + d.status + '</div>' +
           '</div>';
       }
 
-      var agora = new Date();
-      var dataHora = agora.toLocaleString('pt-BR');
-
-      
+      html += '</div>'; // fecha transito-wrap
+      el.innerHTML = html;
     }
 
     // ── VOZ ──────────────────────────────────────────────────
@@ -814,6 +884,15 @@ function tocarVideo(idx) {
 
       var proximo = listaAgendados.length > 0 ? listaAgendados[0] : null;
 
+      // Verifica modo madrugada antes de qualquer render
+      if (verificarMadrugada(chamando)) {
+        // Ainda renderiza fila e status mesmo na madrugada
+        renderProximo(proximo);
+        renderFilaDividida(listaAgendados);
+        renderStatus(dados);
+        return;
+      }
+
       renderPrincipal(chamando);
       renderProximo(proximo);
       renderFilaDividida(listaAgendados);
@@ -821,6 +900,7 @@ function tocarVideo(idx) {
 
       if (chamando) {
         if (modoOcioso) encerrarModoOcioso();
+        esconderTelaEspera();
         if (ultimoChamadoID !== chamando.id) {
           ultimoChamadoID = chamando.id;
           try { document.getElementById('som-alerta').play(); } catch(e) {}
@@ -831,18 +911,17 @@ function tocarVideo(idx) {
         ultimaPlacaVoz  = '';
         ultimoChamadoID = null;
         if (!modoOcioso) {
-          modoOcioso = true;
-          tocarVideo(indiceVideo);
+          // Não há chamada e não está em modo ocioso → mostra tela de espera
+          mostrarTelaEspera();
         }
       }
     }
 
     // ── RENDER PRINCIPAL ─────────────────────────────────────
-   function renderPrincipal(chamando) {
-
+    function renderPrincipal(chamando) {
       var painel = document.getElementById('painel-principal');
-      if (chamando) { 
-      painel.style.display = 'block'; 
+      if (chamando) {
+        painel.style.display = 'block';
         var topoChamada = chamando.motorista
           ? '[!] Chamando: ' + chamando.motorista
           : 'CHAMANDO AGORA';
@@ -856,18 +935,12 @@ function tocarVideo(idx) {
             '<div class="aviso-linha">Desligue o motor &bull; Calce as rodas &bull; Entregue as chaves</div>' +
             '<div class="aviso-linha destaque">[!] USO OBRIGATORIO DE EPIs</div>' +
           '</div>';
-     //} else {
-       // painel.innerHTML =
-         // '<div style="font-size:2rem; color:#555; opacity:0.5;">Aguardando Chamada...</div>';
-      
-    } else {
-        // Se não estiver chamando nada, o painel pode ficar em display none 
-        // porque o modoOcioso (vídeo/clima) vai assumir a tela.
+      } else {
         if (modoOcioso) painel.style.display = 'none';
       }
     }
 
-    // ── RENDER PROXIMO ───────────────────────────────────────
+    // ── RENDER PRÓXIMO ───────────────────────────────────────
     function renderProximo(proximo) {
       var el = document.getElementById('painel-proximo');
       if (proximo) {
@@ -898,8 +971,8 @@ function tocarVideo(idx) {
         else { classeItem = 'item-fila ' + (isCarga ? 'tipo-carga' : 'tipo-descarga'); }
 
         var horaHtml = isCarga
-          ? '<span class="hora-fila-carga">' + item.hora + '<br><small style="font-size:0.75rem; opacity:0.6;">' + item.data.split('-').reverse().join('/') + '</small></span>'
-          : '<span class="hora-fila">'       + item.hora + '<br><small style="font-size:0.75rem; opacity:0.6;">' + item.data.split('-').reverse().join('/') + '</small></span>';
+          ? '<span class="hora-fila-carga">' + item.hora + '<br><small style="font-size:0.75rem;opacity:0.6;">' + item.data.split('-').reverse().join('/') + '</small></span>'
+          : '<span class="hora-fila">'       + item.hora + '<br><small style="font-size:0.75rem;opacity:0.6;">' + item.data.split('-').reverse().join('/') + '</small></span>';
 
         var card =
           '<div class="' + classeItem + '">' +
@@ -953,21 +1026,6 @@ function tocarVideo(idx) {
                 '<span class="badge badge-finalizado">OK</span></div>';
       }
       el.innerHTML = html;
-    }
-
-    // ── DESCANSO ─────────────────────────────────────────────
-    function ativarDescanso() {
-      if (descansoAtivo) return;
-      descansoAtivo = true;
-      var div = document.createElement('div');
-      div.className = 'modo-descanso'; div.id = 'modoDescanso';
-      div.innerHTML = 'PAINEL EM ESPERA';
-      document.body.appendChild(div);
-    }
-    function desativarDescanso() {
-      var el = document.getElementById('modoDescanso');
-      if (el && el.parentNode) el.parentNode.removeChild(el);
-      descansoAtivo = false;
     }
 
   </script>

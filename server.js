@@ -466,114 +466,63 @@ app.get("/api/weather", async (req, res) => {
           80:"Pancadas leves", 81:"Pancadas moderadas", 82:"Pancadas fortes",
           95:"Tempestade", 96:"Tempestade c/ granizo", 99:"Tempestade c/ granizo forte"
         };
-       res.json({
-    temperatura: w.temperature,
-    vento:       w.windspeed,
-    // Adicionamos a sensação aqui para a TV conseguir ler
-    sensacao:    w.temperature, 
-    descricao:   codigos[w.weathercode] || "Condição " + w.weathercode
-});
+        res.json({
+          temperatura: w.temperature,
+          vento:       w.windspeed,
+          descricao:   codigos[w.weathercode] || "Condição " + w.weathercode
+        });
       } catch(e) { res.status(500).json({ erro: "Erro ao processar clima" }); }
     });
   }).on("error", function() { res.status(500).json({ erro: "Erro ao obter clima" }); });
 });
 
 // ========================================================
-// 🚗 ROTA — TRÂNSITO EVOLUÍDA (Com Checkpoint e 6 Destinos)
+// 🚗 ROTA — TRÂNSITO (Google Distance Matrix)
 // ========================================================
 app.get("/api/traffic", async (req, res) => {
-  const https = require("https");
+  const https  = require("https");
   const apiKey = process.env.MAPS_API_KEY;
-  const origin = "-22.779214,-42.935105"; // CD Itaboraí
-
-  // 1. ENTRADA: Definimos as coordenadas estratégicas
-  const coords = [
-    "-22.7471,-42.8596", // Itaboraí Centro
-    "-22.7441,-42.9754", // Manilha (Trevo)
-    "-22.8268,-43.0600", // Alcântara (antigo Arsenal)
-    "-22.8736,-43.2075", // Final da Ponte (Niterói Centro)
-    "-22.8590,-42.8260", // CHECKPOINT: Topo da Serra do Lagarto
-    "-22.9192,-42.8182", // DESTINO FINAL: Maricá Centro
-    "-22.8461,-42.3331"  // Via Lagos (Pedágio Rio Bonito)
-  ];
-
-  const labels = [
-    "ITABORAÍ (CENTRO)",
-    "MANILHA (TREVO)",
-    "ALCÂNTARA / RJ-104",
-    "NITERÓI (CENTRO)",
-    "SERRA_CHECKPOINT", // Tag interna para cálculo
-    "MARICÁ (VIA SERRA)",
-    "VIA LAGOS"
-  ];
-
+  const origin = "-22.779214,-42.935105";
+  const dests  = ["-22.7482,-42.9225", "-22.9194,-42.8186", "-22.7122,-42.6300"].join("|");
+  const labels = ["Niteroi/SG", "Marica", "Regiao dos Lagos"];
   const url = "https://maps.googleapis.com/maps/api/distancematrix/json" +
     "?origins=" + origin +
-    "&destinations=" + encodeURIComponent(coords.join("|")) +
+    "&destinations=" + encodeURIComponent(dests) +
     "&departure_time=now" +
     "&key=" + apiKey;
 
   https.get(url, function(resp) {
     let data = "";
-    resp.on("data", (chunk) => { data += chunk; });
-    resp.on("end", () => {
+    resp.on("data", function(chunk) { data += chunk; });
+    resp.on("end", function() {
       try {
-        const parsed = JSON.parse(data);
-        const elements = parsed.rows[0].elements;
-
-        // 2. PROCESSAMENTO: Mapeamos os resultados da API
-        let resultadosBrutos = elements.map((el, i) => {
-          if (el.status !== "OK") return { label: labels[i], tempo: 0, normal: 0 };
-          return {
-            label: labels[i],
-            tempo: el.duration_in_traffic.value / 60,
-            normal: el.duration.value / 60
-          };
-        });
-
-        // LÓGICA ESPECIAL: Soma da Serra do Lagarto
-        // Trecho 1: CD -> Topo da Serra (index 4)
-        // Trecho 2: Topo da Serra -> Maricá (Este cálculo precisaria de outra chamada ou Waypoint, 
-        // mas para simplificar agora, vamos usar a soma ponderada ou apenas o trajeto direto filtrado)
-        
-        const final = [];
-        resultadosBrutos.forEach((item, i) => {
-          // Ignoramos o checkpoint na saída final
-          if (item.label === "SERRA_CHECKPOINT") return;
-
-          const comTrafico = item.tempo;
-          const atraso = comTrafico - item.normal;
-          
-          let status = "LIVRE";
-          let cor = "green";
-          if (atraso > 15) { status = "LENTO"; cor = "red"; }
+        const elements = JSON.parse(data).rows[0].elements;
+        const resultado = elements.map(function(el, i) {
+          if (el.status !== "OK") return { destino: labels[i], status: "SEM DADOS", cor: "gray" };
+          const comTrafico = el.duration_in_traffic.value / 60;
+          const normal     = el.duration.value / 60;
+          const atraso     = comTrafico - normal;
+          var status = "LIVRE";   var cor = "green";
+          if (atraso > 15) { status = "INTENSO";  cor = "red";    }
           else if (atraso > 5) { status = "MODERADO"; cor = "yellow"; }
-
-          final.push({
-            destino: item.label,
-            tempo: Math.round(comTrafico),
-            atraso: Math.round(atraso),
-            status: status,
-            cor: cor
-          });
+          return { destino: labels[i], tempo: Math.round(comTrafico), atraso: Math.round(atraso), status: status, cor: cor };
         });
-
-        // 3. SAÍDA: Retorna os 6 destinos organizados
-        res.json(final);
+        res.json(resultado);
       } catch(e) { res.status(500).json({ erro: "Erro ao processar transito" }); }
     });
-  }).on("error", () => { res.status(500).json({ erro: "Erro ao obter transito" }); });
+  }).on("error", function() { res.status(500).json({ erro: "Erro ao obter transito" }); });
 });
+
 // ========================================================
 // 🎬 ROTA — LISTA DE VÍDEOS
 // ========================================================
 app.get("/api/videos", function(req, res) {
   res.json([
-    { nome: "Video 1", arquivo: "/video 1.mp4" },
-    { nome: "Video 2", arquivo: "/video 2.mp4" },
-    { nome: "Video 3", arquivo: "/video 3.mp4" },
-    { nome: "Video 4", arquivo: "/video 4.mp4" },
-    { nome: "Video 5", arquivo: "/video 5.mp4" }
+    { nome: "Video 1", arquivo: "/video1.mp4" },
+    { nome: "Video 2", arquivo: "/video2.mp4" },
+    { nome: "Video 3", arquivo: "/video3.mp4" },
+    { nome: "Video 4", arquivo: "/video4.mp4" },
+    { nome: "Video 5", arquivo: "/video5.mp4" }
   ]);
 });
 
