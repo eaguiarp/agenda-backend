@@ -126,9 +126,21 @@ async function criarAgendamento(data, hora, produto, placa, quantidade, motorist
     const agendamentos  = await obterAgendamentos();
     const veiculoNovo   = classificarVeiculo(quantidade);
 
-    const naMesmaHora = agendamentos.filter(a =>
-        a.data === data && a.hora === hora && !STATUS_ENCERRADOS.includes(a.status)
-    );
+    // Converte hora para minutos
+    const partesHora = hora.split(':');
+    const minutosSelecionados = parseInt(partesHora[0]) * 60 + parseInt(partesHora[1]);
+
+    // Faixa de 1 hora: slot anterior (30min atrás) até slot atual — igual à renderizarOpcoesHorario
+    const inicioFaixa = minutosSelecionados - 30;
+    const fimFaixa    = minutosSelecionados;
+
+    const naFaixa = agendamentos.filter(function(a) {
+        if (a.data !== data) return false;
+        if (STATUS_ENCERRADOS.includes(a.status)) return false;
+        const p = a.hora.split(':');
+        const minA = parseInt(p[0]) * 60 + parseInt(p[1]);
+        return minA >= inicioFaixa && minA <= fimFaixa;
+    });
 
     // Placa duplicada no dia
     if (agendamentos.some(a =>
@@ -138,24 +150,24 @@ async function criarAgendamento(data, hora, produto, placa, quantidade, motorist
         return;
     }
 
-    // Regra do Bitrem Grande — pátio livre de médios/grandes
+    // Regra do Bitrem Grande — pátio livre de médios/grandes na faixa
     if (veiculoNovo.classe === "gigante") {
-        const temOutroNaoPequeno = naMesmaHora.some(a =>
+        const temOutroNaoPequeno = naFaixa.some(a =>
             classificarVeiculo(a.quantidade).classe !== "pequeno"
         );
         if (temOutroNaoPequeno) {
             mostrarMensagem("Bitrem Grande requer pátio livre de outros veículos médios/grandes.", "erro");
             return;
         }
-        if (naMesmaHora.length >= 3) {
+        if (naFaixa.length >= 3) {
             mostrarMensagem("Limite de 3 veículos para operação com Bitrem Grande atingido.", "erro");
             return;
         }
     }
 
-    // Regra do Toco — limite de 6 pequenos por hora
+    // Regra do Toco — limite de 6 pequenos na faixa
     if (veiculoNovo.classe === "pequeno") {
-        const pequenos = naMesmaHora.filter(a =>
+        const pequenos = naFaixa.filter(a =>
             classificarVeiculo(a.quantidade).classe === "pequeno"
         );
         if (pequenos.length >= 6) {
@@ -164,12 +176,18 @@ async function criarAgendamento(data, hora, produto, placa, quantidade, motorist
         }
     }
 
-    // Regra da capacidade total (máx 1820 sc por hora)
-    const pesoSomado = naMesmaHora.reduce((acc, a) =>
+    // Regra da capacidade total (máx 1820 sc na faixa de 1 hora)
+    const pesoFaixa = naFaixa.reduce((acc, a) =>
         acc + classificarVeiculo(a.quantidade).peso, 0
     );
-    if ((pesoSomado + veiculoNovo.peso) > 1820) {
+    if ((pesoFaixa + veiculoNovo.peso) > 1820) {
         mostrarMensagem("Capacidade de descarga da hora atingida (Máx 1820 sc).", "erro");
+        return;
+    }
+
+    // Limite de segurança: máx 4 veículos na faixa
+    if (naFaixa.length >= 4) {
+        mostrarMensagem("Limite de veículos por hora atingido.", "erro");
         return;
     }
 
@@ -340,7 +358,7 @@ async function renderizarOpcoesHorario() {
     }
 
     const HORARIOS_EXCLUSIVOS = [
-        2*60+40, 7*60+30, 9*60+30, 13*60, 15*60, 17*60+40, 21*60
+        2*60+40, 7*60+30, 9*60+40, 13*60, 15*60, 17*60+40, 21*60
     ];
 
     if (diaSemana >= 1 && diaSemana <= 5) {
@@ -349,49 +367,38 @@ async function renderizarOpcoesHorario() {
             : horarios.filter(h => !HORARIOS_EXCLUSIVOS.includes(h));
     }
 
-    horarios.forEach(function(m) {
-    var horarioFormatado = String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
+    horarios.forEach(m => {
+        const horarioFormatado = String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
 
-    // Agendamentos no slot exato
-    var naMesmaHora = agendamentos.filter(function(a) {
-        return a.data === dataSelecionada &&
-               a.hora === horarioFormatado &&
-               !STATUS_ENCERRADOS.includes(a.status);
+        const naMesmaHora = agendamentos.filter(a =>
+            a.data === dataSelecionada &&
+            a.hora === horarioFormatado &&
+            !STATUS_ENCERRADOS.includes(a.status)
+        );
+
+        const passado   = (dataSelecionada === hojeData && m < minutosAgora);
+        const bloqueado = horarioBloqueado(dataSelecionada, m, bloqueios);
+
+        // Calcula capacidade restante para mostrar horários parcialmente ocupados
+        const pesoOcupado = naMesmaHora.reduce((acc, a) =>
+            acc + classificarVeiculo(a.quantidade).peso, 0
+        );
+        const cheio = pesoOcupado >= 1820;
+
+        if (!passado && !bloqueado && !cheio) {
+            const option = document.createElement("option");
+            option.value       = horarioFormatado;
+            option.textContent = horarioFormatado;
+            inputHora.appendChild(option);
+        }
     });
 
-    // Agendamentos na FAIXA de 1 hora (slot atual + slot anterior de 30min)
-    var inicioFaixa = m - 30; // slot anterior
-    var fimFaixa    = m;      // slot atual
-
-    var naFaixa = agendamentos.filter(function(a) {
-        if (a.data !== dataSelecionada) return false;
-        if (STATUS_ENCERRADOS.includes(a.status)) return false;
-        var partes = a.hora.split(':');
-        var minAgend = parseInt(partes[0]) * 60 + parseInt(partes[1]);
-        return minAgend >= inicioFaixa && minAgend <= fimFaixa;
-    });
-
-    var temSemQuantidade = false;
-    for (var x = 0; x < naFaixa.length; x++) {
-        if (!naFaixa[x].quantidade) { temSemQuantidade = true; break; }
+    if (inputHora.options.length === 1) {
+        const opt = document.createElement("option");
+        opt.value = ""; opt.disabled = true;
+        opt.textContent = "Nenhum horário disponível";
+        inputHora.appendChild(opt);
     }
-
-    var pesoFaixa = naFaixa.reduce(function(acc, a) {
-        return acc + classificarVeiculo(a.quantidade).peso;
-    }, 0);
-
-    var cheio = temSemQuantidade || pesoFaixa >= 1820 || naFaixa.length >= 4;
-
-    var passado   = (dataSelecionada === hojeData && m < minutosAgora);
-    var bloqueado = horarioBloqueado(dataSelecionada, m, bloqueios);
-
-    if (!passado && !bloqueado && !cheio) {
-        var option = document.createElement("option");
-        option.value       = horarioFormatado;
-        option.textContent = horarioFormatado;
-        inputHora.appendChild(option);
-    }
-});
 }
 
 // ===============================
