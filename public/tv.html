@@ -485,7 +485,14 @@
       xhrT.open('GET', '/api/traffic', true);
       xhrT.onreadystatechange = function() {
         if (xhrT.readyState !== 4 || xhrT.status !== 200) return;
-        try { dadosTransito = JSON.parse(xhrT.responseText); } catch(e) {}
+        try { 
+            dadosTransito = JSON.parse(xhrT.responseText);
+            
+            // CAPTURA A HORA REAL AQUI
+            var agora = new Date();
+            horaUltimaAtualizacao = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            
+        } catch(e) { console.error("Erro no parse do trânsito"); }
       };
       xhrT.send();
     }
@@ -674,6 +681,8 @@ function tocarVideo(idx) {
         var d = dadosTransito[i];
         var alertaPonte = ""; // Começa vazio para cada card
 
+        var horaUltimaAtualizacao = "--:--";
+
         // 1. Lógica do Alerta da Ponte
         if (d.destino.includes("PONTE") && d.tempo > 25) {
             alertaPonte = `
@@ -717,9 +726,7 @@ function tocarVideo(idx) {
       var agora = new Date();
       var dataHora = agora.toLocaleString('pt-BR');
 
-      html += '<div style="text-align:center; margin-top:16px; font-size:0.7rem; color:#444; letter-spacing:0.1em;">Atualizado em: ' + dataHora + '</div>';
-      html += '</div>';
-      el.innerHTML = html;
+      
     }
 
     // ── VOZ ──────────────────────────────────────────────────
