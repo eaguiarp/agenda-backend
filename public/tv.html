@@ -153,9 +153,8 @@
     }
 
     .clima-stat-item {
-        display: flex;
-        flex-direction: column;
-    }
+    min-width: 100px; /* Garante que o texto não quebre linha */
+}
 
     .clima-stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
     .clima-stat-valor { font-size: 1.3rem; color: var(--accent); font-weight: 700; }
@@ -517,15 +516,24 @@ document.addEventListener('keydown', function(event) {
       video.pause();
     }
 
-    function tocarVideo(idx) {
+   function tocarVideo(idx) {
       modoInfo = false;
-      document.getElementById('info-container').className  = '';
-      document.getElementById('video-container').className = 'ativo';
+      
+      // 1. Esconde a tela de Clima/Trânsito e limpa a classe
+      const infoCont = document.getElementById('info-container');
+      infoCont.className = ''; 
+      infoCont.style.display = 'none'; // Força o sumiço total
+
+      // 2. Mostra o vídeo
+      const videoCont = document.getElementById('video-container');
+      videoCont.className = 'ativo';
+      videoCont.style.display = 'flex'; // Garante que o container do vídeo apareça
+
       document.getElementById('painel-principal').style.display = 'none';
       document.getElementById('musica-fundo').volume = 0;
 
       var video = document.getElementById('player-video');
-      video.volume = 1;  // restaura volume do vídeo
+      video.volume = 1;  
       video.src = playlist[idx % playlist.length];
       video.load();
 
@@ -601,19 +609,18 @@ document.addEventListener('keydown', function(event) {
           <div class="clima-box-detalhes">
             <div class="clima-desc">${dadosClima.descricao}</div>
             
-            <div class="clima-stats">
-              <div class="clima-stat-item">
-                <span class="clima-stat-label">Vento</span>
-                <span class="clima-stat-valor">${dadosClima.vento} km/h</span>
-              </div>
-              <div class="clima-stat-item">
-                <span class="clima-stat-label">Umidade</span>
-                <span class="clima-stat-valor">${dadosClima.umidade || '--'}%</span>
-              </div>
-            </div>
+           <div class="clima-stats">
+  <div class="clima-stat-item">
+    <span class="clima-stat-label">Vento</span>
+    <span class="clima-stat-valor">${dadosClima.vento} km/h</span>
+  </div>
+  <div class="clima-stat-item">
+    <span class="clima-stat-label">Sensação</span>
+    <span class="clima-stat-valor">${dadosClima.sensacao || '--'}°</span>
+  </div>
+</div>
           </div>
-        </div>
-      `;
+        </div>`;
     }
     // ── RENDER TRANSITO ───────────────────────────────────────
   
