@@ -622,3 +622,14 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log("Servidor rodando na porta " + PORT);
 });
+
+app.get("/fix-quantidade", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "UPDATE agendamentos SET quantidade = '420' WHERE quantidade IS NULL OR quantidade = ''"
+    );
+    res.send("✅ " + result.rowCount + " registros atualizados!");
+  } catch(e) {
+    res.status(500).send("Erro: " + e.message);
+  }
+});
