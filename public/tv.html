@@ -544,18 +544,34 @@
         if (modoOcioso) tocarVideo(indiceVideo);
       }, 20000);
     }
+// ── AUXILIAR: ÍCONE DO CLIMA ──────────────────────────────
+    function iconeClima(descricao) {
+      if (!descricao) return "🌡️";
+      var d = descricao.toLowerCase();
+      if (d.includes("sol") || d.includes("limpo")) return "☀️";
+      if (d.includes("nuvem")) return "⛅";
+      if (d.includes("chuva") || d.includes("chuvisco")) return "🌧️";
+      if (d.includes("tempest")) return "⛈️";
+      if (d.includes("nebl")) return "🌫️";
+      return "🌡️";
+    }
 
-    // ── RENDER CLIMA ──────────────────────────────────────────
-    
+    // ── RENDER CLIMA ATUALIZADO ──────────────────────────────
     function renderInfoClima() {
       var el = document.getElementById('info-conteudo');
+
       if (!dadosClima) {
-        el.innerHTML = '<div class="clima-wrap"><div class="clima-titulo">CLIMA — ITABORAÍ</div><div style="color:#444; text-align:center;">Carregando...</div></div>';
+        el.innerHTML = `
+          <div class="clima-wrap">
+            <div class="clima-titulo">CLIMA — ITABORAÍ</div>
+            <div class="clima-desc" style="color:#444;">Carregando dados meteorológicos...</div>
+          </div>`;
         return;
       }
 
       var icone = iconeClima(dadosClima.descricao);
 
+      // Estrutura moderna aproveitando os 65% de largura
       el.innerHTML = `
         <div class="clima-wrap">
           <div class="clima-titulo">CONDIÇÕES METEOROLÓGICAS ATUAIS</div>
