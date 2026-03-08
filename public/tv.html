@@ -541,7 +541,7 @@ function tocarVideo(idx) {
       video.src = playlist[idx % playlist.length];
       video.load();
       // ...
-    }
+    
       // FIX: só toca se não houver chamada ativa
       setTimeout(function() {
         if (modoOcioso) {
