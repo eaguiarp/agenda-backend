@@ -570,21 +570,24 @@ document.addEventListener('keydown', function(event) {
       }, 20000);
     }
 // ── AUXILIAR: ÍCONE DO CLIMA ──────────────────────────────
-    function iconeClima(descricao) {
-      if (!descricao) return "🌡️";
-      var d = descricao.toLowerCase();
-      if (d.includes("sol") || d.includes("limpo")) return "☀️";
-      if (d.includes("nuvem")) return "⛅";
-      if (d.includes("chuva") || d.includes("chuvisco")) return "🌧️";
-      if (d.includes("tempest")) return "⛈️";
-      if (d.includes("nebl")) return "🌫️";
-      return "🌡️";
-    }
+   function iconeClima(descricao) {
+  if (!descricao) return "🌡️";
+  var d = descricao.toLowerCase();
+
+  if (d.includes("sol") || d.includes("limpo") || d.includes("aberto")) return "☀️";
+  if (d.includes("nublado") || d.includes("encoberto")) return "☁️";
+  if (d.includes("nuvem") || d.includes("parcial")) return "⛅";
+  if (d.includes("chuva") || d.includes("chuvisco") || d.includes("garoa")) return "🌧️";
+  if (d.includes("tempest") || d.includes("trovão")) return "⛈️";
+  if (d.includes("nebl") || d.includes("névoa")) return "🌫️";
+
+  return "🌡️";
+}
 
     // ── RENDER CLIMA ATUALIZADO ──────────────────────────────
     function renderInfoClima() {
       var el = document.getElementById('info-conteudo');
-
+      
       if (!dadosClima) {
         el.innerHTML = `
           <div class="clima-wrap">
@@ -595,6 +598,16 @@ document.addEventListener('keydown', function(event) {
       }
 
       var icone = iconeClima(dadosClima.descricao);
+
+      // --- LÓGICA DO ALERTA CONDICIONAL ---
+      var alertaChuva = "";
+      // Verifica se existe previsão de chuva nos dados vindos do seu backend
+      if (dadosClima.previsao && dadosClima.previsao.toLowerCase().includes("chuva")) {
+          alertaChuva = `
+            <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.1); color: #ff6d00; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.05em;">
+                [!] PREVISÃO: ${dadosClima.previsao}
+            </div>`;
+      }
 
       // Estrutura moderna aproveitando os 65% de largura
       el.innerHTML = `
@@ -609,16 +622,19 @@ document.addEventListener('keydown', function(event) {
           <div class="clima-box-detalhes">
             <div class="clima-desc">${dadosClima.descricao}</div>
             
-           <div class="clima-stats">
-  <div class="clima-stat-item">
-    <span class="clima-stat-label">Vento</span>
-    <span class="clima-stat-valor">${dadosClima.vento} km/h</span>
-  </div>
-  <div class="clima-stat-item">
-    <span class="clima-stat-label">Sensação</span>
-    <span class="clima-stat-valor">${dadosClima.sensacao || '--'}°</span>
-  </div>
-</div>
+            <div class="clima-stats">
+              <div class="clima-stat-item">
+                <span class="clima-stat-label">Vento</span>
+                <span class="clima-stat-valor">${dadosClima.vento} km/h</span>
+              </div>
+              <div class="clima-stat-item">
+                <span class="clima-stat-label">Sensação</span>
+                <span class="clima-stat-valor">${dadosClima.sensacao || '--'}°</span>
+              </div>
+            </div>
+
+            ${alertaChuva}
+
           </div>
         </div>`;
     }
