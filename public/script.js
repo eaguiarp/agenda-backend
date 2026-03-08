@@ -126,20 +126,13 @@ async function criarAgendamento(data, hora, produto, placa, quantidade, motorist
     const agendamentos  = await obterAgendamentos();
     const veiculoNovo   = classificarVeiculo(quantidade);
 
-    // Converte hora para minutos
-    const partesHora = hora.split(':');
-    const minutosSelecionados = parseInt(partesHora[0]) * 60 + parseInt(partesHora[1]);
-
-    // Faixa de 1 hora: slot anterior (30min atrás) até slot atual — igual à renderizarOpcoesHorario
-    const inicioFaixa = minutosSelecionados - 30;
-    const fimFaixa    = minutosSelecionados;
+    // Agrupa por hora cheia (07:00 e 07:30 pertencem à mesma hora)
+    const horaCheia = parseInt(hora.split(':')[0]);
 
     const naFaixa = agendamentos.filter(function(a) {
         if (a.data !== data) return false;
         if (STATUS_ENCERRADOS.includes(a.status)) return false;
-        const p = a.hora.split(':');
-        const minA = parseInt(p[0]) * 60 + parseInt(p[1]);
-        return minA >= inicioFaixa && minA <= fimFaixa;
+        return parseInt(a.hora.split(':')[0]) === horaCheia;
     });
 
     // Placa duplicada no dia
@@ -370,20 +363,22 @@ async function renderizarOpcoesHorario() {
     horarios.forEach(m => {
         const horarioFormatado = String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
 
-        const naMesmaHora = agendamentos.filter(a =>
-            a.data === dataSelecionada &&
-            a.hora === horarioFormatado &&
-            !STATUS_ENCERRADOS.includes(a.status)
-        );
+        // Agrupa por hora cheia (07:00 e 07:30 pertencem à mesma hora)
+        const horaCheia = Math.floor(m / 60);
+
+        const naHoraCheia = agendamentos.filter(a => {
+            if (a.data !== dataSelecionada) return false;
+            if (STATUS_ENCERRADOS.includes(a.status)) return false;
+            return parseInt(a.hora.split(':')[0]) === horaCheia;
+        });
 
         const passado   = (dataSelecionada === hojeData && m < minutosAgora);
         const bloqueado = horarioBloqueado(dataSelecionada, m, bloqueios);
 
-        // Calcula capacidade restante para mostrar horários parcialmente ocupados
-        const pesoOcupado = naMesmaHora.reduce((acc, a) =>
+        const pesoOcupado = naHoraCheia.reduce((acc, a) =>
             acc + classificarVeiculo(a.quantidade).peso, 0
         );
-        const cheio = pesoOcupado >= 1820;
+        const cheio = pesoOcupado >= 1820 || naHoraCheia.length >= 4;
 
         if (!passado && !bloqueado && !cheio) {
             const option = document.createElement("option");
