@@ -72,10 +72,17 @@
     .aviso-linha.destaque { font-weight: 700; font-size: 1rem; letter-spacing: 0.15em; opacity: 1; }
 
     /* --- VIDEO PLAYER --- */
-    #video-container {
-  position: absolute; top: 52px; left: 0; right: 0; bottom: 0;
-  background: #000; display: none; align-items: center; justify-content: center;
-  overflow: hidden;
+  #video-container, #info-container {
+    position: absolute; 
+    top: 52px; /* Mantém o padrão do seu cabeçalho se houver um */
+    left: 0; 
+    right: 0; 
+    bottom: 0;
+    background: #000;
+    display: none; /* Começam escondidos */
+    align-items: center; 
+    justify-content: center;
+    z-index: 10; /* Camada intermediária */
 }
 #video-container.ativo { display: flex; }
 #player-video {
@@ -515,28 +522,26 @@ document.addEventListener('keydown', function(event) {
       video.volume = 0;  // silencia antes de pausar para evitar vazamento de audio
       video.pause();
     }
-
-   function tocarVideo(idx) {
+function tocarVideo(idx) {
       modoInfo = false;
       
-      // 1. Esconde a tela de Clima/Trânsito e limpa a classe
       const infoCont = document.getElementById('info-container');
-      infoCont.className = ''; 
-      infoCont.style.display = 'none'; // Força o sumiço total
+      infoCont.style.display = 'none'; 
 
-      // 2. Mostra o vídeo
       const videoCont = document.getElementById('video-container');
-      videoCont.className = 'ativo';
-      videoCont.style.display = 'flex'; // Garante que o container do vídeo apareça
+      videoCont.style.display = 'flex'; 
+      videoCont.classList.add('ativo');
 
+      // Garante que o texto de chamada continue escondido durante o vídeo
       document.getElementById('painel-principal').style.display = 'none';
-      document.getElementById('musica-fundo').volume = 0;
-
+      
+      // ... resto do seu código de carregar o vídeo
       var video = document.getElementById('player-video');
       video.volume = 1;  
       video.src = playlist[idx % playlist.length];
       video.load();
-
+      // ...
+    }
       // FIX: só toca se não houver chamada ativa
       setTimeout(function() {
         if (modoOcioso) {
@@ -556,18 +561,35 @@ document.addEventListener('keydown', function(event) {
     }
 
     function mostrarInfo() {
-      modoInfo = true;
-      document.getElementById('video-container').className = '';
-      document.getElementById('info-container').className  = 'ativo';
-      document.getElementById('musica-fundo').volume = 0.18;
+    modoInfo = true;
 
-      if (indiceInfo === 0) { renderInfoClima(); }
-      else                  { renderInfoTransito(); }
-      indiceInfo = (indiceInfo + 1) % 2;
+   // 1. ESCONDE TUDO (Vídeo e o texto de Aguardando Chamada)
+      document.getElementById('video-container').style.display = 'none';
+      document.getElementById('video-container').classList.remove('ativo');
+      
+      // ESTA LINHA É A CHAVE: Esconde a mensagem de "Aguardando Chamada"
+      document.getElementById('painel-principal').style.display = 'none'; 
+      
+      // 2. PREPARA O CONTAINER DE INFO
+      const infoCont = document.getElementById('info-container');
+      infoCont.style.display = 'flex'; 
+      infoCont.classList.add('ativo');
 
+      // 3. DECIDE O QUE RENDERIZAR
+      if (indiceInfo % 2 === 0) { // Usando uma lógica de índice para alternar melhor
+          console.log("Exibindo: CLIMA");
+          renderInfoClima();
+      } else {
+          console.log("Exibindo: TRÂNSITO");
+          renderInfoTransito();
+      }
+      indiceInfo++; // Incrementa para a próxima alternância
+
+      // 4. CONFIGURA O TIMER PARA VOLTAR AO VÍDEO
+      clearTimeout(timerInfo);
       timerInfo = setTimeout(function() {
-        if (modoOcioso) tocarVideo(indiceVideo);
-      }, 20000);
+          if (modoOcioso) tocarVideo(indiceVideo);
+      }, 20000); 
     }
 // ── AUXILIAR: ÍCONE DO CLIMA ──────────────────────────────
    function iconeClima(descricao) {
@@ -809,9 +831,11 @@ document.addEventListener('keydown', function(event) {
     }
 
     // ── RENDER PRINCIPAL ─────────────────────────────────────
-    function renderPrincipal(chamando) {
+   function renderPrincipal(chamando) {
+
       var painel = document.getElementById('painel-principal');
-      if (chamando) {
+      if (chamando) { 
+      painel.style.display = 'block'; 
         var topoChamada = chamando.motorista
           ? '[!] Chamando: ' + chamando.motorista
           : 'CHAMANDO AGORA';
@@ -825,9 +849,14 @@ document.addEventListener('keydown', function(event) {
             '<div class="aviso-linha">Desligue o motor &bull; Calce as rodas &bull; Entregue as chaves</div>' +
             '<div class="aviso-linha destaque">[!] USO OBRIGATORIO DE EPIs</div>' +
           '</div>';
-      } else {
-        painel.innerHTML =
-          '<div style="font-size:2rem; color:#555; opacity:0.5;">Aguardando Chamada...</div>';
+     //} else {
+       // painel.innerHTML =
+         // '<div style="font-size:2rem; color:#555; opacity:0.5;">Aguardando Chamada...</div>';
+      
+    } else {
+        // Se não estiver chamando nada, o painel pode ficar em display none 
+        // porque o modoOcioso (vídeo/clima) vai assumir a tela.
+        if (modoOcioso) painel.style.display = 'none';
       }
     }
 
