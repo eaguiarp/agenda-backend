@@ -484,6 +484,23 @@
       xhrT.send();
     }
 
+    // Atalho para pular durante os testes
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'n' || event.key === 'N' || event.code === 'Space') {
+        console.log("⏭️ Pulando para a próxima execução...");
+        
+        // Se estiver no vídeo, encerra e vai para info
+        if (modoOcioso && !modoInfo) {
+            proximoVideo();
+        } 
+        // Se estiver na info, limpa o timer e volta pro vídeo
+        else if (modoInfo) {
+            clearTimeout(timerInfo);
+            tocarVideo(indiceVideo);
+        }
+    }
+});
+
     // ── PLAYLIST ─────────────────────────────────────────────
     function encerrarModoOcioso() {
       modoOcioso = false;
