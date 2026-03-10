@@ -52,15 +52,37 @@
       background: white; border-radius: 12px; border: 4px solid #222;
       box-shadow: 0 10px 40px rgba(0,0,0,0.8); overflow: hidden;
     }
-    .placa-topo {
-      background: #1a3a8f; color: white; font-size: 1.2rem; font-weight: 700;
-      letter-spacing: 0.3em; text-align: center; padding: 6px 20px;
-      font-family: 'Roboto Condensed', sans-serif;
-    }
-    .placa-numero {
-      color: #111; font-family: 'Roboto Condensed', sans-serif;
-      font-size: 6rem; font-weight: 700; padding: 8px 30px; line-height: 1;
-    }
+  .placa-topo {
+  background: #1a3a8f; 
+  color: white; 
+  /* Fallback nativo: Roboto Condensed (Android) ou Arial Narrow (Win/Mac) */
+  font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif;
+  font-size: 1.2rem; 
+  font-weight: 700;
+  letter-spacing: 0.3em; 
+  text-align: center; 
+  padding: 6px 20px;
+  text-transform: uppercase; /* Garante o padrão de placas */
+}
+
+.placa-numero {
+  color: #111; 
+  /* A 'Bahnschrift' é a mais parecida com a alemã no Windows. 
+     'DIN Alternate' é a versão nativa do Mac/iOS. */
+  font-family: "Bahnschrift", "DIN Alternate", "Franklin Gothic Condensed", "Roboto Condensed", sans-serif;
+  
+  font-size: 6rem; 
+  font-weight: 600; 
+  padding: 8px 30px; 
+  line-height: 0.95em;
+  text-align: center; 
+  letter-spacing: 0.06em;
+  
+  /* Seu truque de compressão está ótimo! */
+  display: block; /* Garante que o transform funcione bem */
+  transform: scaleX(0.9); 
+  transform-origin: center;
+}
 
     /* --- AVISO EPI --- */
     .aviso-epi {
@@ -332,11 +354,11 @@
       padding: 2px 8px; border-radius: 2px; letter-spacing: 0.08em;
       margin-right: 3px; text-transform: uppercase;
     }
-    .badge-cpiii { background-color: #1A4A92; color: white; }
-    .badge-cpii  { background-color: #4A773C; color: white; }
+    .badge-cpiii { background-color: #800080; color: white; }
+    .badge-cpii  { background-color: #AA0000; color: white; }
     .badge-cpv   { background-color: #C62828; color: white; }
-    .badge-maua  { background-color: #0D214F; color: white; }
-    .badge-m25   { background-color: #E67E22; color: black; }
+    .badge-maua  { background-color: #117701; color: white; }
+    .badge-m25   { background-color: #2FB201; color: black; }
     .badge-geral { background-color: #444;    color: #ccc;  }
 
     /* --- INFERIOR --- */
