@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Agendamento</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#5a6b5c">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            min-height: 100vh; padding: 20px; font-family: sans-serif; background-color: #f8f9fa;
+        }
+        h1 { color: #5a6b5c; margin-bottom: 10px; }
+        p { color: #666; margin-bottom: 30px; text-align: center; }
+        .busca-container { 
+            width: 100%; max-width: 400px; background: white; padding: 30px;
+            border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+        }
+        input#placa-busca { 
+            width: 100%; padding: 15px; font-size: 1.8rem; text-align: center; 
+            text-transform: uppercase; border: 2px solid #5a6b5c; border-radius: 8px; margin-bottom: 15px;
+        }
+        button#btn-buscar { 
+            width: 100%; padding: 18px; font-size: 1.2rem; background: #5a6b5c; 
+            color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;
+        }
+        #btn-notificar {
+            background:#e67e22; margin-top: 15px; width:100%; padding:10px; 
+            border:none; border-radius:8px; color:white; cursor:pointer; font-weight: bold;
+        }
+        #resultado { margin-top: 20px; width: 100%; max-width: 400px; display: none; }
+        .agendado { background: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; }
+        .finalizado { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
+        .piscando { 
+            animation: pulse 1s infinite; background: #f1c40f; color: black; border: 2px solid #000;
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+    </style>
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+</head>
+<body>
+
+    <h1>AgendaCD</h1>
+    <p>Consulte sua posição na fila de descarga</p>
+
+    <div class="busca-container">
+        <input type="text" id="placa-busca" placeholder="ABC1D23" maxlength="7">
+        <button id="btn-buscar">VER MINHA POSIÇÃO</button>
+        <button id="btn-notificar">🔔 RECEBER AVISO NO BOLSO</button>
+    </div>
+
+    <div id="resultado"></div>
+
+    <script>
+        const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
+        let monitoramentoAtivo = false;
+        let jaNotificou = false;
+
+        // 1. Pedir permissão de Notificação
+        document.getElementById('btn-notificar').addEventListener('click', () => {
+            Notification.requestPermission().then(perm => {
+                if (perm === 'granted') {
+                    alert("Tudo pronto! O celular vai vibrar quando chegar sua vez.");
+                    document.getElementById('btn-notificar').style.display = 'none';
+                }
+            });
+        });
+
+        // 2. Evento de Busca
+        document.getElementById('btn-buscar').addEventListener('click', async () => {
+            const placa = document.getElementById('placa-busca').value.trim().toUpperCase();
+            if (placa.length < 3) { alert("Digite a placa completa."); return; }
+
+            buscarEExibir(placa);
+
+            if (!monitoramentoAtivo) {
+                monitoramentoAtivo = true;
+                setInterval(() => buscarEExibir(placa), 10000); // Atualiza a cada 10s
+            }
+        });
+
+        // 3. Função Principal (Processamento e Saída)
+        async function buscarEExibir(placa) {
+            const resDiv = document.getElementById('resultado');
+            try {
+                const response = await fetch(API_URL);
+                const dados = await response.json();
+                const hojeStr = new Date().toISOString().split("T")[0];
+
+                // Filtra meus dados
+                const meusAgendamentos = dados.filter(a => 
+                    a.placa.toUpperCase() === placa && a.data >= hojeStr
+                );
+
+                resDiv.style.display = "block";
+                resDiv.innerHTML = ""; 
+
+                if (meusAgendamentos.length > 0) {
+                    let htmlBase = `<h3>Resultados para ${placa}</h3>`;
+                    
+                    // Ordena meus agendamentos por horário
+                    meusAgendamentos.sort((a, b) => new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`));
+
+                    meusAgendamentos.forEach(item => {
+                        let statusMsg = "";
+                        let classeStatus = "";
+
+                        if (item.status === 'chamando') {
+                            statusMsg = "⚠️ SUA VEZ CHEGOU!<br>Dirija-se à portaria agora.";
+                            classeStatus = "piscando";
+                            
+                            // Dispara notificação se ainda não notificou nesta chamada
+                            if (!jaNotificou) {
+                                dispararNotificacao(item.placa);
+                                jaNotificou = true;
+                            }
+                        } else if (item.status === 'finalizado') {
+                            statusMsg = "✅ OPERAÇÃO FINALIZADA";
+                            classeStatus = "finalizado";
+                            jaNotificou = false; 
+                        } else {
+                            // CÁLCULO DA POSIÇÃO (Filtra apenas agendados da mesma unidade)
+                            // Por enquanto usamos 'itaborai' como padrão
+                            const unidadeAtual = item.unidade || 'itaborai'; 
+                            const filaHoje = dados.filter(a => 
+                                a.data === hojeStr && 
+                                a.status === 'agendado' && 
+                                (a.unidade || 'itaborai') === unidadeAtual
+                            );
+                            filaHoje.sort((a, b) => new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`));
+
+                            const posicao = filaHoje.findIndex(a => a.id === item.id);
+                            
+                            if (posicao === 0) {
+                                statusMsg = "VOCÊ É O PRÓXIMO!<br>Ligue o motor e fique atento.";
+                            } else if (posicao > 0) {
+                                statusMsg = `Existem <strong>${posicao}</strong> veículos na sua frente.`;
+                            } else {
+                                statusMsg = "Aguardando na fila.";
+                            }
+                            classeStatus = "agendado";
+                            jaNotificou = false;
+                        }
+
+                        htmlBase += `
+                            <div class="resultado-item ${classeStatus}" style="margin-bottom: 15px; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #ccc;">
+                                <p style="font-size: 0.9rem; color: #555;">Horário previsto: ${item.hora}</p>
+                                <p style="font-size: 1.2rem; margin-top: 10px;">${statusMsg}</p>
+                            </div>
+                        `;
+                    });
+                    resDiv.innerHTML = htmlBase;
+                } else {
+                    resDiv.innerHTML = "<p>Nenhum agendamento encontrado para hoje.</p>";
+                }
+            } catch (error) { console.error("Erro na consulta", error); }
+        }
+
+        // 4. Notificação e Vibração (Saída tátil)
+        function dispararNotificacao(placa) {
+            if ('vibrate' in navigator) {
+                navigator.vibrate([1000, 200, 1000, 200, 2000]);
+            }
+
+            if (Notification.permission === 'granted') {
+                new Notification("⚠️ SUA VEZ CHEGOU!", {
+                    body: `Motorista da placa ${placa}, dirija-se à área de descarga agora.`,
+                    icon: "icon-192.png",
+                    tag: 'chamada-motorista',
+                    renotify: true
+                });
+            }
+        }
+
+        // 5. Registro do Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
