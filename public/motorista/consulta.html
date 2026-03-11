@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consulta de Agendamento</title>
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="/motorista/manifest.json">
     <meta name="theme-color" content="#5a6b5c">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -179,7 +179,7 @@
 
         // 5. Registro do Service Worker
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
+            navigator.serviceWorker.register('/motorista/sw.js')
         }
     </script>
 </body>
