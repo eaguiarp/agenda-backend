@@ -3,7 +3,7 @@ const CACHE_NAME = 'agenda-motorista-v2';
 // Lista todos os arquivos que o PWA precisa para funcionar offline
 const ARQUIVOS_PARA_CACHE = [
   '/motorista/',
-  '/motorista/index.html',
+  '/motorista/consulta.html',
   '/motorista/manifest.json',
   '/motorista/icon-192.png'
 ];
@@ -64,7 +64,7 @@ self.addEventListener('fetch', event => {
         return caches.match(event.request).then(cachedResponse => {
           if (cachedResponse) return cachedResponse;
           // Fallback final: retorna o index.html para qualquer rota não encontrada
-          return caches.match('/motorista/') || caches.match('/motorista/index.html');
+          return caches.match('/motorista/') || caches.match('/motorista/consulta.html');
         });
       })
   );
