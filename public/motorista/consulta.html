@@ -433,7 +433,7 @@
             try {
                 const response = await fetch(API_URL);
                 const dados = await response.json();
-                const hojeStr = new Date().toISOString().split("T")[0];
+               const hojeStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
 
                 const meusAgendamentos = dados.filter(a =>
                     a.placa.toUpperCase() === placa && a.data >= hojeStr
@@ -466,7 +466,7 @@
                         } else {
                             const unidadeAtual = item.unidade || 'itaborai';
                             const filaHoje = dados.filter(a =>
-                                a.data === hojeStr && a.status === 'agendado' &&
+                                a.data === hojeStr && (!a.status || a.status === 'agendado') &&
                                 (a.unidade || 'itaborai') === unidadeAtual
                             );
                             filaHoje.sort((a, b) =>
