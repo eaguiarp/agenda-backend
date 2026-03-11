@@ -245,8 +245,10 @@
     <script>
         const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
         let monitoramentoAtivo = false;
-        let jaNotificou = false;
-        let ultimoHTML = "";  // evita re-renderizar se nada mudou
+        let ultimoHTML = "";
+        // Guarda IDs já alertados — nunca reseta automaticamente,
+        // só limpa quando o status muda para finalizado
+        const idsNotificados = new Set();
 
         // ── Normaliza qualquer formato de data para YYYY-MM-DD ──
         function normalizarData(dataStr) {
@@ -362,7 +364,11 @@
                         let statusMsg = "", indicador = "";
 
                         if (item.status === 'chamando') {
-                            if (!jaNotificou) { dispararAlerta(item.placa); jaNotificou = true; }
+                            // Só dispara alerta se ainda não notificou ESTE agendamento específico
+                            if (!idsNotificados.has(item.id)) {
+                                dispararAlerta(item.placa);
+                                idsNotificados.add(item.id);
+                            }
                             statusMsg = "Dirija-se à portaria agora";
                             indicador = `<span class="res-indicator"><span class="dot-status" style="background:#c0392b"></span> Chamando</span>`;
                             document.body.classList.add('chamando');
@@ -370,7 +376,8 @@
                         } else if (item.status === 'finalizado') {
                             statusMsg = "Operação finalizada";
                             indicador = `<span class="res-indicator"><span class="dot-status finalizado"></span> Finalizado</span>`;
-                            jaNotificou = false;
+                            // Limpa o ID do Set quando finaliza — libera para um próximo chamado futuro
+                            idsNotificados.delete(item.id);
                             document.body.classList.remove('chamando');
                             document.getElementById('alerta-overlay').classList.remove('ativo');
 
@@ -395,7 +402,6 @@
                                 statusMsg = "Aguardando na fila";
                             }
                             indicador = `<span class="res-indicator"><span class="dot-status"></span> Agendado</span>`;
-                            jaNotificou = false;
                             document.body.classList.remove('chamando');
                         }
 
