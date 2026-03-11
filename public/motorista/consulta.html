@@ -34,306 +34,185 @@
             color: var(--text);
         }
 
-        /* ── HEADER ── */
-        .header {
-            text-align: center;
-            margin-bottom: 36px;
-        }
-
+        .header { text-align: center; margin-bottom: 36px; }
         .header-badge {
             display: inline-block;
-            font-size: 0.7rem;
-            font-weight: 500;
-            letter-spacing: 2.5px;
-            text-transform: uppercase;
-            color: var(--verde-light);
-            margin-bottom: 10px;
+            font-size: 0.7rem; font-weight: 500;
+            letter-spacing: 2.5px; text-transform: uppercase;
+            color: var(--verde-light); margin-bottom: 10px;
         }
-
         .header h1 {
-            font-size: 1.55rem;
-            font-weight: 600;
-            color: var(--verde);
-            letter-spacing: -0.3px;
-            line-height: 1.2;
+            font-size: 1.55rem; font-weight: 600;
+            color: var(--verde); letter-spacing: -0.3px; line-height: 1.2;
         }
-
         .header p {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-top: 6px;
-            font-weight: 300;
+            font-size: 0.85rem; color: var(--text-muted);
+            margin-top: 6px; font-weight: 300;
         }
 
-        /* ── CARD ── */
         .card {
-            width: 100%;
-            max-width: 380px;
-            background: var(--white);
-            border-radius: 20px;
+            width: 100%; max-width: 380px;
+            background: var(--white); border-radius: 20px;
             padding: 28px 24px;
             box-shadow: 0 2px 16px rgba(90,107,92,0.08);
         }
 
         .input-label {
-            font-size: 0.7rem;
-            font-weight: 500;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            display: block;
-            margin-bottom: 10px;
+            font-size: 0.7rem; font-weight: 500;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--text-muted); display: block; margin-bottom: 10px;
         }
 
         input#placa-busca {
-            width: 100%;
-            padding: 14px 16px;
+            width: 100%; padding: 14px 16px;
             font-family: 'DM Mono', monospace;
-            font-size: 1.9rem;
-            font-weight: 500;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 8px;
-            color: var(--verde);
+            font-size: 1.9rem; font-weight: 500;
+            text-align: center; text-transform: uppercase;
+            letter-spacing: 8px; color: var(--verde);
             background: var(--verde-bg);
-            border: 1.5px solid transparent;
-            border-radius: 12px;
-            outline: none;
-            transition: border-color 0.2s, background 0.2s;
+            border: 1.5px solid transparent; border-radius: 12px;
+            outline: none; transition: border-color 0.2s, background 0.2s;
             margin-bottom: 16px;
         }
-        input#placa-busca:focus {
-            border-color: var(--verde-light);
-            background: white;
-        }
+        input#placa-busca:focus { border-color: var(--verde-light); background: white; }
         input#placa-busca::placeholder { color: #ccc; letter-spacing: 4px; }
 
         button#btn-buscar {
-            width: 100%;
-            padding: 15px;
+            width: 100%; padding: 15px;
             font-family: 'DM Sans', sans-serif;
-            font-size: 0.9rem;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            background: var(--verde);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
+            font-size: 0.9rem; font-weight: 600; letter-spacing: 0.5px;
+            background: var(--verde); color: white;
+            border: none; border-radius: 12px; cursor: pointer;
             transition: opacity 0.2s, transform 0.1s;
         }
         button#btn-buscar:active { opacity: 0.85; transform: scale(0.99); }
 
         #btn-notificar {
-            margin-top: 10px;
-            width: 100%;
-            padding: 13px;
+            margin-top: 10px; width: 100%; padding: 13px;
             font-family: 'DM Sans', sans-serif;
-            font-size: 0.85rem;
-            font-weight: 500;
-            background: transparent;
-            color: var(--laranja);
-            border: 1.5px solid #f0d4bb;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: background 0.2s, border-color 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 7px;
+            font-size: 0.85rem; font-weight: 500;
+            background: transparent; color: var(--laranja);
+            border: 1.5px solid #f0d4bb; border-radius: 12px;
+            cursor: pointer; transition: background 0.2s, border-color 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 7px;
         }
         #btn-notificar:hover { background: #fff8f3; border-color: var(--laranja); }
         #btn-notificar.ativo {
-            color: var(--text-muted);
-            border-color: var(--border);
-            cursor: default;
-            pointer-events: none;
+            color: var(--text-muted); border-color: var(--border);
+            cursor: default; pointer-events: none;
         }
 
-        /* ── RESULTADO ── */
-        #resultado {
-            margin-top: 14px;
-            width: 100%;
-            max-width: 380px;
-            display: none;
-        }
+        #resultado { margin-top: 14px; width: 100%; max-width: 380px; display: none; }
 
         .resultado-item {
-            background: white;
-            border-radius: 16px;
-            padding: 20px 22px;
-            margin-bottom: 10px;
+            background: white; border-radius: 16px;
+            padding: 20px 22px; margin-bottom: 10px;
             box-shadow: 0 1px 8px rgba(90,107,92,0.06);
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
+            display: flex; flex-direction: column; gap: 6px;
         }
-
         .res-hora {
-            font-size: 0.72rem;
-            font-weight: 500;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
+            font-size: 0.72rem; font-weight: 500;
+            letter-spacing: 1.5px; text-transform: uppercase;
             color: var(--text-muted);
         }
-
-        .res-status {
-            font-size: 1.05rem;
-            font-weight: 500;
-            color: var(--text);
-            line-height: 1.4;
-        }
-
+        .res-status { font-size: 1.05rem; font-weight: 500; color: var(--text); line-height: 1.4; }
         .res-status strong { color: var(--verde); }
-
         .res-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.72rem;
-            font-weight: 500;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            margin-top: 4px;
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 0.72rem; font-weight: 500;
+            letter-spacing: 1px; text-transform: uppercase;
+            color: var(--text-muted); margin-top: 4px;
         }
-        .dot-status {
-            width: 7px; height: 7px;
-            border-radius: 50%;
-            background: var(--verde-light);
-        }
+        .dot-status { width: 7px; height: 7px; border-radius: 50%; background: var(--verde-light); }
         .dot-status.finalizado { background: #6ab86a; }
 
-        /* ── MONITOR ── */
+        /* debug box — aparece só se ativado */
+        #debug-box {
+            display: none;
+            margin-top: 10px; width: 100%; max-width: 380px;
+            background: #fff3cd; border: 1px solid #ffc107;
+            border-radius: 12px; padding: 14px 16px;
+            font-size: 0.75rem; color: #555; line-height: 1.6;
+            font-family: 'DM Mono', monospace;
+            word-break: break-all;
+        }
+
         .monitor-label {
-            text-align: center;
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            letter-spacing: 1px;
-            margin-top: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
+            text-align: center; font-size: 0.7rem;
+            color: var(--text-muted); letter-spacing: 1px; margin-top: 6px;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
         }
         .pulse-dot {
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            background: var(--verde-light);
-            animation: pulse-green 1.5s infinite;
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--verde-light); animation: pulse-green 1.5s infinite;
         }
         @keyframes pulse-green {
             0%, 100% { opacity: 1; transform: scale(1); }
             50%       { opacity: 0.4; transform: scale(0.7); }
         }
 
-        /* ── OVERLAY DE ALERTA ── */
+        /* ── OVERLAY ── */
         #alerta-overlay {
-            display: none;
-            position: fixed; inset: 0; z-index: 9999;
-            background: rgba(15, 10, 10, 0.65);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
-            align-items: center;
-            justify-content: center;
+            display: none; position: fixed; inset: 0; z-index: 9999;
+            background: rgba(15,10,10,0.65);
+            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            align-items: center; justify-content: center;
         }
         #alerta-overlay.ativo { display: flex; }
 
         #alerta-box {
-            background: white;
-            border-radius: 24px;
-            padding: 36px 28px 28px;
-            max-width: 320px;
-            width: 88%;
-            text-align: center;
-            box-shadow: 0 24px 64px rgba(0,0,0,0.3);
-            animation: pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            background: white; border-radius: 24px;
+            padding: 36px 28px 28px; max-width: 320px; width: 88%;
+            text-align: center; box-shadow: 0 24px 64px rgba(0,0,0,0.3);
+            animation: pop-in 0.35s cubic-bezier(0.34,1.56,0.64,1);
         }
         @keyframes pop-in {
             from { transform: scale(0.8) translateY(20px); opacity: 0; }
-            to   { transform: scale(1) translateY(0);      opacity: 1; }
+            to   { transform: scale(1) translateY(0); opacity: 1; }
         }
-
         .alerta-icone {
-            font-size: 3rem;
-            display: block;
-            margin-bottom: 14px;
+            font-size: 3rem; display: block; margin-bottom: 14px;
             animation: balanco 0.5s infinite alternate ease-in-out;
         }
         @keyframes balanco {
             from { transform: rotate(-8deg) scale(1); }
-            to   { transform: rotate(8deg)  scale(1.1); }
+            to   { transform: rotate(8deg) scale(1.1); }
         }
-
         .alerta-titulo {
-            font-size: 1.6rem;
-            font-weight: 600;
-            color: var(--vermelho);
-            line-height: 1.1;
-            margin-bottom: 6px;
+            font-size: 1.6rem; font-weight: 600; color: var(--vermelho);
+            line-height: 1.1; margin-bottom: 6px;
             animation: fade-pulse 0.9s infinite alternate;
         }
-        @keyframes fade-pulse {
-            from { opacity: 1; }
-            to   { opacity: 0.55; }
-        }
-
+        @keyframes fade-pulse { from { opacity:1; } to { opacity:0.55; } }
         .alerta-placa {
-            font-family: 'DM Mono', monospace;
-            font-size: 1.3rem;
-            letter-spacing: 5px;
-            color: var(--verde);
-            background: var(--verde-bg);
-            border-radius: 8px;
-            padding: 6px 14px;
-            display: inline-block;
-            margin: 10px 0 16px;
+            font-family: 'DM Mono', monospace; font-size: 1.3rem;
+            letter-spacing: 5px; color: var(--verde);
+            background: var(--verde-bg); border-radius: 8px;
+            padding: 6px 14px; display: inline-block; margin: 10px 0 16px;
         }
-
         .alerta-sub {
-            font-size: 0.9rem;
-            color: #666;
-            line-height: 1.6;
-            margin-bottom: 24px;
-            font-weight: 300;
+            font-size: 0.9rem; color: #666; line-height: 1.6;
+            margin-bottom: 24px; font-weight: 300;
         }
         .alerta-sub strong { color: var(--text); font-weight: 600; }
-
         #btn-fechar-alerta {
-            width: 100%;
-            padding: 14px;
+            width: 100%; padding: 14px;
             font-family: 'DM Sans', sans-serif;
-            font-size: 0.9rem;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            background: var(--vermelho);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: opacity 0.2s;
+            font-size: 0.9rem; font-weight: 600; letter-spacing: 0.5px;
+            background: var(--vermelho); color: white;
+            border: none; border-radius: 12px; cursor: pointer;
         }
-        #btn-fechar-alerta:active { opacity: 0.85; }
-
-        /* faixa vermelha sutil no topo quando chamando */
         body.chamando::before {
-            content: '';
-            position: fixed; top: 0; left: 0; right: 0;
-            height: 3px;
-            background: var(--vermelho);
-            animation: barra-pulso 0.8s infinite alternate;
-            z-index: 100;
+            content: ''; position: fixed; top:0; left:0; right:0;
+            height: 3px; background: var(--vermelho);
+            animation: barra-pulso 0.8s infinite alternate; z-index: 100;
         }
-        @keyframes barra-pulso {
-            from { opacity: 1; }
-            to   { opacity: 0.3; }
-        }
+        @keyframes barra-pulso { from{opacity:1;} to{opacity:0.3;} }
     </style>
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 </head>
 <body>
 
-    <!-- OVERLAY ALERTA -->
     <div id="alerta-overlay">
         <div id="alerta-box">
             <span class="alerta-icone">🚨</span>
@@ -347,14 +226,12 @@
         </div>
     </div>
 
-    <!-- HEADER -->
     <div class="header">
         <span class="header-badge">CD · Itaboraí</span>
         <h1>Sistema de Agendamento</h1>
         <p>Consulte sua posição na fila de descarga</p>
     </div>
 
-    <!-- CARD BUSCA -->
     <div class="card">
         <span class="input-label">Placa do veículo</span>
         <input type="text" id="placa-busca" placeholder="ABC1D23" maxlength="7">
@@ -363,13 +240,36 @@
     </div>
 
     <div id="resultado"></div>
+    <div id="debug-box"></div>
 
     <script>
         const API_URL = "https://agenda-backend-production-5b72.up.railway.app/agendamentos";
         let monitoramentoAtivo = false;
         let jaNotificou = false;
+        let ultimoHTML = "";  // evita re-renderizar se nada mudou
 
-        // ── SOM (Web Audio API) ──
+        // ── Normaliza qualquer formato de data para YYYY-MM-DD ──
+        function normalizarData(dataStr) {
+            if (!dataStr) return "";
+            // Já está no formato correto YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dataStr)) return dataStr;
+            // Formato DD/MM/YYYY
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(dataStr)) {
+                const [d, m, y] = dataStr.split("/");
+                return `${y}-${m}-${d}`;
+            }
+            // Tenta via Date como fallback
+            const dt = new Date(dataStr);
+            if (!isNaN(dt)) return dt.toLocaleDateString('sv-SE');
+            return dataStr;
+        }
+
+        // ── "Hoje" no fuso de Brasília ──
+        function hojeStr() {
+            return new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+        }
+
+        // ── SOM ──
         function tocarSomAlerta() {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -401,11 +301,7 @@
             }
             Notification.requestPermission().then(perm => {
                 const btn = document.getElementById('btn-notificar');
-                if (perm === 'granted') {
-                    btn.innerHTML = '✅ Aviso ativado';
-                } else {
-                    btn.innerHTML = '⚠️ Só alerta visual ativo';
-                }
+                btn.innerHTML = perm === 'granted' ? '✅ Aviso ativado' : '⚠️ Só alerta visual ativo';
                 btn.classList.add('ativo');
             });
         });
@@ -429,23 +325,38 @@
 
         // ── BUSCA PRINCIPAL ──
         async function buscarEExibir(placa) {
-            const resDiv = document.getElementById('resultado');
+            const resDiv   = document.getElementById('resultado');
+            const debugDiv = document.getElementById('debug-box');
             try {
-                const response = await fetch(API_URL);
+                const response = await fetch(API_URL + "?t=" + Date.now()); // evita cache do browser
                 const dados = await response.json();
-               const hojeStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+                const hoje = hojeStr();
 
-                const meusAgendamentos = dados.filter(a =>
-                    a.placa.toUpperCase() === placa && a.data >= hojeStr
+                // Normaliza todas as datas antes de comparar
+                const dadosNorm = dados.map(a => ({ ...a, _dataNorm: normalizarData(a.data) }));
+
+                // DEBUG: mostra os primeiros registros e o "hoje" calculado
+                // (remova o comentário abaixo temporariamente se ainda der problema)
+                /*
+                debugDiv.style.display = "block";
+                debugDiv.innerHTML = `<b>Hoje (SP):</b> ${hoje}<br>` +
+                    dadosNorm.slice(0, 5).map(a =>
+                        `placa: ${a.placa} | data_orig: ${a.data} | data_norm: ${a._dataNorm} | status: ${a.status}`
+                    ).join('<br>');
+                */
+
+                const meusAgendamentos = dadosNorm.filter(a =>
+                    a.placa.toUpperCase() === placa && a._dataNorm >= hoje
                 );
 
                 resDiv.style.display = "block";
-                resDiv.innerHTML = "";
 
                 if (meusAgendamentos.length > 0) {
                     meusAgendamentos.sort((a, b) =>
-                        new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`)
+                        new Date(`${a._dataNorm} ${a.hora}`) - new Date(`${b._dataNorm} ${b.hora}`)
                     );
+
+                    let novoHTML = "";
 
                     meusAgendamentos.forEach(item => {
                         let statusMsg = "", indicador = "";
@@ -464,13 +375,15 @@
                             document.getElementById('alerta-overlay').classList.remove('ativo');
 
                         } else {
+                            // Status agendado (ou nulo/vazio)
                             const unidadeAtual = item.unidade || 'itaborai';
-                            const filaHoje = dados.filter(a =>
-                                a.data === hojeStr && (!a.status || a.status === 'agendado') &&
+                            const filaHoje = dadosNorm.filter(a =>
+                                a._dataNorm === hoje &&
+                                (!a.status || a.status === 'agendado') &&
                                 (a.unidade || 'itaborai') === unidadeAtual
                             );
                             filaHoje.sort((a, b) =>
-                                new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`)
+                                new Date(`${a._dataNorm} ${a.hora}`) - new Date(`${b._dataNorm} ${b.hora}`)
                             );
                             const posicao = filaHoje.findIndex(a => a.id === item.id);
 
@@ -486,7 +399,7 @@
                             document.body.classList.remove('chamando');
                         }
 
-                        resDiv.innerHTML += `
+                        novoHTML += `
                             <div class="resultado-item">
                                 <span class="res-hora">Horário previsto · ${item.hora}</span>
                                 <span class="res-status">${statusMsg}</span>
@@ -494,16 +407,28 @@
                             </div>`;
                     });
 
-                    resDiv.innerHTML += `
+                    novoHTML += `
                         <div class="monitor-label">
                             <span class="pulse-dot"></span>
                             Atualizando a cada 10s
                         </div>`;
 
+                    // Só re-renderiza se o conteúdo mudou — evita o "piscar"
+                    if (novoHTML !== ultimoHTML) {
+                        resDiv.innerHTML = novoHTML;
+                        ultimoHTML = novoHTML;
+                    }
+
                 } else {
-                    resDiv.innerHTML = `<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;margin-top:8px">Nenhum agendamento encontrado para hoje.</p>`;
+                    const semDados = `<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;margin-top:8px">Nenhum agendamento encontrado para hoje.</p>`;
+                    if (semDados !== ultimoHTML) {
+                        resDiv.innerHTML = semDados;
+                        ultimoHTML = semDados;
+                    }
                 }
-            } catch (e) { console.error("Erro na consulta", e); }
+            } catch (e) {
+                console.error("Erro na consulta", e);
+            }
         }
 
         // ── ALERTA COMPLETO ──
