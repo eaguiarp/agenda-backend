@@ -7,284 +7,358 @@
     <link rel="manifest" href="/motorista/manifest.json">
     <meta name="theme-color" content="#5a6b5c">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --verde: #5a6b5c;
-            --verde-claro: #7a9b7d;
-            --laranja: #e67e22;
-            --amarelo: #f1c40f;
-            --vermelho-alerta: #e74c3c;
-            --bg: #eef0eb;
+            --verde:        #5a6b5c;
+            --verde-light:  #8fa891;
+            --verde-bg:     #f2f5f2;
+            --laranja:      #e67e22;
+            --vermelho:     #c0392b;
+            --text:         #2c2c2c;
+            --text-muted:   #9a9a9a;
+            --border:       #e4e8e4;
+            --white:        #ffffff;
         }
 
         body {
-            display: flex; flex-direction: column; align-items: center;
-            min-height: 100vh; padding: 30px 20px 40px;
-            font-family: 'Barlow', sans-serif;
-            background-color: var(--bg);
-            background-image: repeating-linear-gradient(
-                0deg, transparent, transparent 39px,
-                rgba(90,107,92,0.07) 39px, rgba(90,107,92,0.07) 40px
-            );
+            font-family: 'DM Sans', sans-serif;
+            background: var(--verde-bg);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 48px 20px 60px;
+            color: var(--text);
         }
 
-        /* ── CABEÇALHO ── */
+        /* ── HEADER ── */
         .header {
             text-align: center;
-            margin-bottom: 28px;
+            margin-bottom: 36px;
         }
+
+        .header-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 500;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: var(--verde-light);
+            margin-bottom: 10px;
+        }
+
         .header h1 {
-            font-family: 'Barlow Condensed', sans-serif;
-            font-weight: 900;
-            font-size: 2rem;
+            font-size: 1.55rem;
+            font-weight: 600;
             color: var(--verde);
-            letter-spacing: 1px;
-            line-height: 1.1;
-            text-transform: uppercase;
+            letter-spacing: -0.3px;
+            line-height: 1.2;
         }
-        .header h1 span {
-            display: block;
-            font-size: 1.1rem;
-            font-weight: 400;
-            color: var(--verde-claro);
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            margin-top: 4px;
-        }
+
         .header p {
-            color: #888;
-            font-size: 0.9rem;
-            margin-top: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+            font-weight: 300;
         }
 
-        /* ── CARD DE BUSCA ── */
-        .busca-container {
-            width: 100%; max-width: 400px;
-            background: white;
+        /* ── CARD ── */
+        .card {
+            width: 100%;
+            max-width: 380px;
+            background: var(--white);
+            border-radius: 20px;
             padding: 28px 24px;
-            border-radius: 16px;
-            box-shadow: 0 4px 24px rgba(90,107,92,0.13);
-            border-top: 4px solid var(--verde);
+            box-shadow: 0 2px 16px rgba(90,107,92,0.08);
         }
 
-        .label-placa {
-            font-family: 'Barlow Condensed', sans-serif;
-            font-size: 0.78rem;
+        .input-label {
+            font-size: 0.7rem;
+            font-weight: 500;
             letter-spacing: 2px;
             text-transform: uppercase;
-            color: #999;
-            margin-bottom: 8px;
+            color: var(--text-muted);
             display: block;
+            margin-bottom: 10px;
         }
 
         input#placa-busca {
-            width: 100%; padding: 14px;
-            font-family: 'Barlow Condensed', sans-serif;
-            font-size: 2.2rem; font-weight: 700;
-            text-align: center; text-transform: uppercase;
-            border: 2px solid #dde0d9;
-            border-radius: 10px; margin-bottom: 14px;
+            width: 100%;
+            padding: 14px 16px;
+            font-family: 'DM Mono', monospace;
+            font-size: 1.9rem;
+            font-weight: 500;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 8px;
             color: var(--verde);
-            letter-spacing: 6px;
-            transition: border-color 0.2s;
+            background: var(--verde-bg);
+            border: 1.5px solid transparent;
+            border-radius: 12px;
             outline: none;
+            transition: border-color 0.2s, background 0.2s;
+            margin-bottom: 16px;
         }
-        input#placa-busca:focus { border-color: var(--verde); }
+        input#placa-busca:focus {
+            border-color: var(--verde-light);
+            background: white;
+        }
+        input#placa-busca::placeholder { color: #ccc; letter-spacing: 4px; }
 
         button#btn-buscar {
-            width: 100%; padding: 16px;
-            font-family: 'Barlow Condensed', sans-serif;
-            font-size: 1.15rem; font-weight: 700;
-            letter-spacing: 2px; text-transform: uppercase;
-            background: var(--verde); color: white;
-            border: none; border-radius: 10px;
+            width: 100%;
+            padding: 15px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            background: var(--verde);
+            color: white;
+            border: none;
+            border-radius: 12px;
             cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
+            transition: opacity 0.2s, transform 0.1s;
         }
-        button#btn-buscar:active { transform: scale(0.98); background: #4a5a4c; }
+        button#btn-buscar:active { opacity: 0.85; transform: scale(0.99); }
 
-        /* ── BOTÃO NOTIFICAR ── */
         #btn-notificar {
-            margin-top: 12px; width: 100%; padding: 13px;
-            font-family: 'Barlow Condensed', sans-serif;
-            font-size: 1rem; font-weight: 700;
-            letter-spacing: 1px; text-transform: uppercase;
-            background: white; color: var(--laranja);
-            border: 2px solid var(--laranja);
-            border-radius: 10px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            transition: background 0.2s, color 0.2s;
+            margin-top: 10px;
+            width: 100%;
+            padding: 13px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            background: transparent;
+            color: var(--laranja);
+            border: 1.5px solid #f0d4bb;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
         }
-        #btn-notificar:hover { background: var(--laranja); color: white; }
-        .notif-ativo {
-            background: #fff8f0 !important;
-            color: #b8601a !important;
-            border-color: #f0a96a !important;
-            cursor: default !important;
+        #btn-notificar:hover { background: #fff8f3; border-color: var(--laranja); }
+        #btn-notificar.ativo {
+            color: var(--text-muted);
+            border-color: var(--border);
+            cursor: default;
+            pointer-events: none;
         }
 
-        /* ── RESULTADO NORMAL ── */
+        /* ── RESULTADO ── */
         #resultado {
-            margin-top: 20px; width: 100%; max-width: 400px; display: none;
+            margin-top: 14px;
+            width: 100%;
+            max-width: 380px;
+            display: none;
         }
-        #resultado h3 {
-            font-family: 'Barlow Condensed', sans-serif;
-            font-size: 0.8rem; letter-spacing: 2px;
-            text-transform: uppercase; color: #aaa;
-            margin-bottom: 10px;
-        }
+
         .resultado-item {
-            margin-bottom: 14px; padding: 18px 20px;
-            border-radius: 12px; text-align: center;
+            background: white;
+            border-radius: 16px;
+            padding: 20px 22px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 8px rgba(90,107,92,0.06);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
-        .resultado-item .hora-label {
-            font-size: 0.78rem; color: #888;
-            text-transform: uppercase; letter-spacing: 1px;
+
+        .res-hora {
+            font-size: 0.72rem;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
         }
-        .resultado-item .status-msg {
-            font-family: 'Barlow Condensed', sans-serif;
-            font-size: 1.3rem; font-weight: 700;
-            margin-top: 6px; line-height: 1.3;
+
+        .res-status {
+            font-size: 1.05rem;
+            font-weight: 500;
+            color: var(--text);
+            line-height: 1.4;
         }
-        .agendado  { background: #e8f0e9; color: #2e5c31; border: 1px solid #c3dac5; }
-        .finalizado{ background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
+
+        .res-status strong { color: var(--verde); }
+
+        .res-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.72rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .dot-status {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--verde-light);
+        }
+        .dot-status.finalizado { background: #6ab86a; }
+
+        /* ── MONITOR ── */
+        .monitor-label {
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .pulse-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--verde-light);
+            animation: pulse-green 1.5s infinite;
+        }
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%       { opacity: 0.4; transform: scale(0.7); }
+        }
 
         /* ── OVERLAY DE ALERTA ── */
         #alerta-overlay {
             display: none;
             position: fixed; inset: 0; z-index: 9999;
-            background: rgba(0,0,0,0.55);
-            backdrop-filter: blur(3px);
-            align-items: center; justify-content: center;
-            flex-direction: column;
+            background: rgba(15, 10, 10, 0.65);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            align-items: center;
+            justify-content: center;
         }
         #alerta-overlay.ativo { display: flex; }
 
         #alerta-box {
-            background: #fff;
-            border-radius: 20px;
-            padding: 40px 32px 32px;
-            max-width: 340px; width: 90%;
+            background: white;
+            border-radius: 24px;
+            padding: 36px 28px 28px;
+            max-width: 320px;
+            width: 88%;
             text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.35);
-            animation: entrar 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            border-top: 6px solid var(--vermelho-alerta);
+            box-shadow: 0 24px 64px rgba(0,0,0,0.3);
+            animation: pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-
-        @keyframes entrar {
-            from { transform: scale(0.7) translateY(40px); opacity: 0; }
+        @keyframes pop-in {
+            from { transform: scale(0.8) translateY(20px); opacity: 0; }
             to   { transform: scale(1) translateY(0);      opacity: 1; }
         }
 
         .alerta-icone {
-            font-size: 4rem;
-            animation: piscar-icone 0.6s infinite alternate;
-            display: block; margin-bottom: 10px;
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 14px;
+            animation: balanco 0.5s infinite alternate ease-in-out;
         }
-        @keyframes piscar-icone {
-            from { transform: scale(1); }
-            to   { transform: scale(1.15); }
+        @keyframes balanco {
+            from { transform: rotate(-8deg) scale(1); }
+            to   { transform: rotate(8deg)  scale(1.1); }
         }
 
         .alerta-titulo {
-            font-family: 'Barlow Condensed', sans-serif;
-            font-size: 2.2rem; font-weight: 900;
-            color: var(--vermelho-alerta);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            line-height: 1;
-            margin-bottom: 12px;
-            animation: piscar-texto 0.8s infinite alternate;
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: var(--vermelho);
+            line-height: 1.1;
+            margin-bottom: 6px;
+            animation: fade-pulse 0.9s infinite alternate;
         }
-        @keyframes piscar-texto {
+        @keyframes fade-pulse {
             from { opacity: 1; }
-            to   { opacity: 0.5; }
+            to   { opacity: 0.55; }
         }
 
         .alerta-placa {
-            font-family: 'Barlow Condensed', sans-serif;
-            font-size: 1.4rem; font-weight: 700;
-            background: #f8f8f8;
-            border: 2px dashed #ccc;
+            font-family: 'DM Mono', monospace;
+            font-size: 1.3rem;
+            letter-spacing: 5px;
+            color: var(--verde);
+            background: var(--verde-bg);
             border-radius: 8px;
-            padding: 6px 16px;
+            padding: 6px 14px;
             display: inline-block;
-            color: #333;
-            letter-spacing: 4px;
-            margin-bottom: 16px;
+            margin: 10px 0 16px;
         }
 
-        .alerta-mensagem {
-            font-size: 1rem;
-            color: #555;
-            line-height: 1.5;
+        .alerta-sub {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.6;
             margin-bottom: 24px;
+            font-weight: 300;
         }
-
-        .alerta-mensagem strong {
-            color: #222;
-        }
+        .alerta-sub strong { color: var(--text); font-weight: 600; }
 
         #btn-fechar-alerta {
-            width: 100%; padding: 14px;
-            font-family: 'Barlow Condensed', sans-serif;
-            font-size: 1.1rem; font-weight: 700;
-            letter-spacing: 1px; text-transform: uppercase;
-            background: var(--vermelho-alerta); color: white;
-            border: none; border-radius: 10px; cursor: pointer;
+            width: 100%;
+            padding: 14px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            background: var(--vermelho);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: opacity 0.2s;
         }
+        #btn-fechar-alerta:active { opacity: 0.85; }
 
-        /* Fundo pulsante vermelho na tela toda quando chamando */
-        @keyframes pulsar-fundo {
-            0%   { box-shadow: inset 0 0 0 0 rgba(231,76,60,0); }
-            50%  { box-shadow: inset 0 0 60px 20px rgba(231,76,60,0.18); }
-            100% { box-shadow: inset 0 0 0 0 rgba(231,76,60,0); }
+        /* faixa vermelha sutil no topo quando chamando */
+        body.chamando::before {
+            content: '';
+            position: fixed; top: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--vermelho);
+            animation: barra-pulso 0.8s infinite alternate;
+            z-index: 100;
         }
-        body.chamando { animation: pulsar-fundo 1s infinite; }
-
-        /* ── INDICADOR DE ATUALIZAÇÃO ── */
-        .atualizando {
-            font-size: 0.72rem; color: #bbb;
-            text-align: center; margin-top: 10px;
-            letter-spacing: 1px;
+        @keyframes barra-pulso {
+            from { opacity: 1; }
+            to   { opacity: 0.3; }
         }
-        .dot { display: inline-block; animation: dot 1.2s infinite; }
-        .dot:nth-child(2) { animation-delay: 0.2s; }
-        .dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes dot { 0%,80%,100%{opacity:0} 40%{opacity:1} }
     </style>
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 </head>
 <body>
 
-    <!-- OVERLAY DE ALERTA -->
+    <!-- OVERLAY ALERTA -->
     <div id="alerta-overlay">
         <div id="alerta-box">
             <span class="alerta-icone">🚨</span>
             <div class="alerta-titulo">Sua vez chegou!</div>
             <div class="alerta-placa" id="alerta-placa-texto">—</div>
-            <div class="alerta-mensagem">
+            <div class="alerta-sub">
                 <strong>Dirija-se à portaria agora.</strong><br>
                 Siga as orientações do operador para iniciar a descarga.
             </div>
-            <button id="btn-fechar-alerta">✔ ENTENDIDO</button>
+            <button id="btn-fechar-alerta">✔ Entendido</button>
         </div>
     </div>
 
-    <!-- CABEÇALHO -->
+    <!-- HEADER -->
     <div class="header">
-        <h1>Sistema de Agendamento <span>CD · Itaboraí</span></h1>
+        <span class="header-badge">CD · Itaboraí</span>
+        <h1>Sistema de Agendamento</h1>
         <p>Consulte sua posição na fila de descarga</p>
     </div>
 
-    <!-- CARD DE BUSCA -->
-    <div class="busca-container">
-        <span class="label-placa">Placa do veículo</span>
+    <!-- CARD BUSCA -->
+    <div class="card">
+        <span class="input-label">Placa do veículo</span>
         <input type="text" id="placa-busca" placeholder="ABC1D23" maxlength="7">
-        <button id="btn-buscar">🔍 Ver minha posição</button>
+        <button id="btn-buscar">Ver minha posição</button>
         <button id="btn-notificar">🔔 Ativar aviso de chamada</button>
     </div>
 
@@ -295,68 +369,52 @@
         let monitoramentoAtivo = false;
         let jaNotificou = false;
 
-        // ── SOM DE ALERTA (Web Audio API — não precisa de arquivo externo) ──
+        // ── SOM (Web Audio API) ──
         function tocarSomAlerta() {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
-
-                function beep(freq, start, duration, volume) {
-                    const osc  = ctx.createOscillator();
+                function beep(freq, start, dur, vol) {
+                    const osc = ctx.createOscillator();
                     const gain = ctx.createGain();
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.frequency.value = freq;
-                    osc.type = 'square';
-                    gain.gain.setValueAtTime(volume, ctx.currentTime + start);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
+                    osc.connect(gain); gain.connect(ctx.destination);
+                    osc.frequency.value = freq; osc.type = 'square';
+                    gain.gain.setValueAtTime(vol, ctx.currentTime + start);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
                     osc.start(ctx.currentTime + start);
-                    osc.stop(ctx.currentTime + start + duration + 0.05);
+                    osc.stop(ctx.currentTime + start + dur + 0.05);
                 }
-
-                // Sequência de bipes de alerta
-                beep(880, 0.0,  0.15, 0.4);
-                beep(880, 0.2,  0.15, 0.4);
-                beep(880, 0.4,  0.15, 0.4);
-                beep(1100, 0.7, 0.4,  0.5);
-                beep(880, 1.2,  0.15, 0.4);
-                beep(880, 1.4,  0.15, 0.4);
-                beep(1100, 1.7, 0.5,  0.5);
-            } catch(e) {
-                console.log("Audio não disponível:", e);
-            }
+                beep(880,  0.0, 0.15, 0.35);
+                beep(880,  0.2, 0.15, 0.35);
+                beep(880,  0.4, 0.15, 0.35);
+                beep(1100, 0.7, 0.4,  0.45);
+                beep(880,  1.2, 0.15, 0.35);
+                beep(1100, 1.5, 0.5,  0.45);
+            } catch(e) {}
         }
 
         // ── BOTÃO NOTIFICAR ──
         document.getElementById('btn-notificar').addEventListener('click', () => {
-            // Toca o som para "desbloquear" o AudioContext no iOS (requer gesto do usuário)
             tocarSomAlerta();
-
             if (!('Notification' in window)) {
-                alert("Seu navegador não suporta notificações. O alerta visual e vibração continuarão funcionando.");
+                alert("Navegador sem suporte a notificações. Alerta visual e vibração continuarão funcionando.");
                 return;
             }
-
             Notification.requestPermission().then(perm => {
                 const btn = document.getElementById('btn-notificar');
                 if (perm === 'granted') {
-                    btn.textContent = '✅ Aviso ativado — você será chamado';
-                    btn.classList.add('notif-ativo');
-                    btn.disabled = true;
+                    btn.innerHTML = '✅ Aviso ativado';
                 } else {
-                    btn.textContent = '⚠️ Permissão negada — só alerta visual';
-                    btn.style.borderColor = '#aaa';
-                    btn.style.color = '#aaa';
+                    btn.innerHTML = '⚠️ Só alerta visual ativo';
                 }
+                btn.classList.add('ativo');
             });
         });
 
         // ── BOTÃO BUSCAR ──
-        document.getElementById('btn-buscar').addEventListener('click', async () => {
+        document.getElementById('btn-buscar').addEventListener('click', () => {
             const placa = document.getElementById('placa-busca').value.trim().toUpperCase();
             if (placa.length < 3) { alert("Digite a placa completa."); return; }
-
             buscarEExibir(placa);
-
             if (!monitoramentoAtivo) {
                 monitoramentoAtivo = true;
                 setInterval(() => buscarEExibir(placa), 10000);
@@ -369,7 +427,7 @@
             document.body.classList.remove('chamando');
         });
 
-        // ── FUNÇÃO PRINCIPAL ──
+        // ── BUSCA PRINCIPAL ──
         async function buscarEExibir(placa) {
             const resDiv = document.getElementById('resultado');
             try {
@@ -385,28 +443,22 @@
                 resDiv.innerHTML = "";
 
                 if (meusAgendamentos.length > 0) {
-                    let htmlBase = `<h3>Placa ${placa}</h3>`;
-
-                    meusAgendamentos.sort((a, b) => new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`));
+                    meusAgendamentos.sort((a, b) =>
+                        new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`)
+                    );
 
                     meusAgendamentos.forEach(item => {
-                        let statusMsg = "";
-                        let classeStatus = "";
+                        let statusMsg = "", indicador = "";
 
                         if (item.status === 'chamando') {
-                            // Dispara alerta completo
-                            if (!jaNotificou) {
-                                dispararAlerta(item.placa);
-                                jaNotificou = true;
-                            }
-                            // Card resumido abaixo do overlay (caso feche o overlay)
-                            statusMsg = "⚠️ SUA VEZ — Vá à portaria";
-                            classeStatus = "agendado";
+                            if (!jaNotificou) { dispararAlerta(item.placa); jaNotificou = true; }
+                            statusMsg = "Dirija-se à portaria agora";
+                            indicador = `<span class="res-indicator"><span class="dot-status" style="background:#c0392b"></span> Chamando</span>`;
                             document.body.classList.add('chamando');
 
                         } else if (item.status === 'finalizado') {
-                            statusMsg = "✅ Operação finalizada";
-                            classeStatus = "finalizado";
+                            statusMsg = "Operação finalizada";
+                            indicador = `<span class="res-indicator"><span class="dot-status finalizado"></span> Finalizado</span>`;
                             jaNotificou = false;
                             document.body.classList.remove('chamando');
                             document.getElementById('alerta-overlay').classList.remove('ativo');
@@ -414,65 +466,54 @@
                         } else {
                             const unidadeAtual = item.unidade || 'itaborai';
                             const filaHoje = dados.filter(a =>
-                                a.data === hojeStr &&
-                                a.status === 'agendado' &&
+                                a.data === hojeStr && a.status === 'agendado' &&
                                 (a.unidade || 'itaborai') === unidadeAtual
                             );
-                            filaHoje.sort((a, b) => new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`));
+                            filaHoje.sort((a, b) =>
+                                new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`)
+                            );
                             const posicao = filaHoje.findIndex(a => a.id === item.id);
 
                             if (posicao === 0) {
-                                statusMsg = "Você é o próximo! Fique atento.";
+                                statusMsg = "Você é o próximo — fique atento";
                             } else if (posicao > 0) {
-                                statusMsg = `<strong>${posicao}</strong> veículo${posicao > 1 ? 's' : ''} na sua frente`;
+                                statusMsg = `<strong>${posicao}</strong> veículo${posicao > 1 ? 's' : ''} à sua frente`;
                             } else {
                                 statusMsg = "Aguardando na fila";
                             }
-                            classeStatus = "agendado";
+                            indicador = `<span class="res-indicator"><span class="dot-status"></span> Agendado</span>`;
                             jaNotificou = false;
                             document.body.classList.remove('chamando');
                         }
 
-                        htmlBase += `
-                            <div class="resultado-item ${classeStatus}">
-                                <div class="hora-label">Horário previsto: ${item.hora}</div>
-                                <div class="status-msg">${statusMsg}</div>
-                            </div>
-                        `;
+                        resDiv.innerHTML += `
+                            <div class="resultado-item">
+                                <span class="res-hora">Horário previsto · ${item.hora}</span>
+                                <span class="res-status">${statusMsg}</span>
+                                ${indicador}
+                            </div>`;
                     });
 
-                    // Indicador de monitoramento ativo
-                    htmlBase += `
-                        <div class="atualizando">
-                            Monitorando
-                            <span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>
-                            atualiza a cada 10s
+                    resDiv.innerHTML += `
+                        <div class="monitor-label">
+                            <span class="pulse-dot"></span>
+                            Atualizando a cada 10s
                         </div>`;
 
-                    resDiv.innerHTML = htmlBase;
                 } else {
-                    resDiv.innerHTML = "<p style='text-align:center;color:#aaa;font-size:0.9rem;margin-top:10px'>Nenhum agendamento encontrado para hoje.</p>";
+                    resDiv.innerHTML = `<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;margin-top:8px">Nenhum agendamento encontrado para hoje.</p>`;
                 }
-            } catch (error) { console.error("Erro na consulta", error); }
+            } catch (e) { console.error("Erro na consulta", e); }
         }
 
-        // ── DISPARAR ALERTA COMPLETO ──
+        // ── ALERTA COMPLETO ──
         function dispararAlerta(placa) {
-            // 1. Overlay visual
             document.getElementById('alerta-placa-texto').textContent = placa;
             document.getElementById('alerta-overlay').classList.add('ativo');
-
-            // 2. Vibração longa
-            if ('vibrate' in navigator) {
-                navigator.vibrate([800, 200, 800, 200, 800, 200, 1500]);
-            }
-
-            // 3. Som
+            if ('vibrate' in navigator) navigator.vibrate([800, 200, 800, 200, 800, 200, 1500]);
             tocarSomAlerta();
-
-            // 4. Notificação do sistema (se permitida)
             if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-                new Notification("🚨 SUA VEZ CHEGOU!", {
+                new Notification("🚨 Sua vez chegou!", {
                     body: `Placa ${placa} — Dirija-se à portaria agora.`,
                     icon: "/motorista/icon-192.png",
                     tag: 'chamada-motorista',
