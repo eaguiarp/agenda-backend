@@ -6,6 +6,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     :root {
       --bg: #0a0a0a; --surface: #111111; --surface2: #181818;
@@ -21,7 +22,6 @@
       grid-template-areas: "principal fila" "inferior fila";
     }
 
-    /* --- OVERLAY --- */
     #overlay-inicio {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.95); z-index: 10000;
@@ -29,7 +29,6 @@
       cursor: pointer; text-align: center;
     }
 
-    /* --- TOPO --- */
     .topo {
       position: fixed; top: 0; left: 0; right: 0; height: 52px; padding: 0 36px;
       display: flex; justify-content: space-between; align-items: center;
@@ -39,7 +38,6 @@
     .status-conexao { display: flex; align-items: center; gap: 10px; }
     #ponto-conexao { width: 8px; height: 8px; border-radius: 50%; background: var(--green); transition: background 0.3s; }
 
-    /* --- AREA PRINCIPAL --- */
     .area-principal {
       grid-area: principal; padding: 60px 20px 12px;
       display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -47,44 +45,24 @@
       position: relative; overflow: hidden;
     }
 
-    /* --- PLACA MERCOSUL --- */
     .placa-mercosul {
       background: white; border-radius: 12px; border: 4px solid #222;
       box-shadow: 0 10px 40px rgba(0,0,0,0.8); overflow: hidden;
     }
-  .placa-topo {
-  background: #1a3a8f; 
-  color: white; 
-  /* Fallback nativo: Roboto Condensed (Android) ou Arial Narrow (Win/Mac) */
-  font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif;
-  font-size: 1.2rem; 
-  font-weight: 700;
-  letter-spacing: 0.3em; 
-  text-align: center; 
-  padding: 6px 20px;
-  text-transform: uppercase; /* Garante o padrão de placas */
-}
+    .placa-topo {
+      background: #1a3a8f; color: white;
+      font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif;
+      font-size: 1.2rem; font-weight: 700; letter-spacing: 0.3em;
+      text-align: center; padding: 6px 20px; text-transform: uppercase;
+    }
+    .placa-numero {
+      color: #111;
+      font-family: "Bahnschrift", "DIN Alternate", "Franklin Gothic Condensed", "Roboto Condensed", sans-serif;
+      font-size: 6rem; font-weight: 600; padding: 8px 30px; line-height: 0.95em;
+      text-align: center; letter-spacing: 0.06em;
+      display: block; transform: scaleX(0.9); transform-origin: center;
+    }
 
-.placa-numero {
-  color: #111; 
-  /* A 'Bahnschrift' é a mais parecida com a alemã no Windows. 
-     'DIN Alternate' é a versão nativa do Mac/iOS. */
-  font-family: "Bahnschrift", "DIN Alternate", "Franklin Gothic Condensed", "Roboto Condensed", sans-serif;
-  
-  font-size: 6rem; 
-  font-weight: 600; 
-  padding: 8px 30px; 
-  line-height: 0.95em;
-  text-align: center; 
-  letter-spacing: 0.06em;
-  
-  /* Seu truque de compressão está ótimo! */
-  display: block; /* Garante que o transform funcione bem */
-  transform: scaleX(0.9); 
-  transform-origin: center;
-}
-
-    /* --- AVISO EPI --- */
     .aviso-epi {
       margin-top: 22px; background: #1a1200; border: 1px solid #f0b429;
       border-radius: 6px; padding: 14px 28px; text-align: center;
@@ -93,267 +71,130 @@
     .aviso-linha { font-size: 0.85rem; letter-spacing: 0.1em; color: #f0b429; opacity: 0.85; }
     .aviso-linha.destaque { font-weight: 700; font-size: 1rem; letter-spacing: 0.15em; opacity: 1; }
 
-    /* --- VIDEO PLAYER --- */
     #video-container, #info-container {
-      position: absolute;
-      top: 52px;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: #000;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
+      position: absolute; top: 52px; left: 0; right: 0; bottom: 0;
+      background: #000; display: none;
+      align-items: center; justify-content: center; z-index: 10;
     }
     #video-container.ativo { display: flex; }
     #info-container.ativo  { display: flex; }
     #player-video {
-      width: auto;
-      height: auto;
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      background: #000;
+      width: auto; height: auto; max-width: 100%; max-height: 100%;
+      object-fit: contain; background: #000;
     }
 
-    /* --- TELA ESPERA (relógio grande) --- */
     #tela-espera {
-      position: absolute;
-      top: 52px; left: 0; right: 0; bottom: 0;
-      background: var(--bg);
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 9;
-      gap: 20px;
+      position: absolute; top: 52px; left: 0; right: 0; bottom: 0;
+      background: var(--bg); display: none;
+      flex-direction: column; align-items: center; justify-content: center;
+      z-index: 9; gap: 20px;
     }
     #tela-espera.ativo { display: flex; }
     .espera-relogio {
-      font-family: 'Roboto Condensed', sans-serif;
-      font-size: 11rem;
-      font-weight: 700;
-      color: var(--accent);
-      line-height: 1;
-      letter-spacing: 0.05em;
+      font-family: 'Roboto Condensed', sans-serif; font-size: 11rem;
+      font-weight: 700; color: var(--accent); line-height: 1; letter-spacing: 0.05em;
     }
-    .espera-clima {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      color: var(--muted);
-      font-size: 2rem;
-    }
+    .espera-clima { display: flex; align-items: center; gap: 20px; color: var(--muted); font-size: 2rem; }
     .espera-clima-temp { font-size: 3rem; font-weight: 700; color: var(--text); }
-    .espera-clima-icone { font-size: 3rem; }
-    .espera-data {
-      font-size: 1rem;
-      letter-spacing: 0.2em;
-      color: var(--muted);
-      text-transform: uppercase;
-    }
+    .espera-data { font-size: 1rem; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; }
 
-    /* --- MODO MADRUGADA --- */
     #tela-madrugada {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: #000;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 5000;
-      gap: 16px;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000;
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 5000; gap: 16px;
     }
     #tela-madrugada.ativo { display: flex; }
     .madrugada-relogio {
-      font-family: 'Roboto Condensed', sans-serif;
-      font-size: 14rem;
-      font-weight: 700;
-      color: #1a1a1a;
-      line-height: 1;
+      font-family: 'Roboto Condensed', sans-serif; font-size: 14rem;
+      font-weight: 700; color: #1a1a1a; line-height: 1;
     }
-    .madrugada-info {
-      font-size: 0.75rem;
-      letter-spacing: 0.3em;
-      color: #1a1a1a;
-      text-transform: uppercase;
-    }
+    .madrugada-info { font-size: 0.75rem; letter-spacing: 0.3em; color: #1a1a1a; text-transform: uppercase; }
 
-    /* --- NOVO DESIGN CLIMA --- */
-    .clima-wrap {
-      width: 100%;
-      max-width: 800px;
-      text-align: center;
-      padding: 20px;
-    }
-    .clima-titulo {
-      font-size: 0.8rem;
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 40px;
-    }
-    .clima-display-principal {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 40px;
-      margin-bottom: 30px;
-    }
-    .clima-icone-destaque {
-      font-size: 7rem;
-      filter: drop-shadow(0 0 15px rgba(240, 180, 41, 0.2));
-    }
-    .clima-temp {
-      font-size: 9rem;
-      font-weight: 700;
-      color: var(--accent);
-      line-height: 0.8;
-      font-family: 'Roboto Condensed', sans-serif;
-    }
+    /* CLIMA */
+    .clima-wrap { width: 100%; max-width: 800px; text-align: center; padding: 20px; }
+    .clima-titulo { font-size: 0.8rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); margin-bottom: 40px; }
+    .clima-display-principal { display: flex; align-items: center; justify-content: center; gap: 40px; margin-bottom: 30px; }
+    .clima-icone-destaque { font-size: 7rem; }
+    .clima-temp { font-size: 9rem; font-weight: 700; color: var(--accent); line-height: 0.8; font-family: 'Roboto Condensed', sans-serif; }
     .clima-box-detalhes {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 25px;
-      display: inline-block;
-      min-width: 400px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 12px;
+      padding: 25px; display: inline-block; min-width: 400px;
     }
-    .clima-desc {
-      font-size: 2.2rem;
-      color: #fff;
-      font-weight: 600;
-      text-transform: capitalize;
-      margin-bottom: 15px;
-    }
-    .clima-stats {
-      display: flex;
-      justify-content: center;
-      gap: 50px;
-      border-top: 1px solid var(--border);
-      padding-top: 15px;
-    }
+    .clima-desc { font-size: 2.2rem; color: #fff; font-weight: 600; text-transform: capitalize; margin-bottom: 15px; }
+    .clima-stats { display: flex; justify-content: center; gap: 50px; border-top: 1px solid var(--border); padding-top: 15px; }
     .clima-stat-item { min-width: 100px; }
     .clima-stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
     .clima-stat-valor { font-size: 1.3rem; color: var(--accent); font-weight: 700; }
 
-    /* --- CARDS DE TRÂNSITO --- */
-    .transito-wrap {
-      width: 100%;
-      padding: 10px;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 15px;
+    /* MAPA TOMTOM */
+    .transito-mapa-wrap {
+      width: 100%; height: 100%; display: flex; flex-direction: column;
+      position: relative; background: #0a0a0a;
     }
-    .transito-titulo {
-      grid-column: span 3;
-      text-align: center;
-      margin-bottom: 5px;
-      font-size: 0.8rem;
-      letter-spacing: 0.3em;
-      color: var(--muted);
+    .mapa-header {
+      position: absolute; top: 0; left: 0; right: 0; z-index: 1000;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 16px;
+      background: linear-gradient(to bottom, rgba(10,10,10,0.95), rgba(10,10,10,0));
+      pointer-events: none;
     }
-    .transito-atualizado {
-      grid-column: span 3;
-      text-align: center;
-      margin-bottom: 15px;
-      font-size: 0.65rem;
-      letter-spacing: 0.1em;
-      color: #333;
+    .mapa-titulo-texto { font-size: 0.75rem; letter-spacing: 0.3em; text-transform: uppercase; color: #888; }
+    .mapa-atualizado { font-size: 0.65rem; letter-spacing: 0.1em; color: #444; }
+
+    #mapa-transito { flex: 1; width: 100%; height: 100%; z-index: 1; }
+
+    .mapa-legenda {
+      position: absolute; bottom: 10px; left: 12px; z-index: 1000;
+      background: rgba(17,17,17,0.92); border: 1px solid #2a2a2a;
+      border-radius: 6px; padding: 8px 12px;
+      display: flex; flex-direction: column; gap: 5px; pointer-events: none;
     }
-    .transito-card-novo {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 15px;
-      min-height: 110px;
-      border-radius: 8px;
-      color: #ffffff;
-      font-family: 'Source Sans 3', sans-serif;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-      border-left: 8px solid rgba(0,0,0,0.2);
-      transition: all 0.3s ease;
-    }
-    .card-corpo { display: flex; flex-direction: column; }
-    .transito-destino-novo {
-      font-weight: 800;
-      font-size: 1.1rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 2px;
-    }
-    .transito-detalhe { font-size: 0.9rem; font-weight: 400; opacity: 0.9; }
-    .card-status-box {
-      background: rgba(0,0,0,0.15);
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      min-width: 70px;
-      text-align: center;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      display: inline-block;
-      margin-top: 8px;
-    }
-    .card-verde   { background: linear-gradient(135deg, #2e7d32, #1b5e20); }
-    .card-amarelo { background: linear-gradient(135deg, #f9a825, #f57f17); }
-    .card-vermelho {
-      background: linear-gradient(135deg, #d32f2f, #b71c1c);
-      animation: pulse-red 2s infinite;
-    }
-    .card-cinza { background: #424242; opacity: 0.7; }
-    @keyframes pulse-red {
-      0%   { box-shadow: 0 0 0 0 rgba(211,47,47,0.7); }
-      70%  { box-shadow: 0 0 0 10px rgba(211,47,47,0); }
-      100% { box-shadow: 0 0 0 0 rgba(211,47,47,0); }
+    .legenda-item { display: flex; align-items: center; gap: 8px; font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa; }
+    .legenda-cor { width: 28px; height: 5px; border-radius: 3px; }
+
+    /* Marcador de origem */
+    .marcador-origem {
+      width: 14px; height: 14px; background: #f0b429;
+      border: 3px solid #fff; border-radius: 50%;
+      box-shadow: 0 0 0 3px rgba(240,180,41,0.4);
     }
 
-    /* --- FILA --- */
-    .area-fila {
-      grid-area: fila; background: var(--surface);
-      padding-top: 64px; display: flex; flex-direction: column;
+    /* Overrides Leaflet */
+    .leaflet-container { background: #111 !important; }
+    .leaflet-control-zoom a { background: #181818 !important; color: #888 !important; border-color: #2a2a2a !important; }
+    .leaflet-control-zoom a:hover { background: #222 !important; color: #fff !important; }
+    .leaflet-control-attribution { background: rgba(17,17,17,0.7) !important; color: #333 !important; font-size: 9px !important; }
+    .leaflet-control-attribution a { color: #444 !important; }
+    .leaflet-tooltip {
+      background: rgba(17,17,17,0.92) !important; border: 1px solid #2a2a2a !important;
+      color: #f0b429 !important; font-family: 'Source Sans 3', sans-serif !important;
+      font-size: 0.75rem !important; font-weight: 700 !important;
+      letter-spacing: 0.05em !important; padding: 4px 8px !important;
+      border-radius: 4px !important; box-shadow: none !important;
     }
-    .fila-colunas {
-      display: grid; grid-template-columns: 1fr 1fr;
-      flex: 1; border-top: 1px solid var(--border); overflow: hidden;
-    }
-    .fila-secao {
-      padding: 15px; border-right: 1px solid var(--border);
-      display: flex; flex-direction: column; overflow-y: auto;
-    }
-    .fila-secao-titulo {
-      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em;
-      text-transform: uppercase; margin-bottom: 10px;
-      padding-bottom: 8px; border-bottom: 1px solid var(--border);
-    }
-    .item-fila {
-      background: var(--surface2); padding: 10px 12px; margin-bottom: 8px;
-      border-radius: 4px; border: 1px solid var(--border); border-left: 3px solid var(--border);
-    }
+    .leaflet-tooltip-left::before, .leaflet-tooltip-right::before { border: none !important; }
+
+    /* FILA */
+    .area-fila { grid-area: fila; background: var(--surface); padding-top: 64px; display: flex; flex-direction: column; }
+    .fila-colunas { display: grid; grid-template-columns: 1fr 1fr; flex: 1; border-top: 1px solid var(--border); overflow: hidden; }
+    .fila-secao { padding: 15px; border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+    .fila-secao-titulo { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .item-fila { background: var(--surface2); padding: 10px 12px; margin-bottom: 8px; border-radius: 4px; border: 1px solid var(--border); border-left: 3px solid var(--border); }
     .item-fila.tipo-descarga { border-left-color: #ff6d00; }
     .item-fila.tipo-carga    { border-left-color: #4fc3f7; }
     .item-fila.primeiro      { background: #1a1200; border-left-color: #f0b429; }
     .fila-linha-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-    .placa-fila      { font-size: 1.35rem; color: #fff; font-weight: 700; }
-    .hora-fila       { color: #f0b429; font-weight: 700; font-size: 0.9rem; text-align: right; }
+    .placa-fila  { font-size: 1.35rem; color: #fff; font-weight: 700; }
+    .hora-fila   { color: #f0b429; font-weight: 700; font-size: 0.9rem; text-align: right; }
     .hora-fila-carga { color: #4fc3f7; font-weight: 700; font-size: 0.9rem; text-align: right; }
 
-    /* --- BADGES GERAIS --- */
     .label { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
     .badge { font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 2px; letter-spacing: 0.08em; }
     .badge-descarregando { background: #ff6d00; color: #000; }
     .badge-carregando    { background: #4fc3f7; color: #000; }
     .badge-finalizado    { background: #00e676; color: #000; }
 
-    /* --- BADGES PRODUTO --- */
-    .badge-produto {
-      display: inline-block; font-size: 0.65rem; font-weight: 700;
-      padding: 2px 8px; border-radius: 2px; letter-spacing: 0.08em;
-      margin-right: 3px; text-transform: uppercase;
-    }
+    .badge-produto { display: inline-block; font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 2px; letter-spacing: 0.08em; margin-right: 3px; text-transform: uppercase; }
     .badge-cpiii { background-color: #800080; color: white; }
     .badge-cpii  { background-color: #AA0000; color: white; }
     .badge-cpv   { background-color: #C62828; color: white; }
@@ -361,15 +202,10 @@
     .badge-m25   { background-color: #2FB201; color: black; }
     .badge-geral { background-color: #444;    color: #ccc;  }
 
-    /* --- INFERIOR --- */
-    .area-inferior-grid {
-      grid-area: inferior; display: grid; grid-template-columns: 1fr 1fr;
-      border-right: 1px solid var(--border);
-    }
+    .area-inferior-grid { grid-area: inferior; display: grid; grid-template-columns: 1fr 1fr; border-right: 1px solid var(--border); }
     .box-proximo { padding: 20px; border-right: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; }
     .box-status  { padding: 20px; background: #0d1a0f; overflow-y: auto; }
 
-    /* --- SCROLLBAR --- */
     ::-webkit-scrollbar { width: 3px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
@@ -377,7 +213,6 @@
 </head>
 <body>
 
-  <!-- OVERLAY INICIO -->
   <div id="overlay-inicio" onclick="iniciarPainel()">
     <div style="border: 2px solid #f0b429; padding: 40px; border-radius: 10px;">
       <h1 style="color: #f0b429; margin-bottom: 20px; font-family: 'Source Sans 3', sans-serif;">PAINEL LOGISTICO</h1>
@@ -385,13 +220,11 @@
     </div>
   </div>
 
-  <!-- MODO MADRUGADA -->
   <div id="tela-madrugada">
     <div class="madrugada-relogio" id="madrugada-relogio">00:00</div>
     <div class="madrugada-info">CD ITABORAÍ — PAINEL EM ESPERA</div>
   </div>
 
-  <!-- TOPO -->
   <div class="topo">
     <div style="color: #f0b429; font-weight: 700; letter-spacing: 0.12em; font-size: 0.95rem;">CD &mdash; ITABORAÍ</div>
     <div class="status-conexao">
@@ -400,15 +233,9 @@
     </div>
   </div>
 
-  <!-- PRINCIPAL -->
   <div class="area-principal">
+    <div id="painel-principal" style="display:none;"></div>
 
-    <!-- Chamada ativa -->
-    <div id="painel-principal" style="display:none;">
-      <div style="font-size: 2rem; color: #555; opacity: 0.5;">Aguardando Chamada...</div>
-    </div>
-
-    <!-- Tela de espera: relógio grande + clima -->
     <div id="tela-espera">
       <div class="espera-data" id="espera-data">--</div>
       <div class="espera-relogio" id="espera-relogio">00:00</div>
@@ -419,19 +246,15 @@
       </div>
     </div>
 
-    <!-- Vídeo -->
     <div id="video-container">
       <video id="player-video" preload="auto" playsinline></video>
     </div>
 
-    <!-- Info (clima/trânsito) -->
     <div id="info-container">
-      <div id="info-conteudo"></div>
+      <div id="info-conteudo" style="width:100%;height:100%;"></div>
     </div>
-
   </div>
 
-  <!-- INFERIOR -->
   <div class="area-inferior-grid">
     <div class="box-proximo" id="painel-proximo">
       <div class="label">Próximo</div>
@@ -443,7 +266,6 @@
     </div>
   </div>
 
-  <!-- FILA -->
   <div class="area-fila">
     <div class="fila-colunas">
       <div class="fila-secao">
@@ -457,166 +279,116 @@
     </div>
   </div>
 
-  <!-- AUDIO -->
   <audio id="som-alerta" src="https://agenda-backend-production-5b72.up.railway.app/msn-wizz-sound.ogg?v=2"></audio>
   <audio id="musica-fundo" src="/Sony Xperia.mp3" loop></audio>
 
-  <script>
-    var API_URL         = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
-    var POLL_MS         = 5000;
-    var ultimoChamadoID = null;
-    var ultimaPlacaVoz  = '';
-    var descansoAtivo   = false;
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    var playlist = ['/video1.mp4','/video2.mp4','/video3.mp4','/video4.mp4','/video5.mp4'];
-    var indiceVideo          = 0;
-    var modoOcioso           = false;
-    var modoInfo             = false;
-    var timerInfo            = null;
-    var indiceInfo           = 0;
-    var dadosClima           = null;
-    var dadosTransito        = null;
+  <script>
+    // ══════════════════════════════════════════════════════
+    //  ⬇  TROQUE AQUI pela sua chave TomTom
+    // ══════════════════════════════════════════════════════
+    var TOMTOM_KEY = 'SUA_CHAVE_AQUI';
+    // ══════════════════════════════════════════════════════
+
+    var API_URL          = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
+    var POLL_MS          = 5000;
+    var ultimoChamadoID  = null;
+    var ultimaPlacaVoz   = '';
+
+    var playlist    = ['/video1.mp4','/video2.mp4','/video3.mp4','/video4.mp4','/video5.mp4'];
+    var indiceVideo = 0;
+    var modoOcioso  = false;
+    var modoInfo    = false;
+    var timerInfo   = null;
+    var indiceInfo  = 0;
+    var dadosClima  = null;
     var horaUltimaAtualizacao = '--:--';
 
-    // ── MADRUGADA ────────────────────────────────────────────
-    // Entre 00:00 e 05:59, o painel entra em modo escuro.
-    // O ciclo de vídeos roda apenas se houver chamada ativa.
-    // Um único ciclo de vídeos+info é permitido às 03:00 (horário de janta).
-    var cicloBonusFeito = false;   // controla se o ciclo das 03h já rodou hoje
+    var mapaLeaflet  = null;
+    var cicloBonusFeito = false;
     var modeMadrugada   = false;
 
-    function ehMadrugada() {
-      var h = new Date().getHours();
-      return h >= 0 && h < 6;
-    }
+    // ── MADRUGADA ─────────────────────────────────────────
+    function ehMadrugada() { var h = new Date().getHours(); return h >= 0 && h < 6; }
 
     function verificarMadrugada(chamando) {
       if (!ehMadrugada()) {
-        // Saiu da madrugada: reseta controle do ciclo bônus
         if (modeMadrugada) {
-          modeMadrugada   = false;
-          cicloBonusFeito = false;
+          modeMadrugada = false; cicloBonusFeito = false;
           document.getElementById('tela-madrugada').className = '';
         }
         return false;
       }
-
-      // Está na madrugada E há chamada → sai do modo madrugada temporariamente
       if (chamando) {
         document.getElementById('tela-madrugada').className = '';
-        modeMadrugada = false;
-        return false;
+        modeMadrugada = false; return false;
       }
-
-      // Ciclo bônus das 03:00 (só uma vez por madrugada)
-      var agora = new Date();
-      var h = agora.getHours();
-      var m = agora.getMinutes();
+      var agora = new Date(); var h = agora.getHours(); var m = agora.getMinutes();
       if (h === 3 && m < 5 && !cicloBonusFeito && !modoOcioso) {
-        cicloBonusFeito = true;
-        modeMadrugada   = false;
+        cicloBonusFeito = true; modeMadrugada = false;
         document.getElementById('tela-madrugada').className = '';
-        modoOcioso = true;
-        tocarVideo(indiceVideo);
-        return true; // deixa o ciclo rodar
+        modoOcioso = true; tocarVideo(indiceVideo); return true;
       }
-
-      // Modo madrugada padrão: tela escura
       if (!modeMadrugada) {
         modeMadrugada = true;
-        // Garante que vídeo e info estão parados
-        encerrarModoOcioso();
-        modoOcioso = false;
-        document.getElementById('tela-espera').className  = '';
+        encerrarModoOcioso(); modoOcioso = false;
+        document.getElementById('tela-espera').className = '';
         document.getElementById('tela-madrugada').className = 'ativo';
       }
       return true;
     }
 
-    // ── INICIO ───────────────────────────────────────────────
+    // ── INÍCIO ────────────────────────────────────────────
     function iniciarPainel() {
       document.getElementById('overlay-inicio').style.display = 'none';
-
       var alerta = document.getElementById('som-alerta');
       try { alerta.play(); } catch(e) {}
       setTimeout(function() { alerta.pause(); alerta.currentTime = 0; }, 100);
-
       var musica = document.getElementById('musica-fundo');
-      musica.volume = 0;
-      try { musica.play(); } catch(e) {}
-
-      var video = document.getElementById('player-video');
-      video.addEventListener('ended', function() { proximoVideo(); });
+      musica.volume = 0; try { musica.play(); } catch(e) {}
+      document.getElementById('player-video').addEventListener('ended', function() { proximoVideo(); });
 
       setInterval(atualizarTV,      POLL_MS);
       setInterval(atualizarRelogio, 1000);
-      setInterval(atualizarDados,   3600000); // trânsito a cada 1h
+      setInterval(atualizarClima,   3600000);
       atualizarRelogio();
-      atualizarDados();
+      atualizarClima();
 
-      // Só inicia vídeo se não for madrugada
-      if (!ehMadrugada()) {
-        modoOcioso = true;
-        tocarVideo(0);
-      } else {
-        modeMadrugada = true;
-        document.getElementById('tela-madrugada').className = 'ativo';
-      }
-
+      if (!ehMadrugada()) { modoOcioso = true; tocarVideo(0); }
+      else { modeMadrugada = true; document.getElementById('tela-madrugada').className = 'ativo'; }
       atualizarTV();
     }
 
-    // ── RELÓGIO ──────────────────────────────────────────────
+    // ── RELÓGIO ───────────────────────────────────────────
     function atualizarRelogio() {
       var d = new Date();
-      var h = String(d.getHours()).padStart   ? 
-              (d.getHours()   < 10 ? '0' + d.getHours()   : '' + d.getHours())   : d.getHours();
-      var m = d.getMinutes() < 10 ? '0' + d.getMinutes() : '' + d.getMinutes();
-      var hm = h + ':' + m;
-
-      document.getElementById('relogio').innerHTML          = hm;
+      var h = d.getHours()   < 10 ? '0'+d.getHours()   : ''+d.getHours();
+      var m = d.getMinutes() < 10 ? '0'+d.getMinutes() : ''+d.getMinutes();
+      var hm = h+':'+m;
+      document.getElementById('relogio').innerHTML           = hm;
       document.getElementById('madrugada-relogio').innerHTML = hm;
-      document.getElementById('espera-relogio').innerHTML   = hm;
-
-      // Data por extenso na tela de espera
-      var dias   = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-      var meses  = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-      var data   = dias[d.getDay()] + ', ' + d.getDate() + ' de ' + meses[d.getMonth()];
-      document.getElementById('espera-data').innerHTML = data;
+      document.getElementById('espera-relogio').innerHTML    = hm;
+      var dias  = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+      var meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+      document.getElementById('espera-data').innerHTML =
+        dias[d.getDay()]+', '+d.getDate()+' de '+meses[d.getMonth()];
     }
 
-    // ── DADOS CLIMA E TRÂNSITO ───────────────────────────────
-    function atualizarDados() {
-      var xhrW = new XMLHttpRequest();
-      xhrW.open('GET', '/api/weather', true);
-      xhrW.onreadystatechange = function() {
-        if (xhrW.readyState !== 4 || xhrW.status !== 200) return;
-        try {
-          dadosClima = JSON.parse(xhrW.responseText);
-          atualizarTelaEspera();
-        } catch(e) {}
+    // ── CLIMA (apenas weather, trânsito agora é TomTom) ───
+    function atualizarClima() {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', '/api/weather', true);
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState !== 4 || xhr.status !== 200) return;
+        try { dadosClima = JSON.parse(xhr.responseText); atualizarTelaEspera(); } catch(e) {}
       };
-      xhrW.send();
-
-      var xhrT = new XMLHttpRequest();
-      xhrT.open('GET', '/api/traffic', true);
-      xhrT.onreadystatechange = function() {
-        if (xhrT.readyState !== 4 || xhrT.status !== 200) return;
-        try {
-          dadosTransito = JSON.parse(xhrT.responseText);
-          var agora = new Date();
-          var hh = agora.getHours()   < 10 ? '0' + agora.getHours()   : '' + agora.getHours();
-          var mm = agora.getMinutes() < 10 ? '0' + agora.getMinutes() : '' + agora.getMinutes();
-          horaUltimaAtualizacao = hh + ':' + mm;
-        } catch(e) { console.error("Erro no parse do trânsito"); }
-      };
-      xhrT.send();
+      xhr.send();
     }
 
-    // ── TELA DE ESPERA ───────────────────────────────────────
     function atualizarTelaEspera() {
       if (!dadosClima) return;
-      document.getElementById('espera-temp').innerHTML  = dadosClima.temperatura + '°';
+      document.getElementById('espera-temp').innerHTML  = dadosClima.temperatura+'°';
       document.getElementById('espera-desc').innerHTML  = dadosClima.descricao || '';
       document.getElementById('espera-icone').innerHTML = iconeClima(dadosClima.descricao);
     }
@@ -630,66 +402,42 @@
       document.getElementById('tela-espera').className          = 'ativo';
       atualizarTelaEspera();
     }
+    function esconderTelaEspera() { document.getElementById('tela-espera').className = ''; }
 
-    function esconderTelaEspera() {
-      document.getElementById('tela-espera').className = '';
-    }
-
-    // ── ATALHO DE TESTE ──────────────────────────────────────
-    document.addEventListener('keydown', function(event) {
-      if (event.key === 'n' || event.key === 'N' || event.code === 'Space') {
-        if (modoOcioso && !modoInfo) { proximoVideo(); }
+    document.addEventListener('keydown', function(e) {
+      if (e.key==='n'||e.key==='N'||e.code==='Space') {
+        if (modoOcioso && !modoInfo) proximoVideo();
         else if (modoInfo) { clearTimeout(timerInfo); tocarVideo(indiceVideo); }
       }
     });
 
-    // ── ENCERRAR MODO OCIOSO ─────────────────────────────────
     function encerrarModoOcioso() {
-      modoOcioso = false;
-      modoInfo   = false;
+      modoOcioso = false; modoInfo = false;
       if (timerInfo) { clearTimeout(timerInfo); timerInfo = null; }
-
-      document.getElementById('video-container').className      = '';
-      document.getElementById('video-container').style.display  = 'none';
-      document.getElementById('info-container').className       = '';
-      document.getElementById('info-container').style.display   = 'none';
-      document.getElementById('tela-espera').className          = '';
-      document.getElementById('musica-fundo').volume            = 0;
-
-      var video = document.getElementById('player-video');
-      video.volume = 0;
-      video.pause();
+      document.getElementById('video-container').className     = '';
+      document.getElementById('video-container').style.display = 'none';
+      document.getElementById('info-container').className      = '';
+      document.getElementById('info-container').style.display  = 'none';
+      document.getElementById('tela-espera').className         = '';
+      document.getElementById('musica-fundo').volume           = 0;
+      var v = document.getElementById('player-video'); v.volume = 0; v.pause();
+      // Destrói mapa ao sair do modo ocioso para liberar memória
+      if (mapaLeaflet) { mapaLeaflet.remove(); mapaLeaflet = null; }
     }
 
-    // ── PLAYLIST ─────────────────────────────────────────────
     function tocarVideo(idx) {
-      modoInfo = false;
-      esconderTelaEspera();
-
-      var infoCont  = document.getElementById('info-container');
-      infoCont.style.display = 'none';
-      infoCont.className     = '';
-
-      var videoCont = document.getElementById('video-container');
-      videoCont.style.display = 'flex';
-      videoCont.classList.add('ativo');
-
+      modoInfo = false; esconderTelaEspera();
+      var ic = document.getElementById('info-container');
+      ic.style.display = 'none'; ic.className = '';
+      var vc = document.getElementById('video-container');
+      vc.style.display = 'flex'; vc.classList.add('ativo');
       document.getElementById('painel-principal').style.display = 'none';
-
-      var video  = document.getElementById('player-video');
-      video.volume = 1;
-      video.src  = playlist[idx % playlist.length];
-      video.load();
-
+      var v = document.getElementById('player-video');
+      v.volume = 1; v.src = playlist[idx % playlist.length]; v.load();
       setTimeout(function() {
-        if (modoOcioso) {
-          var promise = video.play();
-          if (promise !== undefined) {
-            promise.catch(function() {
-              setTimeout(function() { if (modoOcioso) video.play(); }, 1000);
-            });
-          }
-        }
+        if (!modoOcioso) return;
+        var p = v.play();
+        if (p) p.catch(function() { setTimeout(function() { if (modoOcioso) v.play(); }, 1000); });
       }, 300);
     }
 
@@ -700,157 +448,178 @@
 
     function mostrarInfo() {
       modoInfo = true;
-
-      document.getElementById('video-container').style.display = 'none';
-      document.getElementById('video-container').className     = '';
+      document.getElementById('video-container').style.display  = 'none';
+      document.getElementById('video-container').className      = '';
       document.getElementById('painel-principal').style.display = 'none';
-
-      var infoCont = document.getElementById('info-container');
-      infoCont.style.display = 'flex';
-      infoCont.className     = 'ativo';
-
-      if (indiceInfo % 2 === 0) { renderInfoClima(); }
-      else                       { renderInfoTransito(); }
+      var ic = document.getElementById('info-container');
+      ic.style.display = 'flex'; ic.className = 'ativo';
+      if (indiceInfo % 2 === 0) renderInfoClima();
+      else                       renderInfoTransito();
       indiceInfo++;
-
       clearTimeout(timerInfo);
-      timerInfo = setTimeout(function() {
-        if (modoOcioso) tocarVideo(indiceVideo);
-      }, 20000);
+      timerInfo = setTimeout(function() { if (modoOcioso) tocarVideo(indiceVideo); }, 20000);
     }
 
-    // ── ÍCONE DO CLIMA ───────────────────────────────────────
-    function iconeClima(descricao) {
-      if (!descricao) return '🌡️';
-      var d = descricao.toLowerCase();
-      if (d.indexOf('sol') !== -1 || d.indexOf('limpo') !== -1 || d.indexOf('aberto') !== -1) return '☀️';
-      if (d.indexOf('nublado') !== -1 || d.indexOf('encoberto') !== -1) return '☁️';
-      if (d.indexOf('nuvem') !== -1 || d.indexOf('parcial') !== -1) return '⛅';
-      if (d.indexOf('chuva') !== -1 || d.indexOf('chuvisco') !== -1 || d.indexOf('garoa') !== -1) return '🌧️';
-      if (d.indexOf('tempest') !== -1 || d.indexOf('trovão') !== -1) return '⛈️';
-      if (d.indexOf('nebl') !== -1 || d.indexOf('névoa') !== -1) return '🌫️';
+    // ── ÍCONE CLIMA ───────────────────────────────────────
+    function iconeClima(d) {
+      if (!d) return '🌡️'; d = d.toLowerCase();
+      if (d.indexOf('sol')!=-1||d.indexOf('limpo')!=-1||d.indexOf('aberto')!=-1) return '☀️';
+      if (d.indexOf('nublado')!=-1||d.indexOf('encoberto')!=-1) return '☁️';
+      if (d.indexOf('nuvem')!=-1||d.indexOf('parcial')!=-1) return '⛅';
+      if (d.indexOf('chuva')!=-1||d.indexOf('chuvisco')!=-1||d.indexOf('garoa')!=-1) return '🌧️';
+      if (d.indexOf('tempest')!=-1||d.indexOf('trovão')!=-1) return '⛈️';
+      if (d.indexOf('nebl')!=-1||d.indexOf('névoa')!=-1) return '🌫️';
       return '🌡️';
     }
 
-    // ── RENDER CLIMA ─────────────────────────────────────────
+    // ── RENDER CLIMA ──────────────────────────────────────
     function renderInfoClima() {
       var el = document.getElementById('info-conteudo');
-      if (!dadosClima) {
-        el.innerHTML = '<div class="clima-wrap"><div class="clima-titulo">CLIMA — ITABORAÍ</div><div class="clima-desc" style="color:#444;">Carregando...</div></div>';
-        return;
-      }
+      if (!dadosClima) { el.innerHTML = '<div class="clima-wrap"><div class="clima-titulo">CLIMA</div><div style="color:#444;text-align:center;">Carregando...</div></div>'; return; }
       var icone = iconeClima(dadosClima.descricao);
       var alertaChuva = '';
-      if (dadosClima.previsao && dadosClima.previsao.toLowerCase().indexOf('chuva') !== -1) {
-        alertaChuva = '<div style="margin-top:15px;padding-top:10px;border-top:1px dashed rgba(255,255,255,0.1);color:#ff6d00;font-weight:700;font-size:0.85rem;">[!] PREVISÃO: ' + dadosClima.previsao + '</div>';
-      }
+      if (dadosClima.previsao && dadosClima.previsao.toLowerCase().indexOf('chuva') !== -1)
+        alertaChuva = '<div style="margin-top:15px;padding-top:10px;border-top:1px dashed rgba(255,255,255,0.1);color:#ff6d00;font-weight:700;font-size:0.85rem;">[!] PREVISÃO: '+dadosClima.previsao+'</div>';
       el.innerHTML =
-        '<div class="clima-wrap">' +
-          '<div class="clima-titulo">CONDIÇÕES METEOROLÓGICAS ATUAIS</div>' +
-          '<div class="clima-display-principal">' +
-            '<div class="clima-icone-destaque">' + icone + '</div>' +
-            '<div class="clima-temp">' + dadosClima.temperatura + '°</div>' +
-          '</div>' +
-          '<div class="clima-box-detalhes">' +
-            '<div class="clima-desc">' + dadosClima.descricao + '</div>' +
-            '<div class="clima-stats">' +
-              '<div class="clima-stat-item">' +
-                '<div class="clima-stat-label">Vento</div>' +
-                '<div class="clima-stat-valor">' + dadosClima.vento + ' km/h</div>' +
-              '</div>' +
-              '<div class="clima-stat-item">' +
-                '<div class="clima-stat-label">Condição</div>' +
-                '<div class="clima-stat-valor">' + icone + '</div>' +
-              '</div>' +
-            '</div>' +
-            alertaChuva +
-          '</div>' +
+        '<div class="clima-wrap">'+
+          '<div class="clima-titulo">CONDIÇÕES METEOROLÓGICAS ATUAIS</div>'+
+          '<div class="clima-display-principal">'+
+            '<div class="clima-icone-destaque">'+icone+'</div>'+
+            '<div class="clima-temp">'+dadosClima.temperatura+'°</div>'+
+          '</div>'+
+          '<div class="clima-box-detalhes">'+
+            '<div class="clima-desc">'+dadosClima.descricao+'</div>'+
+            '<div class="clima-stats">'+
+              '<div class="clima-stat-item"><div class="clima-stat-label">Vento</div><div class="clima-stat-valor">'+dadosClima.vento+' km/h</div></div>'+
+              '<div class="clima-stat-item"><div class="clima-stat-label">Condição</div><div class="clima-stat-valor">'+icone+'</div></div>'+
+            '</div>'+alertaChuva+
+          '</div>'+
         '</div>';
     }
 
-    // ── RENDER TRÂNSITO ──────────────────────────────────────
+    // ══════════════════════════════════════════════════════
+    // ── RENDER TRÂNSITO — MAPA TOMTOM ────────────────────
+    // ══════════════════════════════════════════════════════
     function renderInfoTransito() {
       var el = document.getElementById('info-conteudo');
-      if (!dadosTransito) {
-        el.innerHTML = '<div class="transito-wrap"><div class="transito-titulo">TRÂNSITO</div><div style="color:#444;grid-column:span 3;text-align:center;">Carregando...</div></div>';
-        return;
-      }
 
-      var html = '<div class="transito-wrap">' +
-        '<div class="transito-titulo">TRÂNSITO A PARTIR DE ITABORAÍ</div>' +
-        '<div class="transito-atualizado">Atualizado em: ' + horaUltimaAtualizacao + '</div>';
+      // Atualiza o timestamp
+      var agora = new Date();
+      var hh = agora.getHours()   < 10 ? '0'+agora.getHours()   : ''+agora.getHours();
+      var mm = agora.getMinutes() < 10 ? '0'+agora.getMinutes() : ''+agora.getMinutes();
+      horaUltimaAtualizacao = hh+':'+mm;
 
-      for (var i = 0; i < dadosTransito.length; i++) {
-        var d = dadosTransito[i];
+      el.innerHTML =
+        '<div class="transito-mapa-wrap">'+
+          '<div class="mapa-header">'+
+            '<div class="mapa-titulo-texto">TRÂNSITO — REGIÃO DE ITABORAÍ</div>'+
+            '<div class="mapa-atualizado">Atualizado: '+horaUltimaAtualizacao+'</div>'+
+          '</div>'+
+          '<div id="mapa-transito"></div>'+
+          '<div class="mapa-legenda">'+
+            '<div class="legenda-item"><div class="legenda-cor" style="background:#00c853;"></div>Livre</div>'+
+            '<div class="legenda-item"><div class="legenda-cor" style="background:#ffd600;"></div>Moderado</div>'+
+            '<div class="legenda-item"><div class="legenda-cor" style="background:#f44336;"></div>Congestionado</div>'+
+          '</div>'+
+        '</div>';
 
-        var alertaPonte = '';
-        if (d.destino.indexOf('PONTE') !== -1 && d.tempo > 25) {
-          alertaPonte = '<div style="margin-top:8px;padding-top:5px;border-top:1px dashed rgba(255,255,255,0.1);color:#ff3d00;font-weight:700;font-size:0.75rem;text-align:center;">[!] TRAVESSIA LENTA</div>';
-        }
+      setTimeout(function() {
+        var container = document.getElementById('mapa-transito');
+        if (!container) return;
 
-        var classCard = 'card-verde';
-        if (d.cor === 'yellow') classCard = 'card-amarelo';
-        if (d.cor === 'red')    classCard = 'card-vermelho';
-        if (d.cor === 'gray')   classCard = 'card-cinza';
+        // Destrói mapa anterior se existir
+        if (mapaLeaflet) { mapaLeaflet.remove(); mapaLeaflet = null; }
 
-        var infoTempo = '-- min';
-        if (d.tempo) {
-          if (d.tempo >= 60) {
-            var horas = Math.floor(d.tempo / 60);
-            var mins  = d.tempo % 60;
-            infoTempo = mins > 0 ? horas + 'h ' + mins + 'm' : horas + 'h';
-          } else {
-            infoTempo = d.tempo + ' min';
+        // Cria mapa centrado em Itaboraí / região de São Gonçalo
+        mapaLeaflet = L.map('mapa-transito', {
+          center: [-22.820, -42.980],
+          zoom: 11,
+          zoomControl: true,
+          attributionControl: true,
+          dragging: false,
+          scrollWheelZoom: false,
+          doubleClickZoom: false,
+          touchZoom: false
+        });
+
+        // ── CAMADA BASE: TomTom Mapa Escuro ──────────────
+        // Estilo "night" do TomTom — fundo escuro, ideal para o painel
+        L.tileLayer(
+          'https://api.tomtom.com/map/1/tile/basic/night/{z}/{x}/{y}.png?key='+TOMTOM_KEY,
+          {
+            attribution: '© TomTom © OpenStreetMap',
+            maxZoom: 18,
+            tileSize: 256
           }
-        }
+        ).addTo(mapaLeaflet);
 
-        var atrasoTexto = d.atraso > 0 ? ' (+' + d.atraso + ' min)' : '';
+        // ── CAMADA DE TRÂNSITO: TomTom Traffic Flow ──────
+        // Esta camada colore as vias em verde/amarelo/vermelho
+        // automaticamente com dados reais em tempo real.
+        // Estilo "relative-delay": mostra o atraso relativo ao fluxo normal
+        L.tileLayer(
+          'https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?key='+TOMTOM_KEY,
+          {
+            attribution: '',
+            maxZoom: 18,
+            tileSize: 256,
+            opacity: 0.85
+          }
+        ).addTo(mapaLeaflet);
 
-        html +=
-          '<div class="transito-card-novo ' + classCard + '">' +
-            '<div class="card-corpo">' +
-              '<div class="transito-destino-novo">' + d.destino + '</div>' +
-              '<div class="transito-detalhe">' + infoTempo + atrasoTexto + '</div>' +
-              alertaPonte +
-            '</div>' +
-            '<div class="card-status-box">' + d.status + '</div>' +
-          '</div>';
-      }
+        // ── MARCADOR: CD Itaboraí ─────────────────────────
+        var origemIcon = L.divIcon({
+          className: '',
+          html: '<div class="marcador-origem"></div>',
+          iconSize: [14, 14],
+          iconAnchor: [7, 7]
+        });
 
-      html += '</div>'; // fecha transito-wrap
-      el.innerHTML = html;
+        L.marker([-22.7668, -42.8631], { icon: origemIcon })
+          .addTo(mapaLeaflet)
+          .bindTooltip('CD Itaboraí', {
+            permanent: true,
+            direction: 'right',
+            offset: [10, 0]
+          });
+
+        // Força redraw após inserção no DOM
+        setTimeout(function() {
+          if (mapaLeaflet) mapaLeaflet.invalidateSize();
+        }, 300);
+
+      }, 100);
     }
 
-    // ── VOZ ──────────────────────────────────────────────────
+    // ── VOZ ───────────────────────────────────────────────
     function anunciarVoz(placa, motorista) {
       if (!window.speechSynthesis || placa === ultimaPlacaVoz) return;
       ultimaPlacaVoz = placa;
-      var trechoMot = motorista ? motorista + ' ' : '';
-      var texto = 'Atenção motorista ' + trechoMot + 'da placa ' + placa.split('').join(' ') + '. Dirija-se a area de descarga.';
-      var msg = new SpeechSynthesisUtterance(texto);
+      var txt = 'Atenção motorista '+(motorista ? motorista+' ' : '')+'da placa '+placa.split('').join(' ')+'. Dirija-se a area de descarga.';
+      var msg = new SpeechSynthesisUtterance(txt);
       msg.lang = 'pt-BR';
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(msg);
     }
 
-    // ── PRODUTO ──────────────────────────────────────────────
+    // ── PRODUTO ───────────────────────────────────────────
     function simplificarNome(p) {
-      var s = (p || '').toUpperCase();
-      if (s.indexOf('CPIII')  !== -1 || s.indexOf('CP-III') !== -1 || s.indexOf('RS-SC') !== -1) return 'CPIII';
-      if (s.indexOf('MAUA')   !== -1 || s.indexOf('F-32-SC-V-MA') !== -1) return 'MAUA';
-      if (s.indexOf('E32')    !== -1 || s.indexOf('E-32')  !== -1) return 'E32';
-      if (s.indexOf('M25')    !== -1 || s.indexOf('25-MA') !== -1) return 'M25KG';
-      if (s.indexOf('CPV')    !== -1 || s.indexOf('ARI')   !== -1) return 'CPV';
-      if (s.indexOf('CPII')   !== -1 || s.indexOf('CP-II') !== -1) return 'CPII';
-      return p || '';
+      var s = (p||'').toUpperCase();
+      if (s.indexOf('CPIII')!=-1||s.indexOf('CP-III')!=-1||s.indexOf('RS-SC')!=-1) return 'CPIII';
+      if (s.indexOf('MAUA')!=-1||s.indexOf('F-32-SC-V-MA')!=-1) return 'MAUA';
+      if (s.indexOf('E32')!=-1||s.indexOf('E-32')!=-1) return 'E32';
+      if (s.indexOf('M25')!=-1||s.indexOf('25-MA')!=-1) return 'M25KG';
+      if (s.indexOf('CPV')!=-1||s.indexOf('ARI')!=-1) return 'CPV';
+      if (s.indexOf('CPII')!=-1||s.indexOf('CP-II')!=-1) return 'CPII';
+      return p||'';
     }
     function classeProduto(n) {
-      if (n === 'CPIII') return 'badge-cpiii';
-      if (n === 'MAUA')  return 'badge-maua';
-      if (n === 'E32')   return 'badge-cpii';
-      if (n === 'M25KG') return 'badge-m25';
-      if (n === 'CPV')   return 'badge-cpv';
-      if (n === 'CPII')  return 'badge-cpii';
+      if (n==='CPIII') return 'badge-cpiii';
+      if (n==='MAUA')  return 'badge-maua';
+      if (n==='E32')   return 'badge-cpii';
+      if (n==='M25KG') return 'badge-m25';
+      if (n==='CPV')   return 'badge-cpv';
+      if (n==='CPII')  return 'badge-cpii';
       return 'badge-geral';
     }
     function badgesProduto(raw) {
@@ -858,67 +627,44 @@
       var nomes = [];
       try {
         var parsed = JSON.parse(raw);
-        if (parsed && parsed.length) {
-          for (var i = 0; i < parsed.length; i++) {
-            var n = simplificarNome(parsed[i].produto);
-            if (n) nomes.push(n);
-          }
-        }
-      } catch(e) {
-        var n2 = simplificarNome(raw);
-        if (n2) nomes.push(n2);
-      }
-      var html = '';
-      for (var j = 0; j < nomes.length; j++) {
-        html += '<span class="badge-produto ' + classeProduto(nomes[j]) + '">' + nomes[j] + '</span>';
-      }
+        if (parsed && parsed.length) for (var i=0;i<parsed.length;i++) { var n=simplificarNome(parsed[i].produto); if(n) nomes.push(n); }
+      } catch(e) { var n2=simplificarNome(raw); if(n2) nomes.push(n2); }
+      var html='';
+      for (var j=0;j<nomes.length;j++) html+='<span class="badge-produto '+classeProduto(nomes[j])+'">'+nomes[j]+'</span>';
       return html;
     }
 
-    // ── POLLING ──────────────────────────────────────────────
+    // ── POLLING ───────────────────────────────────────────
     function atualizarTV() {
       var xhr = new XMLHttpRequest();
       xhr.open('GET', API_URL, true);
       xhr.onreadystatechange = function() {
         if (xhr.readyState !== 4) return;
-        var ponto = document.getElementById('ponto-conexao');
+        var p = document.getElementById('ponto-conexao');
         if (xhr.status === 200) {
-          ponto.style.background = '#00e676';
+          p.style.background = '#00e676';
           try { processarDados(JSON.parse(xhr.responseText)); } catch(e) {}
-        } else {
-          ponto.style.background = '#ff0000';
-        }
+        } else { p.style.background = '#ff0000'; }
       };
       xhr.send();
     }
 
-    // ── PROCESSAMENTO ────────────────────────────────────────
+    // ── PROCESSAMENTO ─────────────────────────────────────
     function processarDados(dados) {
-      var chamando       = null;
-      var listaAgendados = [];
-      for (var i = 0; i < dados.length; i++) {
-        if (dados[i].status === 'chamando') chamando = dados[i];
-        if (dados[i].status === 'agendado') listaAgendados.push(dados[i]);
+      var chamando = null; var listaAgendados = [];
+      for (var i=0;i<dados.length;i++) {
+        if (dados[i].status==='chamando') chamando=dados[i];
+        if (dados[i].status==='agendado') listaAgendados.push(dados[i]);
       }
-      listaAgendados.sort(function(a, b) {
-        return new Date(a.data + ' ' + a.hora) - new Date(b.data + ' ' + b.hora);
-      });
-
+      listaAgendados.sort(function(a,b){ return new Date(a.data+' '+a.hora)-new Date(b.data+' '+b.hora); });
       var proximo = listaAgendados.length > 0 ? listaAgendados[0] : null;
 
-      // Verifica modo madrugada antes de qualquer render
       if (verificarMadrugada(chamando)) {
-        // Ainda renderiza fila e status mesmo na madrugada
-        renderProximo(proximo);
-        renderFilaDividida(listaAgendados);
-        renderStatus(dados);
-        return;
+        renderProximo(proximo); renderFilaDividida(listaAgendados); renderStatus(dados); return;
       }
 
-      renderPrincipal(chamando);
-      renderProximo(proximo);
-      renderFilaDividida(listaAgendados);
-      renderStatus(dados);
+      renderPrincipal(chamando); renderProximo(proximo);
+      renderFilaDividida(listaAgendados); renderStatus(dados);
 
       if (chamando) {
         if (modoOcioso) encerrarModoOcioso();
@@ -930,126 +676,80 @@
         }
         ultimaPlacaVoz = '';
       } else {
-        ultimaPlacaVoz  = '';
-        ultimoChamadoID = null;
-        if (!modoOcioso) {
-          // Não há chamada e não está em modo ocioso → mostra tela de espera
-          mostrarTelaEspera();
-        }
+        ultimaPlacaVoz = ''; ultimoChamadoID = null;
+        if (!modoOcioso) mostrarTelaEspera();
       }
     }
 
-    // ── RENDER PRINCIPAL ─────────────────────────────────────
+    // ── RENDER PRINCIPAL ──────────────────────────────────
     function renderPrincipal(chamando) {
       var painel = document.getElementById('painel-principal');
       if (chamando) {
         painel.style.display = 'block';
-        var topoChamada = chamando.motorista
-          ? '[!] Chamando: ' + chamando.motorista
-          : 'CHAMANDO AGORA';
+        var topo = chamando.motorista ? '[!] Chamando: '+chamando.motorista : 'CHAMANDO AGORA';
         painel.innerHTML =
-          '<div class="placa-mercosul">' +
-            '<div class="placa-topo">' + topoChamada + '</div>' +
-            '<div class="placa-numero">' + chamando.placa + '</div>' +
-          '</div>' +
-          '<div style="font-size:3rem; color:#f0b429; margin-top:16px;">' + chamando.hora + '</div>' +
-          '<div class="aviso-epi">' +
-            '<div class="aviso-linha">Desligue o motor &bull; Calce as rodas &bull; Entregue as chaves</div>' +
-            '<div class="aviso-linha destaque">[!] USO OBRIGATORIO DE EPIs</div>' +
+          '<div class="placa-mercosul">'+
+            '<div class="placa-topo">'+topo+'</div>'+
+            '<div class="placa-numero">'+chamando.placa+'</div>'+
+          '</div>'+
+          '<div style="font-size:3rem;color:#f0b429;margin-top:16px;">'+chamando.hora+'</div>'+
+          '<div class="aviso-epi">'+
+            '<div class="aviso-linha">Desligue o motor &bull; Calce as rodas &bull; Entregue as chaves</div>'+
+            '<div class="aviso-linha destaque">[!] USO OBRIGATORIO DE EPIs</div>'+
           '</div>';
-      } else {
-        if (modoOcioso) painel.style.display = 'none';
-      }
+      } else { if (modoOcioso) painel.style.display = 'none'; }
     }
 
-    // ── RENDER PRÓXIMO ───────────────────────────────────────
+    // ── RENDER PRÓXIMO ────────────────────────────────────
     function renderProximo(proximo) {
       var el = document.getElementById('painel-proximo');
       if (proximo) {
         var badges = badgesProduto(proximo.produto);
         el.innerHTML =
-          '<div class="label">Próximo</div>' +
-          '<div style="font-size:3.5rem; font-weight:700; color:#fff; line-height:1;">' + proximo.placa + '</div>' +
-          '<div style="font-size:1.5rem; color:#f0b429; margin:4px 0;">' + proximo.hora + '</div>' +
-          (badges ? '<div style="margin-top:6px;">' + badges + '</div>' : '');
-      } else {
-        el.innerHTML = '<div class="label">Próximo</div><div style="font-size:2rem;color:#555;">--</div>';
-      }
+          '<div class="label">Próximo</div>'+
+          '<div style="font-size:3.5rem;font-weight:700;color:#fff;line-height:1;">'+proximo.placa+'</div>'+
+          '<div style="font-size:1.5rem;color:#f0b429;margin:4px 0;">'+proximo.hora+'</div>'+
+          (badges?'<div style="margin-top:6px;">'+badges+'</div>':'');
+      } else { el.innerHTML='<div class="label">Próximo</div><div style="font-size:2rem;color:#555;">--</div>'; }
     }
 
-    // ── RENDER FILA DIVIDIDA ─────────────────────────────────
+    // ── RENDER FILA ───────────────────────────────────────
     function renderFilaDividida(ativos) {
-      var htmlDescarga = '';
-      var htmlCarga    = '';
-      var primeiroDesc = true;
-
-      for (var i = 0; i < ativos.length; i++) {
-        var item    = ativos[i];
-        var isCarga = (item.tipo_operacao === 'CIF' || item.tipo_operacao === 'FOB');
-        var badges  = badgesProduto(item.produto);
-
-        var classeItem;
-        if (!isCarga && primeiroDesc) { classeItem = 'item-fila primeiro'; primeiroDesc = false; }
-        else { classeItem = 'item-fila ' + (isCarga ? 'tipo-carga' : 'tipo-descarga'); }
-
-        var horaHtml = isCarga
-          ? '<span class="hora-fila-carga">' + item.hora + '<br><small style="font-size:0.75rem;opacity:0.6;">' + item.data.split('-').reverse().join('/') + '</small></span>'
-          : '<span class="hora-fila">'       + item.hora + '<br><small style="font-size:0.75rem;opacity:0.6;">' + item.data.split('-').reverse().join('/') + '</small></span>';
-
-        var card =
-          '<div class="' + classeItem + '">' +
-            '<div class="fila-linha-topo">' +
-              '<span class="placa-fila">' + item.placa + '</span>' + horaHtml +
-            '</div>' +
-            (badges ? '<div style="margin-top:4px;">' + badges + '</div>' : '') +
-          '</div>';
-
-        if (isCarga) htmlCarga    += card;
-        else         htmlDescarga += card;
+      var htmlD='', htmlC='', primD=true;
+      for (var i=0;i<ativos.length;i++) {
+        var item=ativos[i]; var isCarga=(item.tipo_operacao==='CIF'||item.tipo_operacao==='FOB');
+        var badges=badgesProduto(item.produto);
+        var cls;
+        if (!isCarga && primD) { cls='item-fila primeiro'; primD=false; }
+        else cls='item-fila '+(isCarga?'tipo-carga':'tipo-descarga');
+        var horaHtml=isCarga
+          ?'<span class="hora-fila-carga">'+item.hora+'<br><small style="font-size:0.75rem;opacity:0.6;">'+item.data.split('-').reverse().join('/')+'</small></span>'
+          :'<span class="hora-fila">'+item.hora+'<br><small style="font-size:0.75rem;opacity:0.6;">'+item.data.split('-').reverse().join('/')+'</small></span>';
+        var card='<div class="'+cls+'"><div class="fila-linha-topo"><span class="placa-fila">'+item.placa+'</span>'+horaHtml+'</div>'+(badges?'<div style="margin-top:4px;">'+badges+'</div>':'')+'</div>';
+        if (isCarga) htmlC+=card; else htmlD+=card;
       }
-
-      document.getElementById('fila-descarga').innerHTML =
-        htmlDescarga || '<div style="color:#444;font-size:0.8rem;margin-top:8px;">Fila vazia</div>';
-      document.getElementById('fila-carga').innerHTML =
-        htmlCarga    || '<div style="color:#444;font-size:0.8rem;margin-top:8px;">Fila vazia</div>';
+      document.getElementById('fila-descarga').innerHTML=htmlD||'<div style="color:#444;font-size:0.8rem;margin-top:8px;">Fila vazia</div>';
+      document.getElementById('fila-carga').innerHTML=htmlC||'<div style="color:#444;font-size:0.8rem;margin-top:8px;">Fila vazia</div>';
     }
 
-    // ── RENDER STATUS ────────────────────────────────────────
+    // ── RENDER STATUS ─────────────────────────────────────
     function renderStatus(dados) {
-      var el = document.getElementById('painel-status');
-      var emOperacao = null;
-      var historico  = [];
-      for (var i = 0; i < dados.length; i++) {
-        if (dados[i].status === 'descarregando' || dados[i].status === 'carregando') emOperacao = dados[i];
-        if (dados[i].status === 'finalizado') historico.push(dados[i]);
+      var el=document.getElementById('painel-status'); var emOp=null; var hist=[];
+      for (var i=0;i<dados.length;i++) {
+        if (dados[i].status==='descarregando'||dados[i].status==='carregando') emOp=dados[i];
+        if (dados[i].status==='finalizado') hist.push(dados[i]);
       }
-      historico.sort(function(a, b) { return b.id - a.id; });
-      var ultimos = historico.slice(0, 2);
-
-      var html = '<div style="margin-bottom:15px;border-bottom:1px solid #2a2a2a;padding-bottom:10px;">' +
-                 '<div class="label">Em Operacao</div>';
-      if (emOperacao) {
-        var isCIF  = (emOperacao.tipo_operacao === 'CIF' || emOperacao.tipo_operacao === 'FOB');
-        var bdProd = badgesProduto(emOperacao.produto);
-        html +=
-          '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-            '<span style="font-size:1.8rem;font-weight:700;color:#fff;">' + emOperacao.placa + '</span>' +
-            '<span class="badge ' + (isCIF ? 'badge-carregando' : 'badge-descarregando') + '">' +
-              (isCIF ? 'CARREGANDO' : 'DESCARREGANDO') + '</span>' +
-          '</div>' +
-          (bdProd ? '<div style="margin-top:4px;">' + bdProd + '</div>' : '');
-      } else {
-        html += '<div style="color:#555;font-style:italic;">Vaga disponivel</div>';
-      }
-      html += '</div><div><div class="label">Ultimos Finalizados</div>';
-      for (var k = 0; k < ultimos.length; k++) {
-        html += '<div style="display:flex;justify-content:space-between;margin-bottom:5px;opacity:0.7;">' +
-                '<span>' + ultimos[k].placa + '</span>' +
-                '<span class="badge badge-finalizado">OK</span></div>';
-      }
-      el.innerHTML = html;
+      hist.sort(function(a,b){return b.id-a.id;}); var ult=hist.slice(0,2);
+      var html='<div style="margin-bottom:15px;border-bottom:1px solid #2a2a2a;padding-bottom:10px;"><div class="label">Em Operacao</div>';
+      if (emOp) {
+        var isCIF=(emOp.tipo_operacao==='CIF'||emOp.tipo_operacao==='FOB');
+        var bdP=badgesProduto(emOp.produto);
+        html+='<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:1.8rem;font-weight:700;color:#fff;">'+emOp.placa+'</span><span class="badge '+(isCIF?'badge-carregando':'badge-descarregando')+'">'+(isCIF?'CARREGANDO':'DESCARREGANDO')+'</span></div>'+(bdP?'<div style="margin-top:4px;">'+bdP+'</div>':'');
+      } else html+='<div style="color:#555;font-style:italic;">Vaga disponivel</div>';
+      html+='</div><div><div class="label">Ultimos Finalizados</div>';
+      for (var k=0;k<ult.length;k++) html+='<div style="display:flex;justify-content:space-between;margin-bottom:5px;opacity:0.7;"><span>'+ult[k].placa+'</span><span class="badge badge-finalizado">OK</span></div>';
+      el.innerHTML=html;
     }
-
   </script>
 </body>
 </html>

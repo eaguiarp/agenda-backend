@@ -623,3 +623,7 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log("Servidor rodando na porta " + PORT);
 });
 
+// Express (Node.js)
+app.get('/api/config', (req, res) => {
+  res.json({ tomtomKey: process.env.TOMTOM_KEY });
+});
