@@ -614,6 +614,8 @@ app.get("/tv",        (req, res) => res.sendFile(__dirname + "/public/tv.html"))
 app.get("/mobile",    (req, res) => res.sendFile(__dirname + "/public/mobile.html"));
 app.get("/portaria",  (req, res) => res.sendFile(__dirname + "/public/portaria.html"));
 app.get("/relatorio", (req, res) => res.sendFile(__dirname + "/public/relatorio.html"));
+app.get("/motorista", (req, res) => res.sendFile(__dirname + "/public/motorista/consulta.html"));
+app.use("/motorista", express.static(path.join(__dirname, "public/motorista")));
 
 // ========================================================
 // 🚀 START
