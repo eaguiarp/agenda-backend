@@ -465,7 +465,7 @@ fetch('https://agenda-backend-production-5b72.up.railway.app/api/config')
       else                       renderInfoTransito();
       indiceInfo++;
       clearTimeout(timerInfo);
-      timerInfo = setTimeout(function() { if (modoOcioso) tocarVideo(indiceVideo); }, 20000);
+      timerInfo = setTimeout(function() { if (modoOcioso) tocarVideo(indiceVideo); }, 30000);
     }
 
     // ── ÍCONE CLIMA ───────────────────────────────────────
@@ -541,7 +541,7 @@ fetch('https://agenda-backend-production-5b72.up.railway.app/api/config')
         // Cria mapa centrado em Itaboraí / região de São Gonçalo
         mapaLeaflet = L.map('mapa-transito', {
           center: [-22.77868860122144, -42.934891925179684],
-          zoom: 11,
+          zoom: 13,
           zoomControl: true,
           attributionControl: true,
           dragging: false,
