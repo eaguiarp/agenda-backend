@@ -290,9 +290,13 @@
 
   <script>
     // ══════════════════════════════════════════════════════
-    //  ⬇  TROQUE AQUI pela sua chave TomTom
+    //  key TOMTOM para acesso ao mapa de trânsito, é carregada dinamicamente
     // ══════════════════════════════════════════════════════
-    var TOMTOM_KEY = 'SUA_CHAVE_AQUI';
+    var TOMTOM_KEY = null;
+
+fetch('https://agenda-backend-production-5b72.up.railway.app/api/config')
+  .then(function(r) { return r.json(); })
+  .then(function(cfg) { TOMTOM_KEY = cfg.tomtomKey; });
     // ══════════════════════════════════════════════════════
 
     var API_URL          = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
