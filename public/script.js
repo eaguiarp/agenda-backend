@@ -342,7 +342,7 @@ async function renderizarOpcoesHorario() {
     }
 
     if      (diaSemana === 0) { adicionarIntervalo(6 * 60, 14 * 60, 30); }
-    else if (diaSemana === 6) { adicionarIntervalo(7 * 60, 15 * 60 + 30, 30); }
+    else if (diaSemana === 6) {  adicionarIntervalo(0, 15 * 60 + 30, 30);   horarios = horarios.filter(m => !(m >= 6 * 60 && m < 7 * 60)); }
     else if (diaSemana === 1) { adicionarIntervalo(7 * 60, 23 * 60 + 30, 30); }
     else if (diaSemana >= 2 && diaSemana <= 5) {
         adicionarIntervalo(0, 23 * 60 + 30, 30);
