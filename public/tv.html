@@ -7,6 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
   <style>
+    
     :root {
       --bg: #0a0a0a; --surface: #111111; --surface2: #181818;
       --border: #2a2a2a; --accent: #f0b429; --green: #00e676;
@@ -39,6 +40,13 @@
     .status-conexao { display: flex; align-items: center; gap: 10px; }
     #ponto-conexao { width: 8px; height: 8px; border-radius: 50%; background: var(--green); transition: background 0.3s; }
 
+
+
+
+
+
+
+    
     /* --- AREA PRINCIPAL --- */
     .area-principal {
       grid-area: principal; padding: 60px 20px 12px;
@@ -440,6 +448,23 @@
   <audio id="musica-fundo" src="/Sony Xperia.mp3" loop></audio>
 
   <script>
+
+    
+  var ultimaHoraCiclo = null;
+  var cicloEmExecucao = false;
+
+    
+  function podeRodarCicloHorario() {
+  var agora = new Date();
+  var horaAtual = agora.getHours();
+
+  // Se nunca rodou ou virou a hora
+  if (ultimaHoraCiclo === null || ultimaHoraCiclo !== horaAtual) {
+    ultimaHoraCiclo = horaAtual;
+    return true;
+  }
+  return false;
+}
     var API_URL         = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
     var POLL_MS         = 5000;
     var ultimoChamadoID = null;
@@ -533,10 +558,10 @@
       atualizarDados();
 
       // Só inicia vídeo se não for madrugada
-      if (!ehMadrugada()) {
-        modoOcioso = true;
-        tocarVideo(0);
-      } else {
+      if (!ehMadrugada()) {      
+        mostrarTelaEspera();
+      } else 
+      {
         modeMadrugada = true;
         document.getElementById('tela-madrugada').className = 'ativo';
       }
@@ -691,11 +716,14 @@
       else                       { renderInfoTransito(); }
       indiceInfo++;
 
-      clearTimeout(timerInfo);
-      timerInfo = setTimeout(function() {
-        if (modoOcioso) tocarVideo(indiceVideo);
-      }, 20000);
+     
+timerInfo = setTimeout(function() {
+  cicloEmExecucao = false;
+  encerrarModoOcioso();
+  mostrarTelaEspera();
+}, 20000);
     }
+
 
     // ── ÍCONE DO CLIMA ───────────────────────────────────────
     function iconeClima(descricao) {
@@ -906,14 +934,20 @@
           try { document.getElementById('som-alerta').play(); } catch(e) {}
           anunciarVoz(chamando.placa, chamando.motorista);
         }
-        ultimaPlacaVoz = '';
-      } else {
-        ultimaPlacaVoz  = '';
-        ultimoChamadoID = null;
-        if (!modoOcioso) {
-          // Não há chamada e não está em modo ocioso → mostra tela de espera
-          mostrarTelaEspera();
-        }
+} else {
+  ultimaPlacaVoz  = '';
+  ultimoChamadoID = null;
+
+  // Só inicia vídeos/infos uma vez por hora
+  if (!modoOcioso && podeRodarCicloHorario()) {
+    modoOcioso = true;
+    cicloEmExecucao = true;
+    tocarVideo(indiceVideo);
+  } else {
+    // Fora da hora do ciclo → apenas tela de espera
+    if (!modoOcioso) {
+      mostrarTelaEspera();}
+    }
       }
     }
 
