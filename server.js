@@ -476,6 +476,26 @@ app.get("/api/weather", async (req, res) => {
   }).on("error", function() { res.status(500).json({ erro: "Erro ao obter clima" }); });
 });
 
+app.get('/api/nfe/:chave', async (req, res) => {
+  const { chave } = req.params;
+  if (!chave || !/^[0-9]{44}$/.test(chave)) {
+    return res.status(400).json({ erro: 'Chave de acesso inválida. Deve conter 44 dígitos.' });
+  }
+
+  try {
+    const fetchFn = typeof fetch === 'function' ? fetch : require('node-fetch');
+    const respostaApi = await fetchFn(`https://consultadanfe.com/api/v1/chave/${chave}`);
+    if (!respostaApi.ok) {
+      return res.status(404).json({ erro: 'Nota fiscal não encontrada ou limite da API atingido.' });
+    }
+    const data = await respostaApi.json();
+    return res.json(data);
+  } catch (error) {
+    console.error('Erro ao consultar NF-e:', error);
+    return res.status(500).json({ erro: 'Erro interno ao processar a consulta da nota.' });
+  }
+});
+
 // ========================================================
 // 🚗 ROTA — TRÂNSITO (duas chamadas: CD e Serra como origem)
 // Chamada 1: CD → destinos diretos (Centro, Manilha, Alcântara, Niterói, Serra, Via Lagos)

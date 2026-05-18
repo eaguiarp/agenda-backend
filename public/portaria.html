@@ -892,8 +892,11 @@
       const input = document.getElementById("chave_nfe");
       if (!input) return;
       try {
-        const res = await fetch(`https://consultadanfe.com/api/v1/chave/${chave}`);
-        if (!res.ok) throw new Error("Nota fiscal não encontrada");
+        const res = await fetch(`/api/nfe/${chave}`);
+        if (!res.ok) {
+          const erroJson = await res.json().catch(() => ({}));
+          throw new Error(erroJson.erro || "Nota fiscal não encontrada");
+        }
         const json = await res.json();
         if (!json || !json.dados) throw new Error("Nota fiscal não encontrada");
 
