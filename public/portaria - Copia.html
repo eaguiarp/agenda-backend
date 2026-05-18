@@ -99,21 +99,8 @@
       background: var(--bg); color: var(--text); width: 100%;
     }
     .campo textarea { resize: vertical; min-height: 100px; }
-    .campo-chave {
-      border-bottom: 1px dashed var(--border);
-      padding-bottom: 16px;
-      margin-bottom: 16px;
-    }
     .campo input:focus, .campo select:focus, .campo textarea:focus {
       outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,86,164,0.12);
-    }
-    .input-status-sucesso {
-      border-color: #2ecc71 !important;
-      background: rgba(46, 204, 113, 0.12) !important;
-    }
-    .input-status-erro {
-      border-color: #e74c3c !important;
-      background: rgba(231, 76, 60, 0.08) !important;
     }
 
     .btn-registrar {
@@ -492,11 +479,6 @@
       <div class="card-body">
       <div class="form-grid">
 
-        <div class="campo full campo-chave">
-          <label>Chave NF-e</label>
-          <input type="text" id="chave_nfe" maxlength="44" autocomplete="off" autofocus placeholder="Leitura rápida da chave NF-e">
-        </div>
-
         <div class="campo">
           <label>Placa</label>
           <input type="text" id="cif-placa" placeholder="ABC1D23" maxlength="7" autocomplete="off">
@@ -815,132 +797,6 @@
         if (p.includes(e.value.toUpperCase()) || p.includes(e.label)) return e.label;
       }
       return produto || "—";
-    }
-
-    let ultimaChaveNfeProcessada = "";
-
-    function limparStatusChave() {
-      const input = document.getElementById("chave_nfe");
-      if (!input) return;
-      input.classList.remove("input-status-sucesso", "input-status-erro");
-    }
-
-    function marcarStatusChave(tipo) {
-      const input = document.getElementById("chave_nfe");
-      if (!input) return;
-      input.classList.remove("input-status-sucesso", "input-status-erro");
-      input.classList.add(tipo === "sucesso" ? "input-status-sucesso" : "input-status-erro");
-      setTimeout(limparStatusChave, 2500);
-    }
-
-    function lerValor(obj, paths) {
-      for (const path of paths) {
-        const partes = path.split('.');
-        let atual = obj;
-        for (const parte of partes) {
-          if (!atual || typeof atual !== 'object') { atual = null; break; }
-          atual = atual[parte];
-        }
-        if (atual != null) return atual;
-      }
-      return null;
-    }
-
-    function selecionarProdutoPorTexto(select, texto) {
-      if (!select || !texto) return;
-      const textoUpper = texto.toString().toUpperCase();
-      for (const opt of Array.from(select.options)) {
-        const valueText = `${opt.value} ${opt.text}`.toUpperCase();
-        if (valueText.includes(textoUpper) || textoUpper.includes(opt.text.toUpperCase()) || textoUpper.includes(opt.value.toUpperCase())) {
-          select.value = opt.value;
-          return;
-        }
-      }
-    }
-
-    function preencherProdutosNfe(itens, totalQuantidade) {
-      const lista = document.getElementById("produtos-lista");
-      if (!lista) return;
-      if (!lista.querySelector(".produto-linha")) adicionarProduto();
-      const linhas = Array.from(document.querySelectorAll(".produto-linha"));
-      const itensArray = Array.isArray(itens) ? itens : [];
-
-      if (itensArray.length === 0) {
-        const linha = linhas[0];
-        if (!linha) return;
-        const qtd = linha.querySelector("input[id^='qtd-']");
-        if (qtd) qtd.value = totalQuantidade || "";
-        return;
-      }
-
-      itensArray.forEach((item, idx) => {
-        if (!linhas[idx]) adicionarProduto();
-        const linha = document.querySelectorAll(".produto-linha")[idx];
-        const select = linha.querySelector("select[id^='prod-']");
-        const qtd = linha.querySelector("input[id^='qtd-']");
-        const nfInput = linha.querySelector("input[id^='nf-']");
-        const descricao = item.descricao || item.produto || item.xProd || item.infAdProd || item.nome || "";
-        const quantidade = item.quantidade || item.qtd || item.qtde || item.quantidade_total || totalQuantidade || "";
-        const nf = item.nf || item.nota || item.numero_nota || item.nota_fiscal || "";
-        selecionarProdutoPorTexto(select, descricao);
-        if (qtd) qtd.value = quantidade;
-        if (nfInput) nfInput.value = nf;
-      });
-    }
-
-    async function buscarNfePorChave(chave) {
-      const input = document.getElementById("chave_nfe");
-      if (!input) return;
-      try {
-        const res = await fetch(`https://consultadanfe.com/api/v1/chave/${chave}`);
-        if (!res.ok) throw new Error("Nota fiscal não encontrada");
-        const json = await res.json();
-        if (!json || !json.dados) throw new Error("Nota fiscal não encontrada");
-
-        const dados = json.dados;
-        const placaValor = (lerValor(dados, [
-          'placa', 'veiculo_placa', 'placa_veiculo', 'veiculo.placa'
-        ]) || "").toString().replace(/-/g, '').trim().toUpperCase();
-        if (placaValor) document.getElementById("cif-placa").value = placaValor;
-
-        const motoristaValor = lerValor(dados, ['transportador_nome', 'transportador.nome']) || "";
-        if (motoristaValor) document.getElementById("cif-motorista").value = motoristaValor;
-
-        const modFrete = String(lerValor(dados, ['modFrete', 'mod_frete']) || "").trim();
-        if (modFrete === "0" || modFrete.toLowerCase() === 'cif') {
-          document.getElementById("cif-tipo").value = "CIF";
-        } else if (modFrete === "1" || modFrete.toLowerCase() === 'fob') {
-          document.getElementById("cif-tipo").value = "FOB";
-        }
-
-        const itens = Array.isArray(json.itens) ? json.itens : [];
-        const totalQuantidade = lerValor(dados, ['total_quantidade', 'quantidade_total', 'qtd_total', 'totalQtde']) || "";
-        preencherProdutosNfe(itens, totalQuantidade);
-
-        marcarStatusChave('sucesso');
-        mostrarMensagem('Dados da NF-e carregados.', 'sucesso');
-      } catch (err) {
-        console.error(err);
-        marcarStatusChave('erro');
-        mostrarMensagem(err.message || 'Erro ao buscar NF-e.', 'erro');
-      }
-    }
-
-    function validarChaveNfeInput() {
-      const input = document.getElementById('chave_nfe');
-      if (!input) return;
-      let valor = input.value.replace(/\D/g, '');
-      if (valor.length > 44) valor = valor.slice(0, 44);
-      if (valor !== input.value) input.value = valor;
-      if (valor.length === 44) {
-        if (valor !== ultimaChaveNfeProcessada) {
-          ultimaChaveNfeProcessada = valor;
-          buscarNfePorChave(valor);
-        }
-      } else {
-        ultimaChaveNfeProcessada = "";
-        limparStatusChave();
-      }
     }
 
     function horaAgora() {
@@ -1664,8 +1520,6 @@
 
     setInterval(atualizarRelogio, 1000);
     setInterval(atualizarTudo, 10000);
-
-    document.getElementById('chave_nfe')?.addEventListener('input', validarChaveNfeInput);
 
     atualizarRelogio();
     adicionarProduto();
