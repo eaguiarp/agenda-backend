@@ -114,6 +114,43 @@
     .btn-exportar:hover { background: rgba(255,255,255,0.25); }
     .btn-exportar:active { transform: scale(0.97); }
     .btn-exportar:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-desktop-toggle {
+      background: rgba(255,255,255,0.12);
+      color: var(--branco);
+      border: 1px solid rgba(255,255,255,0.35);
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      font-family: var(--fn-body);
+      font-weight: 700;
+      font-size: 0.78rem;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      transition: background 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-left: 10px;
+    }
+    .btn-desktop-toggle:hover { background: rgba(255,255,255,0.22); }
+    .btn-desktop-toggle.active { background: #ffffff; color: var(--azul); }
+
+    body.desktop-mode {
+      background: #eef3f8;
+    }
+    body.desktop-mode .abas,
+    body.desktop-mode .painel {
+      max-width: 1200px;
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+    body.desktop-mode .page-header {
+      padding: 18px 24px;
+    }
+    body.desktop-mode .page-header h1 { font-size: 1rem; }
+    body.desktop-mode .page-header p { font-size: 0.72rem; }
+    body.desktop-mode .filtros { flex-wrap: wrap; }
+    body.desktop-mode .tabela-wrap { overflow-x: hidden; }
+    body.desktop-mode .card { box-shadow: 0 3px 16px rgba(0,0,0,0.12); }
 
     /* ─── ABAS ─── */
     .abas {
@@ -631,6 +668,7 @@
       <p>CD · ITABORAÍ — indicadores, conciliação e exportação</p>
     </div>
     <button class="btn-exportar" id="btn-exportar" style="display:none">↓ Exportar Excel</button>
+    <button class="btn-desktop-toggle" id="btn-desktop-toggle">Modo Desktop</button>
   </div>
 
   <div id="mensagem-relatorio"></div>
@@ -1239,7 +1277,19 @@
     }
 
     document.getElementById("btn-exportar").addEventListener("click",exportarExcel);
+    document.getElementById("btn-desktop-toggle").addEventListener("click",toggleDesktopMode);
+    function toggleDesktopMode() {
+      const isDesktop = document.body.classList.toggle('desktop-mode');
+      document.getElementById('btn-desktop-toggle').classList.toggle('active', isDesktop);
+      document.getElementById('btn-desktop-toggle').textContent = isDesktop ? 'Modo Desktop ✓' : 'Modo Desktop';
+      localStorage.setItem('relatorioDesktopMode', isDesktop ? '1' : '0');
+    }
+    function aplicarDesktopModeInicial() {
+      const ativo = localStorage.getItem('relatorioDesktopMode') === '1';
+      if (ativo) toggleDesktopMode();
+    }
     carregar();
+    aplicarDesktopModeInicial();
   </script>
 </body>
 </html>
