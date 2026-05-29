@@ -60,8 +60,8 @@
       cursor: pointer; font-weight: 600; font-size: 0.8rem;
       border: none; background: transparent; color: var(--muted); transition: all 0.15s;
     }
-    .aba.ativa        { background: var(--accent);    color: white; }
-    .aba.ativa-alerta { background: var(--accent-esc); color: white; }
+    .aba.ativa         { background: var(--accent);    color: white; }
+    .aba.ativa-anomalia { background: #8b1a1a;          color: white; }
 
     /* ── PAINÉIS ─────────────────────────────── */
     .painel { display: none; }
@@ -78,8 +78,6 @@
       font-weight: 700; font-family: var(--fn-body);
       background: var(--accent); color: #fff;
       padding: 9px 16px;
-      margin-bottom: 0;
-      border-bottom: none;
     }
     .card-body { padding: 18px 20px; }
 
@@ -99,22 +97,12 @@
       background: var(--bg); color: var(--text); width: 100%;
     }
     .campo textarea { resize: vertical; min-height: 100px; }
-    .campo-chave {
-      border-bottom: 1px dashed var(--border);
-      padding-bottom: 16px;
-      margin-bottom: 16px;
-    }
+    .campo-chave { border-bottom: 1px dashed var(--border); padding-bottom: 16px; margin-bottom: 16px; }
     .campo input:focus, .campo select:focus, .campo textarea:focus {
       outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,86,164,0.12);
     }
-    .input-status-sucesso {
-      border-color: #2ecc71 !important;
-      background: rgba(46, 204, 113, 0.12) !important;
-    }
-    .input-status-erro {
-      border-color: #e74c3c !important;
-      background: rgba(231, 76, 60, 0.08) !important;
-    }
+    .input-status-sucesso { border-color: #2ecc71 !important; background: rgba(46,204,113,0.12) !important; }
+    .input-status-erro    { border-color: #e74c3c !important; background: rgba(231,76,60,0.08)  !important; }
 
     .btn-registrar {
       background: var(--accent); color: white; border: none;
@@ -213,6 +201,7 @@
     .btn-cancelar      { background: #f0f0f0; color: #666; }
     .btn-ausente       { background: #3498db; color: white; }
     .btn-salvar        { background: var(--accent); color: white; }
+    .btn-triagem       { background: #5b4fcf; color: white; }
 
     .permanencia        { font-family: var(--fn-mono); font-size: 0.75rem; color: var(--muted); margin-left: auto; }
     .permanencia.alerta { color: var(--red); font-weight: 700; }
@@ -224,17 +213,54 @@
     }
 
     /* ══════════════════════════════════════════
-       TRIAGEM — fluxo em etapas
+       PAINEL DE TRIAGEM (slide-over lateral)
     ══════════════════════════════════════════ */
+    .triagem-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      z-index: 200; display: none; align-items: stretch;
+      justify-content: flex-end;
+    }
+    .triagem-overlay.aberto { display: flex; }
 
-    /* barra de progresso */
+    .triagem-painel {
+      width: 100%; max-width: 480px;
+      background: var(--surface);
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+      animation: slideIn 0.22s ease;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to   { transform: translateX(0);   opacity: 1; }
+    }
+
+    .triagem-header {
+      background: #5b4fcf; color: #fff;
+      padding: 14px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .triagem-header h2 { font-size: 0.95rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .triagem-header .placa-tag {
+      font-family: var(--fn-mono); font-size: 1rem; font-weight: 500;
+      background: rgba(255,255,255,0.18); padding: 3px 10px; border-radius: 4px;
+    }
+    .btn-fechar-triagem {
+      background: transparent; border: none; color: #fff;
+      font-size: 1.4rem; cursor: pointer; line-height: 1; padding: 0 4px;
+      opacity: 0.8;
+    }
+    .btn-fechar-triagem:hover { opacity: 1; }
+
+    .triagem-corpo { padding: 20px; flex: 1; }
+
+    /* barra de progresso dentro do painel */
     .triagem-progresso {
       display: flex; align-items: center; gap: 0;
       margin-bottom: 20px; position: relative;
     }
-    .triagem-passo {
-      flex: 1; text-align: center; position: relative;
-    }
+    .triagem-passo { flex: 1; text-align: center; position: relative; }
     .triagem-passo::after {
       content: ''; position: absolute; top: 14px; left: 50%; right: -50%;
       height: 2px; background: var(--border); z-index: 0;
@@ -250,17 +276,16 @@
     }
     .passo-label {
       font-size: 0.58rem; font-family: var(--fn-mono); letter-spacing: 0.08em;
-      text-transform: uppercase; color: var(--muted); margin-top: 5px;
-      display: block;
+      text-transform: uppercase; color: var(--muted); margin-top: 5px; display: block;
     }
-    .triagem-passo.ativo   .passo-circulo { background: var(--accent);     border-color: var(--accent);     color: white; }
-    .triagem-passo.feito   .passo-circulo { background: var(--green);       border-color: var(--green);      color: white; }
-    .triagem-passo.recusa  .passo-circulo { background: var(--red);         border-color: var(--red);        color: white; }
-    .triagem-passo.ativo   .passo-label   { color: var(--accent); font-weight: 700; }
-    .triagem-passo.feito   .passo-label   { color: var(--green); }
-    .triagem-passo.recusa  .passo-label   { color: var(--red); }
+    .triagem-passo.ativo  .passo-circulo { background: #5b4fcf; border-color: #5b4fcf; color: white; }
+    .triagem-passo.feito  .passo-circulo { background: var(--green); border-color: var(--green); color: white; }
+    .triagem-passo.recusa .passo-circulo { background: var(--red);   border-color: var(--red);   color: white; }
+    .triagem-passo.ativo  .passo-label   { color: #5b4fcf; font-weight: 700; }
+    .triagem-passo.feito  .passo-label   { color: var(--green); }
+    .triagem-passo.recusa .passo-label   { color: var(--red); }
 
-    /* etapas */
+    /* etapas dentro do painel */
     .triagem-etapa { display: none; }
     .triagem-etapa.ativa { display: block; }
 
@@ -273,8 +298,8 @@
       transition: border-color 0.15s, background 0.15s;
       user-select: none;
     }
-    .check-item:hover { border-color: var(--accent); }
-    .check-item.marcado { background: var(--accent-cl); border-color: var(--accent); }
+    .check-item:hover  { border-color: #5b4fcf; }
+    .check-item.marcado { background: #f0eeff; border-color: #5b4fcf; }
     .check-numero {
       font-family: var(--fn-mono); font-size: 0.65rem; font-weight: 700;
       color: var(--muted); min-width: 20px; text-align: center;
@@ -284,21 +309,16 @@
     .check-marca {
       width: 22px; height: 22px; border: 2px solid var(--border);
       border-radius: 4px; display: flex; align-items: center; justify-content: center;
-      font-size: 0.75rem; color: transparent; transition: all 0.15s;
-      flex-shrink: 0;
+      font-size: 0.75rem; color: transparent; transition: all 0.15s; flex-shrink: 0;
     }
-    .check-item.marcado .check-marca {
-      background: var(--accent); border-color: var(--accent); color: white;
-    }
+    .check-item.marcado .check-marca { background: #5b4fcf; border-color: #5b4fcf; color: white; }
     .check-progresso {
       font-family: var(--fn-mono); font-size: 0.7rem; color: var(--muted);
       text-align: right; margin-bottom: 6px;
     }
 
-    /* botões de decisão numerados */
-    .decisao-grid {
-      display: grid; gap: 10px; margin-bottom: 8px;
-    }
+    /* botões de decisão */
+    .decisao-grid { display: grid; gap: 10px; margin-bottom: 8px; }
     .decisao-grid.cols-2 { grid-template-columns: 1fr 1fr; }
     .decisao-grid.cols-1 { grid-template-columns: 1fr; }
 
@@ -309,25 +329,24 @@
       cursor: pointer; transition: all 0.15s; text-align: left;
       display: flex; align-items: center; gap: 10px;
     }
-    .btn-decisao:hover { border-color: var(--accent); background: var(--accent-cl); }
-    .btn-decisao.verde  { border-color: var(--green); }
-    .btn-decisao.verde:hover  { background: #eef5ef; }
-    .btn-decisao.vermelho     { border-color: var(--red); }
+    .btn-decisao:hover          { border-color: #5b4fcf; background: #f0eeff; }
+    .btn-decisao.verde          { border-color: var(--green); }
+    .btn-decisao.verde:hover    { background: #eef5ef; }
+    .btn-decisao.vermelho       { border-color: var(--red); }
     .btn-decisao.vermelho:hover { background: #fde8e8; }
-    .btn-decisao.amarelo      { border-color: #c49f2a; }
-    .btn-decisao.amarelo:hover { background: #fdf8e8; }
+    .btn-decisao.amarelo        { border-color: #c49f2a; }
+    .btn-decisao.amarelo:hover  { background: #fdf8e8; }
     .decisao-num {
       font-family: var(--fn-mono); font-size: 0.72rem; font-weight: 700;
       min-width: 22px; height: 22px; border-radius: 3px;
       background: var(--border); color: var(--text);
-      display: inline-flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .btn-decisao.verde  .decisao-num { background: #d4edda; color: var(--green); }
+    .btn-decisao.verde   .decisao-num { background: #d4edda; color: var(--green); }
     .btn-decisao.vermelho .decisao-num { background: #f4dada; color: var(--red); }
     .btn-decisao.amarelo  .decisao-num { background: #fef3c7; color: #92400e; }
 
-    /* lista de motivos */
+    /* motivos */
     .motivos-lista { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
     .motivo-item {
       display: flex; align-items: center; gap: 10px;
@@ -335,7 +354,7 @@
       padding: 11px 14px; cursor: pointer; background: var(--surface);
       transition: all 0.15s; font-size: 0.85rem; font-weight: 500;
     }
-    .motivo-item:hover  { border-color: var(--orange); background: #fdf8f5; }
+    .motivo-item:hover      { border-color: var(--orange); background: #fdf8f5; }
     .motivo-item.selecionado { border-color: var(--orange); background: #fdf0e6; }
     .motivo-num {
       font-family: var(--fn-mono); font-size: 0.7rem; font-weight: 700;
@@ -344,25 +363,26 @@
       display: inline-flex; align-items: center; justify-content: center;
     }
 
-    /* alerta de contexto */
+    /* alertas */
     .triagem-aviso {
       border-radius: 4px; padding: 12px 14px; font-size: 0.8rem;
       font-family: var(--fn-mono); margin-bottom: 14px;
     }
-    .triagem-aviso.info   { background: var(--accent-cl); color: var(--accent-esc); border-left: 3px solid var(--accent); }
-    .triagem-aviso.alerta { background: #fef3c7; color: #92400e;    border-left: 3px solid #f1c40f; }
-    .triagem-aviso.danger { background: #f4e6e6; color: var(--red);  border-left: 3px solid var(--red); }
-    .triagem-aviso.ok     { background: #e6f4ec; color: var(--green);border-left: 3px solid var(--green); }
+    .triagem-aviso.info   { background: #f0eeff; color: #3d2fa3; border-left: 3px solid #5b4fcf; }
+    .triagem-aviso.alerta { background: #fef3c7; color: #92400e;   border-left: 3px solid #f1c40f; }
+    .triagem-aviso.danger { background: #f4e6e6; color: var(--red); border-left: 3px solid var(--red); }
+    .triagem-aviso.ok     { background: #e6f4ec; color: var(--green); border-left: 3px solid var(--green); }
 
-    /* resumo de itens não conformes */
     .resumo-itens {
       background: var(--bg); border: 1px solid var(--border);
       border-radius: 4px; padding: 10px 14px; margin-bottom: 14px;
       font-size: 0.78rem; font-family: var(--fn-mono); color: var(--muted);
     }
-    .resumo-itens strong { color: var(--text); display: block; margin-bottom: 4px; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; }
+    .resumo-itens strong {
+      color: var(--text); display: block; margin-bottom: 4px;
+      font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
+    }
 
-    /* botão voltar */
     .btn-voltar {
       background: transparent; border: none; color: var(--muted);
       font-family: var(--fn-mono); font-size: 0.72rem; cursor: pointer;
@@ -371,7 +391,31 @@
     }
     .btn-voltar:hover { color: var(--text); }
 
-    /* ── ANOMALIA (registro final) ───────────── */
+    .triagem-contexto { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .ctx-tag {
+      font-family: var(--fn-mono); font-size: 0.62rem; letter-spacing: 0.08em;
+      padding: 3px 8px; border-radius: 2px; border: 1px solid var(--border);
+      background: var(--bg); color: var(--muted); text-transform: uppercase;
+    }
+    .ctx-tag.destaque { background: #f0eeff; color: #5b4fcf; border-color: #c8c2f7; }
+    .ctx-tag.alerta   { background: #fef3c7; color: #92400e; border-color: #f1c40f; }
+
+    /* sucesso conforme */
+    .conforme-ok { text-align: center; padding: 32px 20px; }
+    .conforme-ok .ok-icon { font-size: 3rem; margin-bottom: 12px; }
+    .conforme-ok h2 { font-size: 1.1rem; color: var(--green); font-weight: 700; margin-bottom: 6px; }
+    .conforme-ok p  { font-size: 0.8rem; color: var(--muted); font-family: var(--fn-mono); }
+    .btn-nova-triagem {
+      background: #5b4fcf; color: white; border: none;
+      padding: 11px 24px; border-radius: 4px; font-family: var(--fn-body);
+      font-weight: 700; font-size: 0.9rem; cursor: pointer; margin-top: 20px;
+      transition: background 0.15s; width: 100%;
+    }
+    .btn-nova-triagem:hover { background: #4a3fad; }
+
+    /* ══════════════════════════════════════════
+       FOTOS (compartilhado entre triagem e anomalia)
+    ══════════════════════════════════════════ */
     .fotos-grid {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 4px;
     }
@@ -383,9 +427,7 @@
     }
     .foto-slot:hover { border-color: var(--accent); background: #f0f5f0; }
     .foto-slot.tem-foto { border-style: solid; border-color: var(--accent); }
-    .foto-slot img {
-      width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0;
-    }
+    .foto-slot img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
     .foto-slot .icone-camera { font-size: 1.8rem; color: var(--muted); pointer-events: none; }
     .foto-slot .label-camera {
       font-size: 0.65rem; color: var(--muted); font-family: var(--fn-mono);
@@ -401,11 +443,24 @@
     .foto-slot input[type="file"] {
       position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
     }
+
+    /* ══════════════════════════════════════════
+       PAINEL ANOMALIAS (aba)
+    ══════════════════════════════════════════ */
+    .anomalia-aba-status {
+      text-align: center; padding: 20px; border-radius: 6px;
+      font-family: var(--fn-mono); font-size: 0.88rem; display: none;
+    }
+    .anomalia-aba-status.enviando { background: var(--accent-cl); color: var(--accent-esc); display: block; }
+    .anomalia-aba-status.sucesso  { background: #e6f4ec; color: var(--green); display: block; }
+    .anomalia-aba-status.erro     { background: #f4e6e6; color: var(--red);   display: block; }
+
+    /* status dentro do painel de triagem */
     .anomalia-status {
       text-align: center; padding: 20px; border-radius: 6px;
       font-family: var(--fn-mono); font-size: 0.88rem; display: none;
     }
-    .anomalia-status.enviando { background: var(--accent-cl); color: var(--accent-esc); display: block; }
+    .anomalia-status.enviando { background: #f0eeff; color: #3d2fa3; display: block; }
     .anomalia-status.sucesso  { background: #e6f4ec; color: var(--green); display: block; }
     .anomalia-status.erro     { background: #f4e6e6; color: var(--red);   display: block; }
 
@@ -418,34 +473,14 @@
     .btn-anomalia-enviar:hover    { opacity: 0.85; }
     .btn-anomalia-enviar:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* sucesso finalização conforme */
-    .conforme-ok {
-      text-align: center; padding: 32px 20px;
+    .aviso-anomalia-aba {
+      background: #fff8e1; border-left: 3px solid #f1c40f;
+      border-radius: 4px; padding: 12px 14px;
+      font-size: 0.8rem; font-family: var(--fn-mono); color: #7a5c00;
+      margin-bottom: 18px;
     }
-    .conforme-ok .ok-icon { font-size: 3rem; margin-bottom: 12px; }
-    .conforme-ok h2 { font-size: 1.1rem; color: var(--green); font-weight: 700; margin-bottom: 6px; }
-    .conforme-ok p  { font-size: 0.8rem; color: var(--muted); font-family: var(--fn-mono); }
-    .btn-nova-triagem {
-      background: var(--accent); color: white; border: none;
-      padding: 11px 24px; border-radius: 4px; font-family: var(--fn-body);
-      font-weight: 700; font-size: 0.9rem; cursor: pointer; margin-top: 20px;
-      transition: background 0.15s; width: 100%;
-    }
-    .btn-nova-triagem:hover { background: var(--accent-esc); }
 
-    /* tag de contexto na triagem */
-    .triagem-contexto {
-      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;
-    }
-    .ctx-tag {
-      font-family: var(--fn-mono); font-size: 0.62rem; letter-spacing: 0.08em;
-      padding: 3px 8px; border-radius: 2px; border: 1px solid var(--border);
-      background: var(--bg); color: var(--muted); text-transform: uppercase;
-    }
-    .ctx-tag.destaque { background: var(--accent-cl); color: var(--accent); border-color: #b8d0ea; }
-    .ctx-tag.alerta   { background: #fef3c7; color: #92400e;    border-color: #f1c40f; }
-
-    /* Mensagem flutuante */
+    /* ── MENSAGEM ──────────────────────────── */
     #mensagem {
       position: fixed; top: 16px; right: 16px; padding: 12px 18px;
       border-radius: 4px; font-size: 0.85rem; font-weight: 600;
@@ -468,11 +503,239 @@
 
   <div id="mensagem"></div>
 
+  <!-- ═══ PAINEL DE TRIAGEM (slide-over) ═══ -->
+  <div class="triagem-overlay" id="triagem-overlay" onclick="fecharTriagemSeTela(event)">
+    <div class="triagem-painel" id="triagem-painel">
+
+      <div class="triagem-header">
+        <div>
+          <div style="font-size:0.65rem;opacity:0.8;letter-spacing:0.1em;margin-bottom:4px">TRIAGEM DE CARREGAMENTO</div>
+          <span class="placa-tag" id="triagem-placa-tag">—</span>
+        </div>
+        <button class="btn-fechar-triagem" onclick="fecharTriagem()" aria-label="Fechar triagem">×</button>
+      </div>
+
+      <div class="triagem-corpo">
+
+        <!-- BARRA DE PROGRESSO -->
+        <div class="triagem-progresso">
+          <div class="triagem-passo ativo" id="prog-1">
+            <div class="passo-circulo">1</div>
+            <span class="passo-label">Checklist</span>
+          </div>
+          <div class="triagem-passo" id="prog-2">
+            <div class="passo-circulo">2</div>
+            <span class="passo-label">Resultado</span>
+          </div>
+          <div class="triagem-passo" id="prog-3">
+            <div class="passo-circulo">3</div>
+            <span class="passo-label">Motivo</span>
+          </div>
+          <div class="triagem-passo" id="prog-4">
+            <div class="passo-circulo">4</div>
+            <span class="passo-label">Recusa</span>
+          </div>
+          <div class="triagem-passo" id="prog-5">
+            <div class="passo-circulo">5</div>
+            <span class="passo-label">Registro</span>
+          </div>
+        </div>
+
+        <!-- ETAPA 1: CHECKLIST -->
+        <div class="triagem-etapa ativa" id="etapa-1">
+          <div class="triagem-aviso info">
+            Antes do carregamento, verifique cada item abaixo. Toque para marcar como conferido.
+          </div>
+          <div class="check-progresso" id="check-progresso-txt">0 / 4 conferidos</div>
+          <div class="checklist" id="checklist-items">
+            <div class="check-item" data-idx="0" onclick="toggleCheck(0)">
+              <span class="check-numero">01</span>
+              <span class="check-icone">📦</span>
+              <span class="check-texto">Estado da carga</span>
+              <span class="check-marca">✓</span>
+            </div>
+            <div class="check-item" data-idx="1" onclick="toggleCheck(1)">
+              <span class="check-numero">02</span>
+              <span class="check-icone">🏗️</span>
+              <span class="check-texto">Estado do assoalho</span>
+              <span class="check-marca">✓</span>
+            </div>
+            <div class="check-item" data-idx="2" onclick="toggleCheck(2)">
+              <span class="check-numero">03</span>
+              <span class="check-icone">🚛</span>
+              <span class="check-texto">Pneus</span>
+              <span class="check-marca">✓</span>
+            </div>
+            <div class="check-item" data-idx="3" onclick="toggleCheck(3)">
+              <span class="check-numero">04</span>
+              <span class="check-icone">🦺</span>
+              <span class="check-texto">Uso de EPI</span>
+              <span class="check-marca">✓</span>
+            </div>
+          </div>
+          <div class="decisao-grid cols-1">
+            <button class="btn-decisao" onclick="irEtapa(2)" style="margin-top:4px;">
+              <span class="decisao-num">→</span>
+              Avançar para resultado
+            </button>
+          </div>
+        </div>
+
+        <!-- ETAPA 2: CONFORME / NÃO CONFORME -->
+        <div class="triagem-etapa" id="etapa-2">
+          <button class="btn-voltar" onclick="irEtapa(1)">← voltar ao checklist</button>
+          <div class="triagem-contexto" id="ctx-etapa2"></div>
+          <div class="triagem-aviso info" id="aviso-etapa2">
+            Com base na verificação realizada, qual é o resultado da triagem?
+          </div>
+          <div class="decisao-grid cols-2">
+            <button class="btn-decisao verde" onclick="irConforme()">
+              <span class="decisao-num">1</span>
+              ✅ Conforme
+            </button>
+            <button class="btn-decisao vermelho" onclick="irEtapa(3)">
+              <span class="decisao-num">2</span>
+              ❌ Não conforme
+            </button>
+          </div>
+        </div>
+
+        <!-- ETAPA 3: MOTIVO -->
+        <div class="triagem-etapa" id="etapa-3">
+          <button class="btn-voltar" onclick="irEtapa(2)">← voltar ao resultado</button>
+          <div class="triagem-aviso alerta">
+            Informe o motivo da não conformidade identificada.
+          </div>
+          <div class="motivos-lista" id="motivos-lista">
+            <div class="motivo-item" data-motivo="Avaria na carga" onclick="selecionarMotivo(this)">
+              <span class="motivo-num">1</span> Avaria na carga
+            </div>
+            <div class="motivo-item" data-motivo="Assoalho danificado" onclick="selecionarMotivo(this)">
+              <span class="motivo-num">2</span> Assoalho danificado
+            </div>
+            <div class="motivo-item" data-motivo="Pneu(s) em mau estado" onclick="selecionarMotivo(this)">
+              <span class="motivo-num">3</span> Pneu(s) em mau estado
+            </div>
+            <div class="motivo-item" data-motivo="EPI ausente ou inadequado" onclick="selecionarMotivo(this)">
+              <span class="motivo-num">4</span> EPI ausente ou inadequado
+            </div>
+            <div class="motivo-item" data-motivo="Outro motivo" onclick="selecionarMotivo(this)">
+              <span class="motivo-num">5</span> Outro motivo
+            </div>
+          </div>
+          <div class="campo" id="campo-outro-motivo" style="display:none; margin-bottom:14px;">
+            <label>Descreva o motivo</label>
+            <input type="text" id="outro-motivo-txt" placeholder="Informe o motivo...">
+          </div>
+          <div class="decisao-grid cols-1">
+            <button class="btn-decisao" id="btn-avancar-etapa3" onclick="irEtapa(4)" disabled style="opacity:0.4;">
+              <span class="decisao-num">→</span>
+              Avançar
+            </button>
+          </div>
+        </div>
+
+        <!-- ETAPA 4: DEVER DE RECUSA -->
+        <div class="triagem-etapa" id="etapa-4">
+          <button class="btn-voltar" onclick="irEtapa(3)">← voltar ao motivo</button>
+          <div class="resumo-itens" id="resumo-motivo-etapa4">
+            <strong>Motivo registrado</strong>
+            <span id="motivo-resumo-txt">—</span>
+          </div>
+          <div class="triagem-aviso alerta">
+            O conferente identificou uma não conformidade. O <strong>dever de recusa</strong> foi aplicado?
+          </div>
+          <div class="decisao-grid cols-2">
+            <button class="btn-decisao verde" onclick="selecionarRecusa(true)">
+              <span class="decisao-num">1</span>
+              ✅ Sim, aplicado
+            </button>
+            <button class="btn-decisao vermelho" onclick="selecionarRecusa(false)">
+              <span class="decisao-num">2</span>
+              ❌ Não aplicado
+            </button>
+          </div>
+        </div>
+
+        <!-- ETAPA 5: REGISTRO DE ANOMALIA (vinculado ao veículo) -->
+        <div class="triagem-etapa" id="etapa-5">
+          <button class="btn-voltar" onclick="irEtapa(4)">← voltar à recusa</button>
+          <div class="triagem-aviso danger" id="aviso-etapa5">
+            Registre a ocorrência. Este registro será enviado por e-mail à equipe responsável.
+          </div>
+          <div class="resumo-itens" id="resumo-etapa5">
+            <strong>Resumo da triagem</strong>
+            <span id="resumo-etapa5-txt">—</span>
+          </div>
+          <div class="form-grid">
+            <div class="campo full">
+              <label>Tipo de ocorrência</label>
+              <select id="anom-tipo">
+                <option value="">Selecione o tipo...</option>
+                <option value="Avaria na carga">Avaria na carga</option>
+                <option value="Avaria operacional">Avaria operacional</option>
+                <option value="Problema no veículo">Problema no veículo</option>
+                <option value="Acidente / Incidente">Acidente / Incidente</option>
+                <option value="Produto fora de especificação">Produto fora de especificação</option>
+                <option value="Erro de nota fiscal">Erro de nota fiscal</option>
+                <option value="EPI — não conformidade">EPI — não conformidade</option>
+                <option value="Outro">Outro</option>
+              </select>
+            </div>
+            <div class="campo full">
+              <label>Descrição do ocorrido</label>
+              <textarea id="anom-descricao" placeholder="Descreva o que aconteceu com o máximo de detalhes possível..."></textarea>
+            </div>
+            <div class="campo full">
+              <label>Fotos (até 3)</label>
+              <div class="fotos-grid">
+                <div class="foto-slot" id="slot-t-0">
+                  <span class="icone-camera">📷</span>
+                  <span class="label-camera">FOTO 1</span>
+                  <input type="file" id="foto-t-0" accept="image/*" capture="environment" onchange="previewFoto('t', 0, this)">
+                </div>
+                <div class="foto-slot" id="slot-t-1">
+                  <span class="icone-camera">📷</span>
+                  <span class="label-camera">FOTO 2</span>
+                  <input type="file" id="foto-t-1" accept="image/*" capture="environment" onchange="previewFoto('t', 1, this)">
+                </div>
+                <div class="foto-slot" id="slot-t-2">
+                  <span class="icone-camera">📷</span>
+                  <span class="label-camera">FOTO 3</span>
+                  <input type="file" id="foto-t-2" accept="image/*" capture="environment" onchange="previewFoto('t', 2, this)">
+                </div>
+              </div>
+            </div>
+            <div class="campo full">
+              <div class="anomalia-status" id="anom-status"></div>
+            </div>
+            <div class="campo full">
+              <button class="btn-anomalia-enviar" id="btn-enviar-anomalia" onclick="enviarAnomaliaTriagem()">
+                Enviar registro de ocorrência
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ETAPA CONFORME (fim feliz) -->
+        <div class="triagem-etapa" id="etapa-ok">
+          <div class="conforme-ok">
+            <div class="ok-icon">✅</div>
+            <h2>Triagem Concluída — Conforme</h2>
+            <p id="ok-resumo">Todos os itens verificados. Carregamento liberado.</p>
+            <button class="btn-nova-triagem" onclick="fecharTriagem()">Fechar</button>
+          </div>
+        </div>
+
+      </div><!-- triagem-corpo -->
+    </div><!-- triagem-painel -->
+  </div><!-- triagem-overlay -->
+
   <!-- ABAS -->
   <div class="abas">
-    <button class="aba ativa"       onclick="trocarAba('descarga')">⬇ Descarga</button>
-    <button class="aba"             onclick="trocarAba('carga')">⬆ Carga CIF/FOB</button>
-    <button class="aba aba-triagem" onclick="trocarAba('triagem')">🔍 Triagem</button>
+    <button class="aba ativa"          onclick="trocarAba('descarga')">⬇ Descarga</button>
+    <button class="aba"                onclick="trocarAba('carga')">⬆ Carga CIF/FOB</button>
+    <button class="aba aba-anomalia"   onclick="trocarAba('anomalia')">⚠ Anomalias</button>
   </div>
 
   <!-- ═══ PAINEL DESCARGA ═══ -->
@@ -490,56 +753,47 @@
     <div class="card">
       <div class="card-titulo">Registrar entrada de veículo</div>
       <div class="card-body">
-      <div class="form-grid">
-
-        <div class="campo full campo-chave">
-          <label>Chave NF-e</label>
-          <input type="text" id="chave_nfe" maxlength="44" autocomplete="off" autofocus placeholder="Leitura rápida da chave NF-e">
+        <div class="form-grid">
+          <div class="campo full campo-chave">
+            <label>Chave NF-e</label>
+            <input type="text" id="chave_nfe" maxlength="44" autocomplete="off" autofocus placeholder="Leitura rápida da chave NF-e">
+          </div>
+          <div class="campo">
+            <label>Placa</label>
+            <input type="text" id="cif-placa" placeholder="ABC1D23" maxlength="7" autocomplete="off">
+          </div>
+          <div class="campo">
+            <label>Motorista</label>
+            <input type="text" id="cif-motorista" placeholder="Nome do motorista">
+          </div>
+          <div class="campo">
+            <label>Tipo de Operação</label>
+            <select id="cif-tipo">
+              <option value="CIF">CIF</option>
+              <option value="FOB">FOB</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label>Veículo / Transportadora</label>
+            <select id="cif-transp-tipo" onchange="toggleTransp()">
+              <option value="proprio">Próprio (FOB)</option>
+              <option value="transportadora">Transportadora</option>
+            </select>
+          </div>
+          <div class="campo" id="campo-transp-nome" style="display:none;">
+            <label>Nome da Transportadora</label>
+            <input type="text" id="cif-transportadora" placeholder="Nome da transportadora">
+          </div>
+          <div class="campo full">
+            <label>Produtos</label>
+            <div class="produtos-lista" id="produtos-lista"></div>
+            <button class="btn-add-produto" onclick="adicionarProduto()">+ Adicionar produto</button>
+          </div>
+          <div class="campo full">
+            <button class="btn-registrar" onclick="registrarCifFob()">+ Registrar entrada</button>
+          </div>
         </div>
-
-        <div class="campo">
-          <label>Placa</label>
-          <input type="text" id="cif-placa" placeholder="ABC1D23" maxlength="7" autocomplete="off">
-        </div>
-
-        <div class="campo">
-          <label>Motorista</label>
-          <input type="text" id="cif-motorista" placeholder="Nome do motorista">
-        </div>
-
-        <div class="campo">
-          <label>Tipo de Operação</label>
-          <select id="cif-tipo">
-            <option value="CIF">CIF</option>
-            <option value="FOB">FOB</option>
-          </select>
-        </div>
-
-        <div class="campo">
-          <label>Veículo / Transportadora</label>
-          <select id="cif-transp-tipo" onchange="toggleTransp()">
-            <option value="proprio">Próprio (FOB)</option>
-            <option value="transportadora">Transportadora</option>
-          </select>
-        </div>
-
-        <div class="campo" id="campo-transp-nome" style="display:none;">
-          <label>Nome da Transportadora</label>
-          <input type="text" id="cif-transportadora" placeholder="Nome da transportadora">
-        </div>
-
-        <div class="campo full">
-          <label>Produtos</label>
-          <div class="produtos-lista" id="produtos-lista"></div>
-          <button class="btn-add-produto" onclick="adicionarProduto()">+ Adicionar produto</button>
-        </div>
-
-        <div class="campo full">
-          <button class="btn-registrar" onclick="registrarCifFob()">+ Registrar entrada</button>
-        </div>
-
-      </div><!-- form-grid -->
-      </div><!-- card-body -->
+      </div>
     </div>
 
     <div class="card">
@@ -550,188 +804,18 @@
     </div>
   </div>
 
-  <!-- ═══ PAINEL TRIAGEM ═══ -->
-  <div class="painel" id="painel-triagem">
-
+  <!-- ═══ PAINEL ANOMALIAS ═══ -->
+  <div class="painel" id="painel-anomalia">
     <div class="card">
-      <div class="card-titulo">Triagem de carregamento</div>
+      <div class="card-titulo" style="background:#8b1a1a;">⚠ Registro de Anomalia Operacional</div>
       <div class="card-body">
-
-      <!-- BARRA DE PROGRESSO -->
-      <div class="triagem-progresso">
-        <div class="triagem-passo ativo" id="prog-1">
-          <div class="passo-circulo">1</div>
-          <span class="passo-label">Checklist</span>
+        <div class="aviso-anomalia-aba">
+          Use este formulário para registrar ocorrências operacionais não vinculadas a um veículo específico — problemas de estrutura, equipamentos, pátio, segurança, etc.
         </div>
-        <div class="triagem-passo" id="prog-2">
-          <div class="passo-circulo">2</div>
-          <span class="passo-label">Resultado</span>
-        </div>
-        <div class="triagem-passo" id="prog-3">
-          <div class="passo-circulo">3</div>
-          <span class="passo-label">Motivo</span>
-        </div>
-        <div class="triagem-passo" id="prog-4">
-          <div class="passo-circulo">4</div>
-          <span class="passo-label">Recusa</span>
-        </div>
-        <div class="triagem-passo" id="prog-5">
-          <div class="passo-circulo">5</div>
-          <span class="passo-label">Registro</span>
-        </div>
-      </div>
-
-      <!-- ── ETAPA 1: CHECKLIST ── -->
-      <div class="triagem-etapa ativa" id="etapa-1">
-        <div class="triagem-aviso info">
-          Antes do carregamento, verifique cada item abaixo. Toque para marcar como conferido.
-        </div>
-
-        <div class="check-progresso" id="check-progresso-txt">0 / 4 conferidos</div>
-
-        <div class="checklist" id="checklist-items">
-
-          <div class="check-item" data-idx="0" onclick="toggleCheck(0)">
-            <span class="check-numero">01</span>
-            <span class="check-icone">📦</span>
-            <span class="check-texto">Estado da carga</span>
-            <span class="check-marca">✓</span>
-          </div>
-
-          <div class="check-item" data-idx="1" onclick="toggleCheck(1)">
-            <span class="check-numero">02</span>
-            <span class="check-icone">🏗️</span>
-            <span class="check-texto">Estado do assoalho</span>
-            <span class="check-marca">✓</span>
-          </div>
-
-          <div class="check-item" data-idx="2" onclick="toggleCheck(2)">
-            <span class="check-numero">03</span>
-            <span class="check-icone">🚛</span>
-            <span class="check-texto">Pneus</span>
-            <span class="check-marca">✓</span>
-          </div>
-
-          <div class="check-item" data-idx="3" onclick="toggleCheck(3)">
-            <span class="check-numero">04</span>
-            <span class="check-icone">🦺</span>
-            <span class="check-texto">Uso de EPI</span>
-            <span class="check-marca">✓</span>
-          </div>
-
-        </div>
-
-        <div class="decisao-grid cols-1">
-          <button class="btn-decisao" onclick="irEtapa(2)" style="margin-top:4px;">
-            <span class="decisao-num">→</span>
-            Avançar para resultado
-          </button>
-        </div>
-      </div>
-
-      <!-- ── ETAPA 2: CONFORME / NÃO CONFORME ── -->
-      <div class="triagem-etapa" id="etapa-2">
-        <button class="btn-voltar" onclick="irEtapa(1)">← voltar ao checklist</button>
-
-        <div class="triagem-contexto" id="ctx-etapa2"></div>
-
-        <div class="triagem-aviso info" id="aviso-etapa2">
-          Com base na verificação realizada, qual é o resultado da triagem?
-        </div>
-
-        <div class="decisao-grid cols-2">
-          <button class="btn-decisao verde" onclick="irConforme()">
-            <span class="decisao-num">1</span>
-            ✅ Conforme
-          </button>
-          <button class="btn-decisao vermelho" onclick="irEtapa(3)">
-            <span class="decisao-num">2</span>
-            ❌ Não conforme
-          </button>
-        </div>
-      </div>
-
-      <!-- ── ETAPA 3: MOTIVO DA NÃO CONFORMIDADE ── -->
-      <div class="triagem-etapa" id="etapa-3">
-        <button class="btn-voltar" onclick="irEtapa(2)">← voltar ao resultado</button>
-
-        <div class="triagem-aviso alerta">
-          Informe o motivo da não conformidade identificada.
-        </div>
-
-        <div class="motivos-lista" id="motivos-lista">
-          <div class="motivo-item" data-motivo="Avaria na carga" onclick="selecionarMotivo(this)">
-            <span class="motivo-num">1</span> Avaria na carga
-          </div>
-          <div class="motivo-item" data-motivo="Assoalho danificado" onclick="selecionarMotivo(this)">
-            <span class="motivo-num">2</span> Assoalho danificado
-          </div>
-          <div class="motivo-item" data-motivo="Pneu(s) em mau estado" onclick="selecionarMotivo(this)">
-            <span class="motivo-num">3</span> Pneu(s) em mau estado
-          </div>
-          <div class="motivo-item" data-motivo="EPI ausente ou inadequado" onclick="selecionarMotivo(this)">
-            <span class="motivo-num">4</span> EPI ausente ou inadequado
-          </div>
-          <div class="motivo-item" data-motivo="Outro motivo" onclick="selecionarMotivo(this)">
-            <span class="motivo-num">5</span> Outro motivo
-          </div>
-        </div>
-
-        <div class="campo" id="campo-outro-motivo" style="display:none; margin-bottom:14px;">
-          <label>Descreva o motivo</label>
-          <input type="text" id="outro-motivo-txt" placeholder="Informe o motivo...">
-        </div>
-
-        <div class="decisao-grid cols-1">
-          <button class="btn-decisao" id="btn-avancar-etapa3" onclick="irEtapa(4)" disabled style="opacity:0.4;">
-            <span class="decisao-num">→</span>
-            Avançar
-          </button>
-        </div>
-      </div>
-
-      <!-- ── ETAPA 4: DEVER DE RECUSA ── -->
-      <div class="triagem-etapa" id="etapa-4">
-        <button class="btn-voltar" onclick="irEtapa(3)">← voltar ao motivo</button>
-
-        <div class="resumo-itens" id="resumo-motivo-etapa4">
-          <strong>Motivo registrado</strong>
-          <span id="motivo-resumo-txt">—</span>
-        </div>
-
-        <div class="triagem-aviso alerta">
-          O conferente identificou uma não conformidade. O <strong>dever de recusa</strong> foi aplicado?
-        </div>
-
-        <div class="decisao-grid cols-2">
-          <button class="btn-decisao verde" onclick="selecionarRecusa(true)">
-            <span class="decisao-num">1</span>
-            ✅ Sim, aplicado
-          </button>
-          <button class="btn-decisao vermelho" onclick="selecionarRecusa(false)">
-            <span class="decisao-num">2</span>
-            ❌ Não aplicado
-          </button>
-        </div>
-      </div>
-
-      <!-- ── ETAPA 5: REGISTRO DE ANOMALIA ── -->
-      <div class="triagem-etapa" id="etapa-5">
-        <button class="btn-voltar" onclick="irEtapa(4)">← voltar à recusa</button>
-
-        <div class="triagem-aviso danger" id="aviso-etapa5">
-          Registre a ocorrência abaixo. Este registro será enviado por e-mail à equipe responsável.
-        </div>
-
-        <div class="resumo-itens" id="resumo-etapa5">
-          <strong>Resumo da triagem</strong>
-          <span id="resumo-etapa5-txt">—</span>
-        </div>
-
         <div class="form-grid">
           <div class="campo full">
             <label>Tipo de ocorrência</label>
-            <select id="anom-tipo">
+            <select id="aba-anom-tipo">
               <option value="">Selecione o tipo...</option>
               <option value="Avaria na carga">Avaria na carga</option>
               <option value="Avaria operacional">Avaria operacional</option>
@@ -743,56 +827,40 @@
               <option value="Outro">Outro</option>
             </select>
           </div>
-
           <div class="campo full">
-            <label>Descrição do ocorrido</label>
-            <textarea id="anom-descricao" placeholder="Descreva o que aconteceu com o máximo de detalhes possível..."></textarea>
+            <label>Descrição da ocorrência</label>
+            <textarea id="aba-anom-descricao" placeholder="Descreva o problema com o máximo de detalhes possível — local, horário aproximado, o que foi observado..."></textarea>
           </div>
-
           <div class="campo full">
             <label>Fotos (até 3) — toque para tirar foto ou escolher da galeria</label>
             <div class="fotos-grid">
-              <div class="foto-slot" id="slot-0">
+              <div class="foto-slot" id="slot-a-0">
                 <span class="icone-camera">📷</span>
                 <span class="label-camera">FOTO 1</span>
-                <input type="file" id="foto-0" accept="image/*" capture="environment" onchange="previewFoto(0, this)">
+                <input type="file" id="foto-a-0" accept="image/*" capture="environment" onchange="previewFoto('a', 0, this)">
               </div>
-              <div class="foto-slot" id="slot-1">
+              <div class="foto-slot" id="slot-a-1">
                 <span class="icone-camera">📷</span>
                 <span class="label-camera">FOTO 2</span>
-                <input type="file" id="foto-1" accept="image/*" capture="environment" onchange="previewFoto(1, this)">
+                <input type="file" id="foto-a-1" accept="image/*" capture="environment" onchange="previewFoto('a', 1, this)">
               </div>
-              <div class="foto-slot" id="slot-2">
+              <div class="foto-slot" id="slot-a-2">
                 <span class="icone-camera">📷</span>
                 <span class="label-camera">FOTO 3</span>
-                <input type="file" id="foto-2" accept="image/*" capture="environment" onchange="previewFoto(2, this)">
+                <input type="file" id="foto-a-2" accept="image/*" capture="environment" onchange="previewFoto('a', 2, this)">
               </div>
             </div>
           </div>
-
           <div class="campo full">
-            <div class="anomalia-status" id="anom-status"></div>
+            <div class="anomalia-aba-status" id="aba-anom-status"></div>
           </div>
-
           <div class="campo full">
-            <button class="btn-anomalia-enviar" id="btn-enviar-anomalia" onclick="enviarAnomalia()">
+            <button class="btn-anomalia-enviar" id="btn-aba-enviar-anomalia" onclick="enviarAnomaliaAba()">
               Enviar registro de ocorrência
             </button>
           </div>
         </div>
       </div>
-
-      <!-- ── ETAPA CONFORME (fim feliz) ── -->
-      <div class="triagem-etapa" id="etapa-ok">
-        <div class="conforme-ok">
-          <div class="ok-icon">✅</div>
-          <h2>Triagem Concluída — Conforme</h2>
-          <p id="ok-resumo">Todos os itens verificados. Carregamento liberado.</p>
-          <button class="btn-nova-triagem" onclick="reiniciarTriagem()">Nova triagem</button>
-        </div>
-      </div><!-- etapa-ok -->
-
-      </div><!-- card-body -->
     </div>
   </div>
 
@@ -807,11 +875,10 @@
       { value: "CPII-F-32-SC-25-MA", label: "M25KG"  },
       { value: "CPV-ARI-SC-40-V",    label: "CPV"    },
     ];
-    const PRODUTOS_MAP = PRODUTOS_OPCOES;
 
     function simplificarProduto(produto) {
       const p = (produto || "").toUpperCase();
-      for (const e of PRODUTOS_MAP) {
+      for (const e of PRODUTOS_OPCOES) {
         if (p.includes(e.value.toUpperCase()) || p.includes(e.label)) return e.label;
       }
       return produto || "—";
@@ -864,7 +931,6 @@
       if (!lista.querySelector(".produto-linha")) adicionarProduto();
       const linhas = Array.from(document.querySelectorAll(".produto-linha"));
       const itensArray = Array.isArray(itens) ? itens : [];
-
       if (itensArray.length === 0) {
         const linha = linhas[0];
         if (!linha) return;
@@ -872,14 +938,13 @@
         if (qtd) qtd.value = totalQuantidade || "";
         return;
       }
-
       itensArray.forEach((item, idx) => {
         if (!linhas[idx]) adicionarProduto();
         const linha = document.querySelectorAll(".produto-linha")[idx];
         const select = linha.querySelector("select[id^='prod-']");
-        const qtd = linha.querySelector("input[id^='qtd-']");
+        const qtd    = linha.querySelector("input[id^='qtd-']");
         const nfInput = linha.querySelector("input[id^='nf-']");
-        const descricao = item.descricao || item.produto || item.xProd || item.infAdProd || item.nome || "";
+        const descricao  = item.descricao || item.produto || item.xProd || item.infAdProd || item.nome || "";
         const quantidade = item.quantidade || item.qtd || item.qtde || item.quantidade_total || totalQuantidade || "";
         const nf = item.nf || item.nota || item.numero_nota || item.nota_fiscal || "";
         selecionarProdutoPorTexto(select, descricao);
@@ -889,8 +954,6 @@
     }
 
     async function buscarNfePorChave(chave) {
-      const input = document.getElementById("chave_nfe");
-      if (!input) return;
       try {
         const res = await fetch(`/api/nfe/${chave}`);
         if (!res.ok) {
@@ -899,27 +962,17 @@
         }
         const json = await res.json();
         if (!json || !json.dados) throw new Error("Nota fiscal não encontrada");
-
         const dados = json.dados;
-        const placaValor = (lerValor(dados, [
-          'placa', 'veiculo_placa', 'placa_veiculo', 'veiculo.placa'
-        ]) || "").toString().replace(/-/g, '').trim().toUpperCase();
+        const placaValor = (lerValor(dados, ['placa','veiculo_placa','placa_veiculo','veiculo.placa']) || "").toString().replace(/-/g,'').trim().toUpperCase();
         if (placaValor) document.getElementById("cif-placa").value = placaValor;
-
-        const motoristaValor = lerValor(dados, ['transportador_nome', 'transportador.nome']) || "";
+        const motoristaValor = lerValor(dados, ['transportador_nome','transportador.nome']) || "";
         if (motoristaValor) document.getElementById("cif-motorista").value = motoristaValor;
-
-        const modFrete = String(lerValor(dados, ['modFrete', 'mod_frete']) || "").trim();
-        if (modFrete === "0" || modFrete.toLowerCase() === 'cif') {
-          document.getElementById("cif-tipo").value = "CIF";
-        } else if (modFrete === "1" || modFrete.toLowerCase() === 'fob') {
-          document.getElementById("cif-tipo").value = "FOB";
-        }
-
+        const modFrete = String(lerValor(dados, ['modFrete','mod_frete']) || "").trim();
+        if (modFrete === "0" || modFrete.toLowerCase() === 'cif') document.getElementById("cif-tipo").value = "CIF";
+        else if (modFrete === "1" || modFrete.toLowerCase() === 'fob') document.getElementById("cif-tipo").value = "FOB";
         const itens = Array.isArray(json.itens) ? json.itens : [];
-        const totalQuantidade = lerValor(dados, ['total_quantidade', 'quantidade_total', 'qtd_total', 'totalQtde']) || "";
+        const totalQuantidade = lerValor(dados, ['total_quantidade','quantidade_total','qtd_total','totalQtde']) || "";
         preencherProdutosNfe(itens, totalQuantidade);
-
         marcarStatusChave('sucesso');
         mostrarMensagem('Dados da NF-e carregados.', 'sucesso');
       } catch (err) {
@@ -969,24 +1022,24 @@
 
     function badgeStatus(status) {
       const map = {
-        agendado:        ["badge-agendado",      "AGENDADO"],
-        chamando:        ["badge-chamando",       "CHAMANDO"],
-        descarregando:   ["badge-descarregando",  "DESCARREGANDO"],
-        finalizado:      ["badge-finalizado",     "FINALIZADO"],
-        cancelado:       ["badge-cancelado",      "CANCELADO"],
-        reagendado_fila: ["badge-agendado",       "REAGENDADO"],
+        agendado:        ["badge-agendado",     "AGENDADO"],
+        chamando:        ["badge-chamando",      "CHAMANDO"],
+        descarregando:   ["badge-descarregando", "DESCARREGANDO"],
+        finalizado:      ["badge-finalizado",    "FINALIZADO"],
+        cancelado:       ["badge-cancelado",     "CANCELADO"],
+        reagendado_fila: ["badge-agendado",      "REAGENDADO"],
       };
       const [cls, label] = map[status] || ["badge-agendado", (status || "").toUpperCase()];
       return `<span class="badge ${cls}">${label}</span>`;
     }
 
-    // ── ABAS ──────────────────────────────────
+    /* ── ABAS ─────────────────────────────── */
     function trocarAba(aba) {
-      const nomes = ['descarga', 'carga', 'triagem'];
+      const nomes = ['descarga', 'carga', 'anomalia'];
       document.querySelectorAll(".aba").forEach((b, i) => {
-        b.classList.remove("ativa", "ativa-alerta");
+        b.classList.remove("ativa", "ativa-anomalia");
         if (nomes[i] === aba) {
-          b.classList.add(aba === 'triagem' ? 'ativa-alerta' : 'ativa');
+          b.classList.add(aba === 'anomalia' ? 'ativa-anomalia' : 'ativa');
         }
       });
       nomes.forEach(n => {
@@ -994,7 +1047,7 @@
       });
     }
 
-    // ── TOGGLE TRANSPORTADORA ─────────────────
+    /* ── TOGGLE TRANSPORTADORA ─────────────── */
     function toggleTransp() {
       const tipo  = document.getElementById("cif-transp-tipo").value;
       const campo = document.getElementById("campo-transp-nome");
@@ -1008,13 +1061,11 @@
       }
     }
 
-    // ── PRODUTOS DINÂMICOS ────────────────────
+    /* ── PRODUTOS DINÂMICOS ─────────────────── */
     let contadorProduto = 0;
 
     function opcoesSelect() {
-      return PRODUTOS_OPCOES.map(p =>
-        `<option value="${p.value}">${p.label}</option>`
-      ).join("");
+      return PRODUTOS_OPCOES.map(p => `<option value="${p.value}">${p.label}</option>`).join("");
     }
 
     function adicionarProduto() {
@@ -1046,8 +1097,7 @@
     }
 
     function coletarProdutos() {
-      const linhas = document.querySelectorAll("[id^='prod-linha-']");
-      return Array.from(linhas).map(linha => {
+      return Array.from(document.querySelectorAll("[id^='prod-linha-']")).map(linha => {
         const id = linha.id.replace("prod-linha-", "");
         return {
           produto:    document.getElementById(`prod-${id}`)?.value || "",
@@ -1068,7 +1118,7 @@
       adicionarProduto();
     }
 
-    // ── MENSAGEM ──────────────────────────────
+    /* ── MENSAGEM ───────────────────────────── */
     function mostrarMensagem(texto, tipo) {
       const el = document.getElementById("mensagem");
       el.textContent   = texto;
@@ -1077,7 +1127,7 @@
       setTimeout(() => { el.style.display = "none"; }, 3000);
     }
 
-    // ── API ───────────────────────────────────
+    /* ── API ────────────────────────────────── */
     async function obterAgendamentos() {
       const res = await fetch(API_URL);
       return await res.json();
@@ -1092,7 +1142,7 @@
       return res.ok;
     }
 
-    // ── RENDERIZAR DESCARGA ───────────────────
+    /* ── RENDERIZAR DESCARGA ────────────────── */
     async function renderizarDescarga() {
       const dados = await obterAgendamentos();
       const el    = document.getElementById("lista-descarga");
@@ -1116,6 +1166,10 @@
         const perm      = calcularPermanencia(item.hora_entrada);
         const permHTML  = perm
           ? `<span class="permanencia ${perm.alerta ? 'alerta' : ''}">⏱ ${perm.texto}</span>`
+          : "";
+
+        const btnTriagem = !encerrado
+          ? `<button class="btn-acao btn-triagem" onclick="abrirTriagem('${item.placa}', '${item.id}')">🔍 TRIAGEM</button>`
           : "";
 
         return `
@@ -1156,7 +1210,7 @@
                 </div>
                 <div class="mini-campo">
                   <label>NF</label>
-                  <input type="text" id="nf-${item.id}" value="${item.nota_fiscal || ''}" placeholder="Nº NF">
+                  <input type="text" id="nf-desc-${item.id}" value="${item.nota_fiscal || ''}" placeholder="Nº NF">
                 </div>
                 <div class="mini-campo">
                   <label>Qtd (sacos)</label>
@@ -1165,23 +1219,20 @@
               </div>
             `}
             <div class="item-acoes">
-              ${item.status === 'agendado' ?
-                `<button class="btn-acao btn-chamar" onclick="acao('${item.id}','chamar')">CHAMAR</button>` : ''}
-              ${item.status === 'chamando' ?
-                `<button class="btn-acao btn-descarga" onclick="acao('${item.id}','descarregando')">DESCARREGANDO</button>` : ''}
-              ${['chamando','descarregando'].includes(item.status) ?
-                `<button class="btn-acao btn-finalizar" onclick="acao('${item.id}','finalizar')">FINALIZAR</button>` : ''}
-              ${!encerrado ?
-                `<button class="btn-acao btn-salvar" onclick="salvarExtras('${item.id}')">SALVAR</button>` : ''}
+              ${item.status === 'agendado'      ? `<button class="btn-acao btn-chamar"  onclick="acao('${item.id}','chamar')">CHAMAR</button>` : ''}
+              ${item.status === 'chamando'       ? `<button class="btn-acao btn-descarga" onclick="acao('${item.id}','descarregando')">DESCARREGANDO</button>` : ''}
+              ${['chamando','descarregando'].includes(item.status) ? `<button class="btn-acao btn-finalizar" onclick="acao('${item.id}','finalizar')">FINALIZAR</button>` : ''}
+              ${!encerrado ? `<button class="btn-acao btn-salvar" onclick="salvarExtras('${item.id}')">SALVAR</button>` : ''}
               ${!encerrado ? `
                 <button class="btn-acao btn-cancelar" onclick="if(confirm('Cancelar agendamento?')) acao('${item.id}','cancelar')">CANCELAR</button>
-                <button class="btn-acao btn-ausente"  onclick="if(confirm('Marcar como ausente?')) acao('${item.id}','ausente')">AUSENTE</button>` : ''}
+                <button class="btn-acao btn-ausente"  onclick="if(confirm('Marcar como ausente?'))  acao('${item.id}','ausente')">AUSENTE</button>` : ''}
+              ${btnTriagem}
             </div>
           </div>`;
       }).join("");
     }
 
-    // ── RENDERIZAR CARGA CIF/FOB ──────────────
+    /* ── RENDERIZAR CARGA CIF/FOB ─────────── */
     async function renderizarCarga() {
       const dados = await obterAgendamentos();
       const el    = document.getElementById("lista-carga");
@@ -1232,19 +1283,17 @@
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">${produtosHTML}</div>
             <div class="item-resumo">${item.transportadora || ''}</div>
             <div class="item-acoes">
-              ${item.status === 'agendado' ?
-                `<button class="btn-acao btn-chamar" onclick="acao('${item.id}','chamar')">CHAMAR TV</button>` : ''}
-              ${item.status === 'chamando' ?
-                `<button class="btn-acao btn-descarga" onclick="acao('${item.id}','descarregando')">CARREGANDO</button>` : ''}
-              ${['chamando','descarregando','agendado'].includes(item.status) ?
-                `<button class="btn-acao btn-finalizar" onclick="acao('${item.id}','finalizar')">FINALIZAR</button>` : ''}
+              ${item.status === 'agendado'      ? `<button class="btn-acao btn-chamar"   onclick="acao('${item.id}','chamar')">CHAMAR TV</button>` : ''}
+              ${item.status === 'chamando'       ? `<button class="btn-acao btn-descarga"  onclick="acao('${item.id}','descarregando')">CARREGANDO</button>` : ''}
+              ${['chamando','descarregando','agendado'].includes(item.status) ? `<button class="btn-acao btn-finalizar" onclick="acao('${item.id}','finalizar')">FINALIZAR</button>` : ''}
               <button class="btn-acao btn-cancelar" onclick="if(confirm('Cancelar?')) acao('${item.id}','cancelar')">CANCELAR</button>
+              <button class="btn-acao btn-triagem" onclick="abrirTriagem('${item.placa}', '${item.id}')">🔍 TRIAGEM</button>
             </div>
           </div>`;
       }).join("");
     }
 
-    // ── AÇÕES STATUS ──────────────────────────
+    /* ── AÇÕES STATUS ──────────────────────── */
     async function acao(id, tipo) {
       const campos = {};
       const agora  = horaAgora();
@@ -1263,14 +1312,14 @@
       }
     }
 
-    // ── SALVAR EXTRAS (DESCARGA) ──────────────
+    /* ── SALVAR EXTRAS (DESCARGA) ──────────── */
     async function salvarExtras(id) {
       const campos = {};
       const entrada        = document.getElementById(`ent-${id}`)?.value;
       const saida          = document.getElementById(`sai-${id}`)?.value;
       const motorista      = document.getElementById(`mot-${id}`)?.value;
       const transportadora = document.getElementById(`tr-${id}`)?.value;
-      const nf             = document.getElementById(`nf-${id}`)?.value;
+      const nf             = document.getElementById(`nf-desc-${id}`)?.value;
       const quantidade     = document.getElementById(`qt-${id}`)?.value;
 
       if (entrada)        campos.hora_entrada   = entrada;
@@ -1293,7 +1342,7 @@
       }
     }
 
-    // ── REGISTRAR CIF/FOB ─────────────────────
+    /* ── REGISTRAR CIF/FOB ──────────────────── */
     async function registrarCifFob() {
       const placa          = document.getElementById("cif-placa").value.trim().toUpperCase();
       const motorista      = document.getElementById("cif-motorista").value.trim();
@@ -1301,8 +1350,8 @@
       const transportadora = document.getElementById("cif-transportadora").value.trim();
       const produtos       = coletarProdutos();
 
-      if (!placa) { mostrarMensagem("Informe a placa.", "erro"); return; }
-      if (!produtos.length) { mostrarMensagem("Adicione ao menos um produto.", "erro"); return; }
+      if (!placa)          { mostrarMensagem("Informe a placa.", "erro"); return; }
+      if (!produtos.length){ mostrarMensagem("Adicione ao menos um produto.", "erro"); return; }
 
       const agora = horaAgora();
       const hoje  = new Date().toISOString().split("T")[0];
@@ -1341,30 +1390,44 @@
     }
 
     /* ════════════════════════════════════════════
-       TRIAGEM — lógica de fluxo
+       TRIAGEM — painel slide-over
     ════════════════════════════════════════════ */
 
+    let triagemVeiculoId  = null;
+    let triagemVeiculoPlaca = null;
+
     const triagemState = {
-      checados:    [],      // índices dos itens marcados
-      motivoSel:   null,    // texto do motivo
-      recusaAplic: null,    // true / false
+      checados:    [],
+      motivoSel:   null,
+      recusaAplic: null,
     };
 
     const ETAPAS_IDS = ['etapa-1','etapa-2','etapa-3','etapa-4','etapa-5','etapa-ok'];
     const PASSOS_IDS = ['prog-1','prog-2','prog-3','prog-4','prog-5'];
 
-    function irEtapa(num) {
-      // oculta todas as etapas
-      ETAPAS_IDS.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.remove("ativa");
-      });
+    function abrirTriagem(placa, veiculoId) {
+      triagemVeiculoPlaca = placa;
+      triagemVeiculoId    = veiculoId;
+      document.getElementById("triagem-placa-tag").textContent = placa;
+      reiniciarTriagem();
+      document.getElementById("triagem-overlay").classList.add("aberto");
+      document.body.style.overflow = "hidden";
+    }
 
-      // ativa a etapa alvo
+    function fecharTriagem() {
+      document.getElementById("triagem-overlay").classList.remove("aberto");
+      document.body.style.overflow = "";
+    }
+
+    function fecharTriagemSeTela(event) {
+      if (event.target === document.getElementById("triagem-overlay")) fecharTriagem();
+    }
+
+    function irEtapa(num) {
+      ETAPAS_IDS.forEach(id => document.getElementById(id)?.classList.remove("ativa"));
       const alvo = num === 'ok' ? 'etapa-ok' : `etapa-${num}`;
       document.getElementById(alvo)?.classList.add("ativa");
 
-      // atualiza barra de progresso
       PASSOS_IDS.forEach((id, idx) => {
         const p = document.getElementById(id);
         p.classList.remove("ativo","feito","recusa");
@@ -1378,141 +1441,108 @@
         }
       });
 
-      // pré-preenche contexto da etapa 2
       if (num === 2) {
-        const ctx = document.getElementById("ctx-etapa2");
-        const total   = 4;
+        const ctx    = document.getElementById("ctx-etapa2");
+        const total  = 4;
         const marcados = triagemState.checados.length;
         ctx.innerHTML = marcados === total
           ? `<span class="ctx-tag destaque">✓ ${marcados}/${total} itens conferidos</span>`
           : `<span class="ctx-tag alerta">⚠ ${marcados}/${total} itens conferidos</span>`;
         const aviso = document.getElementById("aviso-etapa2");
-        aviso.className = marcados < total
-          ? "triagem-aviso alerta"
-          : "triagem-aviso info";
+        aviso.className = marcados < total ? "triagem-aviso alerta" : "triagem-aviso info";
         aviso.textContent = marcados < total
-          ? `Atenção: ${total - marcados} item(s) não foram marcados no checklist. Com base na verificação, qual é o resultado?`
+          ? `Atenção: ${total - marcados} item(s) não foram marcados. Com base na verificação, qual é o resultado?`
           : "Todos os itens foram conferidos. Com base na verificação, qual é o resultado da triagem?";
       }
 
-      // pré-preenche resumo da etapa 4
       if (num === 4) {
-        document.getElementById("motivo-resumo-txt").textContent =
-          triagemState.motivoSel || "—";
+        document.getElementById("motivo-resumo-txt").textContent = triagemState.motivoSel || "—";
       }
 
-      // pré-preenche resumo da etapa 5
       if (num === 5) {
         const recusaTexto = triagemState.recusaAplic ? "Dever de recusa APLICADO" : "Dever de recusa NÃO aplicado";
         document.getElementById("resumo-etapa5-txt").textContent =
           `${triagemState.motivoSel || "—"} · ${recusaTexto}`;
-        // pré-seleciona tipo de anomalia se motivo bater com algum
         const mapa = {
-          "Avaria na carga":        "Avaria na carga",
-          "Assoalho danificado":    "Avaria operacional",
-          "Pneu(s) em mau estado":  "Problema no veículo",
+          "Avaria na carga":           "Avaria na carga",
+          "Assoalho danificado":       "Avaria operacional",
+          "Pneu(s) em mau estado":     "Problema no veículo",
           "EPI ausente ou inadequado": "EPI — não conformidade",
         };
         const tipo = mapa[triagemState.motivoSel] || "";
         if (tipo) document.getElementById("anom-tipo").value = tipo;
-
-        // cor do aviso
         const aviso5 = document.getElementById("aviso-etapa5");
-        aviso5.className = triagemState.recusaAplic
-          ? "triagem-aviso ok"
-          : "triagem-aviso danger";
+        aviso5.className = triagemState.recusaAplic ? "triagem-aviso ok" : "triagem-aviso danger";
         aviso5.textContent = triagemState.recusaAplic
           ? "Dever de recusa aplicado. Registre a ocorrência para fins de rastreabilidade."
           : "⚠ Dever de recusa NÃO aplicado. Registre a ocorrência para que a equipe responsável seja informada.";
       }
     }
 
-    // ── CHECKLIST ────────────────────────────
     function toggleCheck(idx) {
       const item = document.querySelector(`.check-item[data-idx="${idx}"]`);
       const pos  = triagemState.checados.indexOf(idx);
-      if (pos === -1) {
-        triagemState.checados.push(idx);
-        item.classList.add("marcado");
-      } else {
-        triagemState.checados.splice(pos, 1);
-        item.classList.remove("marcado");
-      }
-      const total = 4;
-      const n = triagemState.checados.length;
+      if (pos === -1) { triagemState.checados.push(idx); item.classList.add("marcado"); }
+      else { triagemState.checados.splice(pos, 1); item.classList.remove("marcado"); }
       document.getElementById("check-progresso-txt").textContent =
-        `${n} / ${total} conferidos`;
+        `${triagemState.checados.length} / 4 conferidos`;
     }
 
-    // ── CONFORME ─────────────────────────────
     function irConforme() {
-      const marcados = triagemState.checados.length;
-      ETAPAS_IDS.forEach(id => {
-        document.getElementById(id)?.classList.remove("ativa");
-      });
+      ETAPAS_IDS.forEach(id => document.getElementById(id)?.classList.remove("ativa"));
       document.getElementById("etapa-ok").classList.add("ativa");
-
       PASSOS_IDS.forEach(id => {
         document.getElementById(id).classList.remove("ativo","feito","recusa");
         document.getElementById(id).classList.add("feito");
       });
-
       document.getElementById("ok-resumo").textContent =
-        `${marcados} de 4 itens verificados. Carregamento liberado às ${horaAgora()}.`;
+        `${triagemState.checados.length} de 4 itens verificados. Carregamento liberado às ${horaAgora()}.`;
     }
 
-    // ── MOTIVO ───────────────────────────────
     function selecionarMotivo(el) {
       document.querySelectorAll(".motivo-item").forEach(m => m.classList.remove("selecionado"));
       el.classList.add("selecionado");
       triagemState.motivoSel = el.dataset.motivo;
-
-      const campoOutro = document.getElementById("campo-outro-motivo");
-      campoOutro.style.display = el.dataset.motivo === "Outro motivo" ? "flex" : "none";
-
+      document.getElementById("campo-outro-motivo").style.display =
+        el.dataset.motivo === "Outro motivo" ? "flex" : "none";
       const btn = document.getElementById("btn-avancar-etapa3");
       btn.disabled = false;
       btn.style.opacity = "1";
     }
 
-    // garante captura do texto livre "Outro"
     document.getElementById("outro-motivo-txt")?.addEventListener("input", function() {
       if (this.value.trim()) triagemState.motivoSel = this.value.trim();
     });
 
-    // ── RECUSA ───────────────────────────────
     function selecionarRecusa(aplicado) {
       triagemState.recusaAplic = aplicado;
       irEtapa(5);
     }
 
-    // ── REINICIAR ────────────────────────────
     function reiniciarTriagem() {
       triagemState.checados    = [];
       triagemState.motivoSel   = null;
       triagemState.recusaAplic = null;
-
       document.querySelectorAll(".check-item").forEach(el => el.classList.remove("marcado"));
       document.querySelectorAll(".motivo-item").forEach(el => el.classList.remove("selecionado"));
       document.getElementById("check-progresso-txt").textContent = "0 / 4 conferidos";
       document.getElementById("anom-tipo").value      = "";
       document.getElementById("anom-descricao").value = "";
-      for (let i = 0; i < 3; i++) removerFoto(i);
-
+      for (let i = 0; i < 3; i++) removerFoto('t', i);
       const btn = document.getElementById("btn-avancar-etapa3");
       btn.disabled = true;
       btn.style.opacity = "0.4";
-
       document.getElementById("campo-outro-motivo").style.display = "none";
       document.getElementById("outro-motivo-txt").value = "";
-
+      document.getElementById("anom-status").className = "anomalia-status";
+      document.getElementById("btn-enviar-anomalia").disabled = false;
       irEtapa(1);
     }
 
     /* ════════════════════════════════════════════
-       FOTOS — compressão e preview
+       FOTOS — prefixo 't' = triagem, 'a' = anomalia aba
     ════════════════════════════════════════════ */
-    const fotosComprimidas = [null, null, null];
+    const fotosComprimidas = { t: [null,null,null], a: [null,null,null] };
 
     function comprimirImagem(file, maxPx, qualidade) {
       return new Promise((resolve) => {
@@ -1536,12 +1566,11 @@
       });
     }
 
-    async function previewFoto(idx, input) {
-      const slot = document.getElementById(`slot-${idx}`);
+    async function previewFoto(prefixo, idx, input) {
+      const slot = document.getElementById(`slot-${prefixo}-${idx}`);
       if (!input.files || !input.files[0]) return;
-
       const blob = await comprimirImagem(input.files[0], 1200, 0.75);
-      fotosComprimidas[idx] = blob;
+      fotosComprimidas[prefixo][idx] = blob;
       const kb = Math.round(blob.size / 1024);
 
       slot.querySelector('.icone-camera')?.remove();
@@ -1561,24 +1590,25 @@
       slot.appendChild(badge);
 
       const btn = document.createElement('button');
-      btn.className = 'btn-remover-foto';
+      btn.className   = 'btn-remover-foto';
       btn.textContent = '✕';
-      btn.onclick = (ev) => { ev.preventDefault(); removerFoto(idx); };
+      btn.onclick = (ev) => { ev.preventDefault(); removerFoto(prefixo, idx); };
       slot.appendChild(btn);
 
       slot.classList.add('tem-foto');
     }
 
-    function removerFoto(idx) {
-      const slot  = document.getElementById(`slot-${idx}`);
-      const input = document.getElementById(`foto-${idx}`);
+    function removerFoto(prefixo, idx) {
+      const slot  = document.getElementById(`slot-${prefixo}-${idx}`);
+      const input = document.getElementById(`foto-${prefixo}-${idx}`);
+      if (!slot) return;
 
       slot.querySelector('img')?.remove();
       slot.querySelector('.btn-remover-foto')?.remove();
       slot.querySelector('.size-badge')?.remove();
       slot.classList.remove('tem-foto');
-      input.value = '';
-      fotosComprimidas[idx] = null;
+      if (input) input.value = '';
+      fotosComprimidas[prefixo][idx] = null;
 
       if (!slot.querySelector('.icone-camera')) {
         const ic = document.createElement('span');
@@ -1593,33 +1623,27 @@
     }
 
     /* ════════════════════════════════════════════
-       ENVIO DA ANOMALIA
+       ENVIO — anomalia da triagem (vinculada ao veículo)
     ════════════════════════════════════════════ */
-    async function enviarAnomalia() {
+    async function enviarAnomaliaTriagem() {
       const tipo      = document.getElementById("anom-tipo").value;
       const descricao = document.getElementById("anom-descricao").value.trim();
       const statusEl  = document.getElementById("anom-status");
       const btnEnviar = document.getElementById("btn-enviar-anomalia");
 
-      if (!tipo) {
-        statusEl.textContent = "⚠ Selecione o tipo de ocorrência.";
-        statusEl.className   = "anomalia-status erro";
-        return;
-      }
-      if (!descricao) {
-        statusEl.textContent = "⚠ Descreva o ocorrido antes de enviar.";
-        statusEl.className   = "anomalia-status erro";
-        return;
-      }
+      if (!tipo)      { statusEl.textContent = "⚠ Selecione o tipo de ocorrência."; statusEl.className = "anomalia-status erro"; return; }
+      if (!descricao) { statusEl.textContent = "⚠ Descreva o ocorrido antes de enviar."; statusEl.className = "anomalia-status erro"; return; }
 
       const formData = new FormData();
-      formData.append("tipo",      tipo);
-      formData.append("descricao", `[TRIAGEM] Motivo: ${triagemState.motivoSel || "—"} | Recusa: ${triagemState.recusaAplic ? "Sim" : "Não"} | ${descricao}`);
+      formData.append("tipo", tipo);
+      formData.append("descricao",
+        `[TRIAGEM | Placa: ${triagemVeiculoPlaca || "—"}] Motivo: ${triagemState.motivoSel || "—"} | Recusa: ${triagemState.recusaAplic ? "Sim" : "Não"} | ${descricao}`
+      );
 
       let totalFotos = 0;
       for (let i = 0; i < 3; i++) {
-        if (fotosComprimidas[i]) {
-          formData.append("fotos", fotosComprimidas[i], `foto-${i + 1}.jpg`);
+        if (fotosComprimidas['t'][i]) {
+          formData.append("fotos", fotosComprimidas['t'][i], `foto-${i+1}.jpg`);
           totalFotos++;
         }
       }
@@ -1631,17 +1655,10 @@
       try {
         const res  = await fetch(ANOMALIA_URL, { method: "POST", body: formData });
         const json = await res.json();
-
         if (res.ok && json.sucesso) {
           statusEl.textContent = "✅ Ocorrência registrada! E-mail enviado com sucesso.";
           statusEl.className   = "anomalia-status sucesso";
-
-          setTimeout(() => {
-            statusEl.className = "anomalia-status";
-            btnEnviar.disabled = false;
-            reiniciarTriagem();
-          }, 3000);
-
+          setTimeout(() => { fecharTriagem(); }, 2500);
         } else {
           throw new Error(json.erro || "Erro desconhecido");
         }
@@ -1653,13 +1670,65 @@
       }
     }
 
-    // ── RELÓGIO ───────────────────────────────
+    /* ════════════════════════════════════════════
+       ENVIO — anomalia da aba (sem veículo)
+    ════════════════════════════════════════════ */
+    async function enviarAnomaliaAba() {
+      const tipo      = document.getElementById("aba-anom-tipo").value;
+      const descricao = document.getElementById("aba-anom-descricao").value.trim();
+      const statusEl  = document.getElementById("aba-anom-status");
+      const btnEnviar = document.getElementById("btn-aba-enviar-anomalia");
+
+      if (!tipo)      { statusEl.textContent = "⚠ Selecione o tipo de ocorrência."; statusEl.className = "anomalia-aba-status erro"; return; }
+      if (!descricao) { statusEl.textContent = "⚠ Descreva o ocorrido antes de enviar."; statusEl.className = "anomalia-aba-status erro"; return; }
+
+      const formData = new FormData();
+      formData.append("tipo", tipo);
+      formData.append("descricao", `[ANOMALIA OPERACIONAL] ${descricao}`);
+
+      let totalFotos = 0;
+      for (let i = 0; i < 3; i++) {
+        if (fotosComprimidas['a'][i]) {
+          formData.append("fotos", fotosComprimidas['a'][i], `foto-${i+1}.jpg`);
+          totalFotos++;
+        }
+      }
+
+      btnEnviar.disabled   = true;
+      statusEl.textContent = `⏳ Enviando registro${totalFotos > 0 ? ` com ${totalFotos} foto(s)` : ''}...`;
+      statusEl.className   = "anomalia-aba-status enviando";
+
+      try {
+        const res  = await fetch(ANOMALIA_URL, { method: "POST", body: formData });
+        const json = await res.json();
+        if (res.ok && json.sucesso) {
+          statusEl.textContent = "✅ Ocorrência registrada! E-mail enviado com sucesso.";
+          statusEl.className   = "anomalia-aba-status sucesso";
+          setTimeout(() => {
+            statusEl.className = "anomalia-aba-status";
+            btnEnviar.disabled = false;
+            document.getElementById("aba-anom-tipo").value      = "";
+            document.getElementById("aba-anom-descricao").value = "";
+            for (let i = 0; i < 3; i++) removerFoto('a', i);
+          }, 3000);
+        } else {
+          throw new Error(json.erro || "Erro desconhecido");
+        }
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = `❌ Erro ao enviar: ${err.message}. Tente novamente.`;
+        statusEl.className   = "anomalia-aba-status erro";
+        btnEnviar.disabled   = false;
+      }
+    }
+
+    /* ── RELÓGIO ─────────────────────────────── */
     function atualizarRelogio() {
       document.getElementById("relogio").textContent =
         new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
     }
 
-    // ── POLLING ───────────────────────────────
+    /* ── POLLING ────────────────────────────── */
     function atualizarTudo() {
       renderizarDescarga();
       renderizarCarga();
