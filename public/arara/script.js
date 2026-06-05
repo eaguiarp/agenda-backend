@@ -1,92 +1,59 @@
-
-// ── ESTADO GLOBAL ──────────────────────────────────────────────────
-const STORAGE_KEY = 'arara_composicoes_ativas_v1';
-const STORAGE_CFG = 'arara_config_v1';
-const SENHA_PADRAO = '1234';
+const STORAGE_KEY = 'arara_vagoes_ativos_v2';
+const STORAGE_CFG = 'arara_config_v2';
 
 let composicoesAtivas = [];
-let config = { limite_estadia: 24, senha: SENHA_PADRAO };
-let vagaoSelecionado = null; // id do vagão em edição
-let logado = false;
+let config = { limite_estadia: 24 };
+let vagaoSelecionado = null;
 
-// ── INIT ───────────────────────────────────────────────────────────
 function init() {
   const salvo = localStorage.getItem(STORAGE_KEY);
-  if (salvo) {
-    composicoesAtivas = JSON.parse(salvo) || [];
-  } else {
-    const antigo = localStorage.getItem('arara_composicao_v1');
-    if (antigo) {
-      try {
-        const comp = JSON.parse(antigo);
-        if (comp && comp.chegadaDt && Array.isArray(comp.vagoes)) {
-          composicoesAtivas = [{
-            id: `COMP-LEGACY-${Date.now().toString().slice(-4)}`,
-            chegadaDt: comp.chegadaDt,
-            vagoes: comp.vagoes
-          }];
-          salvar();
-          localStorage.removeItem('arara_composicao_v1');
-        }
-      } catch (err) {
-        console.warn('Falha ao migrar dados legados:', err);
-      }
-    }
-  }
+  if (salvo) composicoesAtivas = JSON.parse(salvo);
+  
   const cfgSalvo = localStorage.getItem(STORAGE_CFG);
   if (cfgSalvo) config = { ...config, ...JSON.parse(cfgSalvo) };
 
   configurarAbas();
   configurarModal();
   configurarFormComposicao();
-  configurarLogin();
-  configurarGestao();
   configurarLiberacao();
-  atualizarComposicoesAtivas();
-  atualizarEstadoRegistroComposicao();
-  renderPainel();
-  renderFarol();
-  renderLiberacao();
+  
+  document.getElementById('cfg-limite').value = config.limite_estadia;
+  document.getElementById('btn-salvar-cfg').addEventListener('click', () => {
+    config.limite_estadia = parseInt(document.getElementById('cfg-limite').value) || 24;
+    localStorage.setItem(STORAGE_CFG, JSON.stringify(config));
+    alert('Configuração salva!');
+  });
 
-  // Preenche data de hoje nos campos
   const hoje = new Date().toISOString().split('T')[0];
   document.getElementById('comp-data').value = hoje;
   document.getElementById('lib-data').value = hoje;
 
-  // Relógio
-  atualizarRelogio();
+  atualizarInterface();
   setInterval(() => {
     atualizarRelogio();
-    atualizarComposicoesAtivas();
     renderFarol();
   }, 1000);
 }
 
-function salvar() {
+function salvarDados() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(composicoesAtivas));
-}
-function salvarConfig() {
-  localStorage.setItem(STORAGE_CFG, JSON.stringify(config));
+  atualizarInterface();
 }
 
-function atualizarEstadoRegistroComposicao() {
-  const btn = document.getElementById('btn-nova-comp');
-  if (!btn) return;
-  btn.disabled = composicoesAtivas.length >= 3;
+function atualizarInterface() {
+  atualizarRelogio();
+  limparComposicoesVazias();
+  renderPainelFIFO();
+  renderFarol();
+  renderLiberacao();
 }
 
-function atualizarComposicoesAtivas() {
-  const anterior = composicoesAtivas.length;
+function limparComposicoesVazias() {
   composicoesAtivas = composicoesAtivas.filter(comp => {
-    const temVagoes = Array.isArray(comp.vagoes) && comp.vagoes.length > 0;
-    const restante = temVagoes && comp.vagoes.some(v => v.status !== 'vazio');
-    return temVagoes && restante;
+    return comp.vagoes.some(v => v.status !== 'vazio');
   });
-  if (composicoesAtivas.length !== anterior) salvar();
-  atualizarEstadoRegistroComposicao();
 }
 
-// ── RELÓGIO ────────────────────────────────────────────────────────
 function atualizarRelogio() {
   const agora = new Date();
   document.getElementById('relogio').textContent =
@@ -94,61 +61,98 @@ function atualizarRelogio() {
     agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
-// ── ABAS ───────────────────────────────────────────────────────────
 function configurarAbas() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-      if (btn.dataset.tab === 'gestao') renderGestao();
-      if (btn.dataset.tab === 'liberacao') renderLiberacao();
     });
   });
 }
 
-// ── PAINEL DE VAGÕES ───────────────────────────────────────────────
-function renderPainel() {
-  const div = document.getElementById('painel-vagoes');
-  if (composicoesAtivas.length === 0) {
-    div.innerHTML = '<div class="vazio-msg">Nenhuma composição ativa. Registre uma acima.</div>';
-    return;
+// ── LÓGICA DE REGISTRO ──
+function configurarFormComposicao() {
+  document.getElementById('btn-nova-comp').addEventListener('click', () => {
+    const data = document.getElementById('comp-data').value;
+    const hora = document.getElementById('comp-hora').value;
+    const textoVagoes = document.getElementById('comp-vagoes').value;
+
+    if (!data || !hora || !textoVagoes.trim()) {
+      alert('Preencha data, hora e os IDs dos vagões.');
+      return;
+    }
+
+    const idsArr = textoVagoes.split(/[\n,]+/).map(v => v.trim().toUpperCase()).filter(v => v.length > 0);
+    
+    const novaComp = {
+      chegadaDt: `${data}T${hora}`,
+      vagoes: idsArr.map(id => ({
+        id,
+        status: 'nao_posicionado',
+        posDt: null,
+        fimDt: null
+      }))
+    };
+
+    composicoesAtivas.push(novaComp);
+    salvarDados();
+    
+    document.getElementById('comp-vagoes').value = '';
+    alert(`${idsArr.length} vagão(ões) inserido(s) no pátio.`);
+  });
+}
+
+// ── PAINEL DE LED (FIFO ÚNICO) ──
+function renderPainelFIFO() {
+  const container = document.getElementById('painel-vagoes-fifo');
+  const resumo = document.getElementById('patio-resumo');
+  container.innerHTML = '';
+  
+  let vagoesFila = [];
+  let resumosDict = {};
+
+  // Extrai apenas os vagões que AINDA NÃO FORAM LIBERADOS (status != 'vazio')
+  composicoesAtivas.forEach(comp => {
+    const pendentes = comp.vagoes.filter(v => v.status !== 'vazio');
+    if (pendentes.length > 0) {
+      const chaveResumo = formatarDataResumo(comp.chegadaDt);
+      resumosDict[chaveResumo] = (resumosDict[chaveResumo] || 0) + pendentes.length;
+      pendentes.forEach(v => vagoesFila.push(v));
+    }
+  });
+
+  if (vagoesFila.length === 0) {
+    resumo.textContent = 'Pátio Atual: Limpo (Sem operações ativas)';
+  } else {
+    const stringResumo = Object.keys(resumosDict).map(k => `[${k} — ${resumosDict[k]} FLTs]`).join(' ');
+    resumo.textContent = `Pátio Atual: ${stringResumo}`;
   }
 
-  div.innerHTML = '';
-  composicoesAtivas.forEach(comp => {
-    const totalVagoes = comp.vagoes.length;
-    const restantes = comp.vagoes.filter(v => v.status !== 'vazio').length;
-    const titulo = formatarDataFLTs(comp.chegadaDt, totalVagoes);
-    const compSegment = document.createElement('div');
-    compSegment.className = 'composicao-secao';
-    compSegment.innerHTML = `
-      <div class="composicao-titulo">
-        <div>${titulo}</div>
-        <div class="composicao-chegada">${restantes} FLT(s) ativos</div>
-      </div>
-      <div class="painel-vagoes"></div>
-    `;
+  // Renderiza exatos 30 slots (Os primeiros entram, o resto fica oculto em backlog)
+  for (let i = 0; i < 30; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'vagao-slot-fifo';
 
-    const grid = compSegment.querySelector('.painel-vagoes');
-    const slots = Array.from({ length: 30 }, (_, index) => comp.vagoes[index] || null);
-    slots.forEach(v => {
-      const isEmpty = !v;
-      const slot = document.createElement('div');
-      slot.className = 'vagao-slot' + (isEmpty ? ' vazio-indisponivel' : '');
-      const statusClass = isEmpty ? 'slot-vazio' : v.status;
-      const emEstadia = !isEmpty && calcularEstadia(v, comp.chegadaDt);
+    if (i < vagoesFila.length) {
+      const v = vagoesFila[i];
       slot.innerHTML = `
-        <div class="bolinha ${statusClass}${emEstadia ? ' estadia' : ''}"></div>
-        <div class="vagao-id">${isEmpty ? '' : formatarId(v.id)}</div>
+        <div class="bolinha ${v.status}" title="${v.id}" style="cursor:pointer;"></div>
+        <div class="vagao-id">${formatarId(v.id)}</div>
       `;
-      if (!isEmpty) slot.addEventListener('click', () => abrirModal(v.id));
-      grid.appendChild(slot);
-    });
+      slot.querySelector('.bolinha').addEventListener('click', () => abrirModal(v.id));
+    } else {
+      slot.innerHTML = `<div class="bolinha slot-vazio"></div><div class="vagao-id"></div>`;
+    }
+    container.appendChild(slot);
+  }
+}
 
-    div.appendChild(compSegment);
-  });
+function formatarDataResumo(dtString) {
+  const dt = new Date(dtString);
+  const dia = String(dt.getDate()).padStart(2, '0');
+  const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  return `${dia}/${meses[dt.getMonth()]}`;
 }
 
 function formatarId(id) {
@@ -156,181 +160,53 @@ function formatarId(id) {
   return id;
 }
 
-function formatarDataFLTs(chegadaDt, quantidade) {
-  if (!chegadaDt) return `— — ${quantidade} FLTs`;
-  const dt = new Date(chegadaDt);
-  const dia = String(dt.getDate()).padStart(2, '0');
-  const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-  return `${dia}/${meses[dt.getMonth()]} — ${quantidade} FLTs`;
-}
-
-function formatarDataHoraChegada(chegadaDt) {
-  if (!chegadaDt) return '—';
-  const dt = new Date(chegadaDt);
-  return dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-}
-
-function calcularEstadia(vagao, chegadaDt) {
-  if (!chegadaDt) return false;
-  const limite = (config.limite_estadia || 24) * 3600000;
-  const chegada = new Date(chegadaDt).getTime();
-  return (Date.now() - chegada) > limite;
-}
-
-function encontrarVagao(id) {
-  for (const comp of composicoesAtivas) {
-    const vagao = comp.vagoes.find(v => v.id === id);
-    if (vagao) return { comp, vagao };
-  }
-  return { comp: null, vagao: null };
-}
-
-// ── FAROL ──────────────────────────────────────────────────────────
-function renderFarol() {
-  const grid = document.getElementById('farol-grid');
-  if (!grid) return;
-  if (composicoesAtivas.length === 0) {
-    grid.innerHTML = '<div class="farol-item"><div class="farol-label">Sem composição ativa</div><div class="farol-valor">—</div><div class="farol-sub">Registre até 3 composições</div></div>';
-    return;
-  }
-
-  grid.innerHTML = '';
-  const limiteMs = (config.limite_estadia || 24) * 3600000;
-
-  composicoesAtivas.slice(0, 3).forEach(comp => {
-    const restantes = comp.vagoes.filter(v => v.status !== 'vazio').length;
-    const tpvChegLib = calcularTempoChegadaLiberacao(comp);
-    const tpvPosLib = calcularTempoPosicionamentoLiberacao(comp);
-    const item = document.createElement('div');
-    item.className = 'farol-item ' + corFarol(tpvChegLib, limiteMs);
-    item.innerHTML = `
-      <div class="farol-label">${formatarDataFLTs(comp.chegadaDt, comp.vagoes.length)}</div>
-      <div class="farol-valor">${formatarDuracao(tpvChegLib)}</div>
-      <div class="farol-sub">Chegada → Liberação</div>
-      <div class="farol-valor farol-valor-sm">${tpvPosLib !== null ? formatarDuracao(tpvPosLib) : '—'}</div>
-      <div class="farol-sub">Posicionamento → Liberação</div>
-      <div class="farol-sub">${restantes} vagão(s) restantes</div>
-    `;
-    grid.appendChild(item);
-  });
-}
-
-function calcularTempoChegadaLiberacao(comp) {
-  const chegada = new Date(comp.chegadaDt).getTime();
-  const duracoes = comp.vagoes.map(v => {
-    if (v.fimDt) return new Date(v.fimDt).getTime() - chegada;
-    return Date.now() - chegada;
-  });
-  return Math.max(...duracoes, 0);
-}
-
-function calcularTempoPosicionamentoLiberacao(comp) {
-  const duracoes = comp.vagoes.map(v => {
-    if (!v.posDt) return null;
-    const inicio = new Date(v.posDt).getTime();
-    if (v.fimDt) return new Date(v.fimDt).getTime() - inicio;
-    return Date.now() - inicio;
-  }).filter(v => v !== null);
-  if (duracoes.length === 0) return null;
-  return Math.max(...duracoes, 0);
-}
-
-function corFarol(ms, limite) {
-  const pct = ms / limite;
-  if (pct < 0.5) return 'verde';
-  if (pct < 0.8) return 'amarelo';
-  return 'vermelho';
-}
-
-function formatarDuracao(ms) {
-  if (ms < 0) ms = 0;
-  const h = Math.floor(ms / 3600000);
-  const m = Math.floor((ms % 3600000) / 60000);
-  return `${h}h ${String(m).padStart(2,'0')}m`;
-}
-
-// ── FORM NOVA COMPOSIÇÃO ───────────────────────────────────────────
-function configurarFormComposicao() {
-  document.getElementById('btn-nova-comp').addEventListener('click', () => {
-    const dataVal = document.getElementById('comp-data').value;
-    const horaVal = document.getElementById('comp-hora').value;
-    const vagoesRaw = document.getElementById('comp-vagoes').value.trim();
-
-    if (!dataVal || !horaVal || !vagoesRaw) {
-      alert('Preencha data, hora e pelo menos um vagão.');
-      return;
-    }
-
-    if (composicoesAtivas.length >= 3) {
-      alert('Já existem 3 composições ativas. Libere uma antes de registrar outra.');
-      return;
-    }
-
-    const ids = vagoesRaw
-      .split(/[\n,]+/)
-      .map(s => s.trim().toUpperCase().replace(/[^A-Z0-9]/g, ''))
-      .filter(Boolean);
-
-    if (ids.length === 0) {
-      alert('Nenhum ID de vagão válido encontrado.');
-      return;
-    }
-    if (ids.length > 20) {
-      alert('Máximo de 20 vagões por composição.');
-      return;
-    }
-
-    const compId = `COMP-${dataVal.replace(/-/g, '')}-${horaVal.replace(/:/g, '')}-${Date.now().toString().slice(-4)}`;
-    const novaComp = {
-      id: compId,
-      chegadaDt: `${dataVal}T${horaVal}`,
-      vagoes: ids.map(id => ({ id, status: 'nao_posicionado', posDt: null, inicioDt: null, fimDt: null, nf: '', peso: '' }))
-    };
-
-    composicoesAtivas.push(novaComp);
-    salvar();
-    atualizarEstadoRegistroComposicao();
-    renderPainel();
-    renderFarol();
-    renderLiberacao();
-    document.getElementById('comp-vagoes').value = '';
-    mostrarMsg(`Composição ${compId} registrada com ${ids.length} vagão(s).`, 'sucesso');
-  });
-}
-
-// ── MODAL DO VAGÃO ─────────────────────────────────────────────────
+// ── MODAL DE ATUALIZAÇÃO DO VAGÃO ──
 function configurarModal() {
   document.getElementById('modal-fechar').addEventListener('click', fecharModal);
-  document.getElementById('vagao-modal').addEventListener('click', (e) => {
-    if (e.target === e.currentTarget) fecharModal();
+  document.getElementById('modal-status').addEventListener('change', (e) => {
+    document.getElementById('grp-posicionamento').style.display = e.target.value !== 'nao_posicionado' ? 'block' : 'none';
+    document.getElementById('grp-fim').style.display = e.target.value === 'vazio' ? 'block' : 'none';
   });
-  document.getElementById('modal-salvar').addEventListener('click', salvarVagao);
-  document.getElementById('modal-remover').addEventListener('click', removerVagao);
-  document.getElementById('modal-status').addEventListener('change', atualizarCamposModal);
+
+  document.getElementById('modal-salvar').addEventListener('click', () => {
+    if (!vagaoSelecionado) return;
+    
+    for (const comp of composicoesAtivas) {
+      const vagao = comp.vagoes.find(v => v.id === vagaoSelecionado);
+      if (vagao) {
+        vagao.status = document.getElementById('modal-status').value;
+        vagao.posDt = document.getElementById('modal-dt-pos').value || null;
+        if (vagao.status === 'vazio') {
+          vagao.fimDt = document.getElementById('modal-dt-fim').value || new Date().toISOString().slice(0,16);
+        } else {
+          vagao.fimDt = null;
+        }
+        break;
+      }
+    }
+    fecharModal();
+    salvarDados();
+  });
 }
 
 function abrirModal(id) {
-  const { comp, vagao } = encontrarVagao(id);
-  if (!comp || !vagao) return;
   vagaoSelecionado = id;
+  let vagaoEncontrado = null;
+  for (const comp of composicoesAtivas) {
+    const v = comp.vagoes.find(v => v.id === id);
+    if (v) { vagaoEncontrado = v; break; }
+  }
+  if (!vagaoEncontrado) return;
 
-  document.getElementById('modal-vagao-id').textContent = `${vagao.id} (${comp.id})`;
-  document.getElementById('modal-status').value = vagao.status;
-  document.getElementById('modal-dt-pos').value = vagao.posDt || '';
-  document.getElementById('modal-dt-inicio').value = vagao.inicioDt || '';
-  document.getElementById('modal-dt-fim').value = vagao.fimDt || '';
-  document.getElementById('modal-nf').value = vagao.nf || '';
-  document.getElementById('modal-peso').value = vagao.peso || '';
+  document.getElementById('modal-vagao-id').textContent = id;
+  const selStatus = document.getElementById('modal-status');
+  selStatus.value = vagaoEncontrado.status;
+  
+  document.getElementById('modal-dt-pos').value = vagaoEncontrado.posDt || '';
+  document.getElementById('modal-dt-fim').value = vagaoEncontrado.fimDt || '';
 
-  atualizarCamposModal();
+  selStatus.dispatchEvent(new Event('change')); // Força exibir/esconder campos
   document.getElementById('vagao-modal').style.display = 'flex';
-}
-
-function atualizarCamposModal() {
-  const s = document.getElementById('modal-status').value;
-  document.getElementById('grp-posicionamento').style.display = s !== 'nao_posicionado' ? 'block' : 'none';
-  document.getElementById('grp-inicio').style.display = (s === 'vazio' || s === 'carregado') ? 'block' : 'none';
-  document.getElementById('grp-fim').style.display = s === 'carregado' ? 'block' : 'none';
 }
 
 function fecharModal() {
@@ -338,239 +214,113 @@ function fecharModal() {
   vagaoSelecionado = null;
 }
 
-function salvarVagao() {
-  if (!vagaoSelecionado) return;
-  const { comp, vagao } = encontrarVagao(vagaoSelecionado);
-  if (!comp || !vagao) return;
-  vagao.status = document.getElementById('modal-status').value;
-  vagao.posDt = document.getElementById('modal-dt-pos').value || null;
-  vagao.inicioDt = document.getElementById('modal-dt-inicio').value || null;
-  vagao.fimDt = document.getElementById('modal-dt-fim').value || null;
-  vagao.nf = document.getElementById('modal-nf').value;
-  vagao.peso = document.getElementById('modal-peso').value;
-  salvar();
-  atualizarComposicoesAtivas();
-  fecharModal();
-  renderPainel();
-  renderFarol();
-  renderLiberacao();
-  if (logado) renderGestao();
+// ── LÓGICA DO FAROL (6 INDICADORES) ──
+function renderFarol() {
+  let ativos = [];
+  composicoesAtivas.forEach(comp => {
+    comp.vagoes.forEach(v => {
+      if (v.status !== 'vazio') ativos.push({ ...v, chegadaDt: comp.chegadaDt });
+    });
+  });
+
+  const agora = Date.now();
+  const limiteEstadia = config.limite_estadia * 3600000;
+  const limiteRisco = (config.limite_estadia - 4) * 3600000;
+
+  let maxTpvMs = 0;
+  let somaPosMs = 0; let countPos = 0;
+  let somaEsperaMs = 0; let countEspera = 0;
+  let estourados = 0;
+  let risco = 0;
+
+  ativos.forEach(v => {
+    const chegadaMs = new Date(v.chegadaDt).getTime();
+    const tpvVagao = agora - chegadaMs;
+    
+    if (tpvVagao > maxTpvMs) maxTpvMs = tpvVagao;
+    if (tpvVagao >= limiteEstadia) estourados++;
+    else if (tpvVagao >= limiteRisco) risco++;
+
+    if (v.posDt) {
+      somaPosMs += (agora - new Date(v.posDt).getTime());
+      countPos++;
+    } else {
+      somaEsperaMs += tpvVagao;
+      countEspera++;
+    }
+  });
+
+  const backlog = ativos.length > 30 ? ativos.length - 30 : 0;
+
+  document.getElementById('val-tpv').innerText = maxTpvMs > 0 ? formatarMs(maxTpvMs) : '—';
+  document.getElementById('val-pos').innerText = countPos > 0 ? formatarMs(somaPosMs / countPos) : '—';
+  document.getElementById('val-espera').innerText = countEspera > 0 ? formatarMs(somaEsperaMs / countEspera) : '—';
+  document.getElementById('val-estadia').innerText = estourados;
+  document.getElementById('val-risco').innerText = risco;
+  document.getElementById('val-backlog').innerText = backlog;
 }
 
-function removerVagao() {
-  if (!vagaoSelecionado) return;
-  const { comp } = encontrarVagao(vagaoSelecionado);
-  if (!comp) return;
-  if (!confirm('Remover vagão ' + vagaoSelecionado + '?')) return;
-  comp.vagoes = comp.vagoes.filter(x => x.id !== vagaoSelecionado);
-  atualizarComposicoesAtivas();
-  salvar();
-  fecharModal();
-  renderPainel();
-  renderFarol();
-  renderLiberacao();
-  if (logado) renderGestao();
+function formatarMs(ms) {
+  const totalMinutos = Math.floor(ms / 60000);
+  const h = Math.floor(totalMinutos / 60);
+  const m = totalMinutos % 60;
+  return `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m`;
 }
 
-// ── LIBERAÇÃO ─────────────────────────────────────────────────────
+// ── ABA DE LIBERAÇÃO / IMPRESSÃO ──
 function configurarLiberacao() {
-  document.getElementById('btn-gerar-form').addEventListener('click', gerarFormulario);
+  document.getElementById('btn-gerar-form').addEventListener('click', gerarFormularioImpressao);
 }
 
 function renderLiberacao() {
   const div = document.getElementById('lista-liberacao');
-  let vagoes = [];
+  let checkboxesHTML = '';
+  
   composicoesAtivas.forEach(comp => {
-    comp.vagoes.forEach(v => vagoes.push({ ...v, compId: comp.id }));
+    comp.vagoes.forEach(v => {
+      // Exibe na lista de liberação apenas vagões que já estão configurados como "vazio" pelo operador
+      if (v.status === 'vazio' && !v.impresso) {
+        checkboxesHTML += `
+          <label style="display:block; padding: 6px; border-bottom: 1px solid #eee;">
+            <input type="checkbox" class="check-liberacao" value="${v.id}"> ${v.id} (Liberado)
+          </label>`;
+      }
+    });
   });
 
-  if (vagoes.length === 0) {
-    div.innerHTML = '<div class="vazio-msg">Nenhum vagão na composição ativa.</div>';
+  div.innerHTML = checkboxesHTML || '<div class="vazio-msg">Mude o status de um vagão para "Vazio" no painel para que ele apareça aqui.</div>';
+}
+
+function gerarFormularioImpressao() {
+  const plts = document.getElementById('lib-plts').value || '______';
+  let dataLib = document.getElementById('lib-data').value;
+  if (dataLib) {
+    const [a,m,d] = dataLib.split('-');
+    dataLib = `${d}/${m}/${a}`;
+  } else {
+    dataLib = '______/______/______';
+  }
+
+  const checkboxes = document.querySelectorAll('.check-liberacao:checked');
+  if (checkboxes.length === 0) {
+    alert('Selecione os vagões vazios na lista para gerar a via.');
     return;
   }
-  div.innerHTML = '';
-  vagoes.forEach(v => {
-    const item = document.createElement('label');
-    item.className = 'lib-item';
-    item.innerHTML = `
-      <input type="checkbox" class="lib-check" data-id="${v.id}">
-      <span class="lib-item-id">${v.id}</span>
-      <span class="lib-item-comp">${v.compId}</span>
-      <span class="lib-item-status">${labelStatus(v.status)}</span>
-    `;
-    item.querySelector('.lib-check').addEventListener('change', (e) => {
-      item.classList.toggle('selecionado', e.target.checked);
-    });
-    div.appendChild(item);
+
+  let listaHtml = '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; font-size:11pt;">';
+  checkboxes.forEach((cb, index) => {
+    listaHtml += `<div><strong>${index + 1}:</strong> ${cb.value}</div>`;
+    // Opcional: Marcar no JS que o vagão foi impresso para tirá-lo da lista futuramente
   });
-}
+  listaHtml += '</div>';
 
-function labelStatus(s) {
-  const m = { vazio: 'Vazio', carregado: 'Carregado', nao_posicionado: 'Não posic.' };
-  return m[s] || s;
-}
-
-function gerarFormulario() {
-  const checks = document.querySelectorAll('.lib-check:checked');
-  if (checks.length === 0) { alert('Selecione pelo menos um vagão.'); return; }
-
-  const ids = Array.from(checks).map(c => c.dataset.id);
-  const plts = document.getElementById('lib-plts').value || '—';
-  const dataFmt = formatarDataExtenso(document.getElementById('lib-data').value);
-  const placeholder = '_______';
-
-  ['csn','mrs'].forEach(bloco => {
-    document.getElementById(`imp-plts-${bloco}`).textContent = plts;
-    document.getElementById(`imp-data-${bloco}`).textContent = dataFmt;
-    document.getElementById(`imp-est-ini-${bloco}`).textContent = placeholder;
-    document.getElementById(`imp-est-fim-${bloco}`).textContent = placeholder;
-    document.getElementById(`imp-cons-${bloco}`).textContent = placeholder;
-    document.getElementById(`imp-pos-${bloco}`).textContent = placeholder;
-
-    const listaEl = document.getElementById(`imp-lista-${bloco}`);
-    listaEl.innerHTML = '';
-    ids.forEach((id, i) => {
-      const d = document.createElement('div');
-      d.textContent = (i + 1) + '. ' + id;
-      listaEl.appendChild(d);
-    });
+  ['csn', 'mrs'].forEach(via => {
+    document.getElementById(`imp-plts-${via}`).innerText = plts;
+    document.getElementById(`imp-data-${via}`).innerText = dataLib;
+    document.getElementById(`imp-lista-${via}`).innerHTML = listaHtml;
   });
 
   window.print();
 }
 
-function formatarDataExtenso(str) {
-  if (!str) return '___/___/______';
-  const [y, m, d] = str.split('-');
-  const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  return `${d}/${meses[parseInt(m)-1]}/${y}`;
-}
-
-// ── LOGIN ──────────────────────────────────────────────────────────
-function configurarLogin() {
-  document.getElementById('btn-login').addEventListener('click', tentarLogin);
-  document.getElementById('senha-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') tentarLogin();
-  });
-}
-
-function tentarLogin() {
-  const s = document.getElementById('senha-input').value;
-  if (s === config.senha) {
-    logado = true;
-    document.getElementById('bloco-login').style.display = 'none';
-    document.getElementById('bloco-gestao').style.display = 'block';
-    renderGestao();
-  } else {
-    document.getElementById('login-erro').style.display = 'block';
-  }
-}
-
-// ── GESTÃO ─────────────────────────────────────────────────────────
-function configurarGestao() {
-  document.getElementById('btn-salvar-cfg').addEventListener('click', () => {
-    const lim = parseInt(document.getElementById('cfg-limite').value);
-    const novaSenha = document.getElementById('cfg-senha-nova').value.trim();
-    if (!isNaN(lim) && lim > 0) config.limite_estadia = lim;
-    if (novaSenha.length >= 3) config.senha = novaSenha;
-    salvarConfig();
-    renderFarol();
-    alert('Configurações salvas.');
-  });
-
-  document.getElementById('btn-exportar-csv').addEventListener('click', exportarCSV);
-  document.getElementById('btn-imprimir-rel').addEventListener('click', () => window.print());
-}
-
-function renderGestao() {
-  if (!logado) return;
-  const wrap = document.getElementById('tabela-relatorio-wrap');
-  const vagoes = [];
-  composicoesAtivas.forEach(comp => {
-    comp.vagoes.forEach(v => vagoes.push({ ...v, compId: comp.id, chegadaDt: comp.chegadaDt }));
-  });
-
-  if (vagoes.length === 0) {
-    wrap.innerHTML = '<div class="vazio-msg">Sem dados para exibir.</div>';
-    return;
-  }
-
-  const limiteMs = (config.limite_estadia || 24) * 3600000;
-
-  let html = `<table class="tabela-rel">
-    <thead><tr>
-      <th>Composição</th><th>Vagão</th><th>Status</th><th>NF</th><th>Peso</th>
-      <th>Posicionamento</th><th>Início C/D</th><th>Fim C/D</th>
-      <th>Espera MRS</th><th>TPV</th><th>Estadia</th>
-    </tr></thead><tbody>`;
-
-  vagoes.forEach(v => {
-    const chegada = new Date(v.chegadaDt);
-    const posMs = v.posDt ? new Date(v.posDt) - chegada : null;
-    const tpvMs = v.fimDt ? new Date(v.fimDt) - chegada : Date.now() - chegada.getTime();
-    const emEstadia = tpvMs > limiteMs;
-
-    html += `<tr>
-      <td>${v.compId}</td>
-      <td style="font-family:monospace;font-weight:700;">${v.id}</td>
-      <td>${labelStatus(v.status)}</td>
-      <td>${v.nf || '—'}</td>
-      <td>${v.peso ? v.peso + 't' : '—'}</td>
-      <td>${v.posDt ? new Date(v.posDt).toLocaleString('pt-BR') : '—'}</td>
-      <td>${v.inicioDt ? new Date(v.inicioDt).toLocaleString('pt-BR') : '—'}</td>
-      <td>${v.fimDt ? new Date(v.fimDt).toLocaleString('pt-BR') : '—'}</td>
-      <td>${posMs !== null ? formatarDuracao(posMs) : '—'}</td>
-      <td>${formatarDuracao(tpvMs)}</td>
-      <td class="${emEstadia ? 'alerta' : ''}">${emEstadia ? '⚠ SIM' : 'Não'}</td>
-    </tr>`;
-  });
-
-  html += '</tbody></table>';
-  wrap.innerHTML = html;
-  document.getElementById('cfg-limite').value = config.limite_estadia;
-}
-
-// ── EXPORT CSV ────────────────────────────────────────────────────
-function exportarCSV() {
-  const linhaCabecalho = ['Composição','Vagão','Status','NF','Peso','Posicionamento','InicioCargaDesc','FimCargaDesc','EsperaMRS','TPV_horas','EmEstadia'];
-  const linhas = [linhaCabecalho];
-
-  composicoesAtivas.forEach(comp => {
-    const chegada = new Date(comp.chegadaDt);
-    const limiteMs = (config.limite_estadia || 24) * 3600000;
-    comp.vagoes.forEach(v => {
-      const posMs = v.posDt ? new Date(v.posDt) - chegada : '';
-      const tpvMs = v.fimDt ? new Date(v.fimDt) - chegada : Date.now() - chegada.getTime();
-      linhas.push([
-        comp.id,
-        v.id,
-        v.status,
-        v.nf || '',
-        v.peso || '',
-        v.posDt || '',
-        v.inicioDt || '',
-        v.fimDt || '',
-        posMs !== '' ? (posMs / 3600000).toFixed(2) : '',
-        (tpvMs / 3600000).toFixed(2),
-        tpvMs > limiteMs ? 'SIM' : 'NAO'
-      ]);
-    });
-  });
-
-  const csv = linhas.map(r => r.join(';')).join('\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'relatorio_tpv_' + new Date().toISOString().split('T')[0] + '.csv';
-  a.click();
-}
-
-// ── MENSAGEM ──────────────────────────────────────────────────────
-function mostrarMsg(txt, tipo) {
-  // Simples alert por ora; pode ser substituído por toast
-  console.log(`[${tipo}] ${txt}`);
-}
-
-// ── START ─────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', init);
+window.onload = init;
