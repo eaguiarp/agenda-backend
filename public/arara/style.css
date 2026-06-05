@@ -105,7 +105,7 @@ body {
 /* ── FAROL GRID ── */
 .farol-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 10px;
 }
 .farol-item {
@@ -154,6 +154,21 @@ body {
   .painel-vagoes { grid-template-columns: repeat(8, 1fr); }
 }
 
+.composicao-secao {
+  margin-bottom: 18px;
+}
+.composicao-titulo {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--texto);
+}
+.composicao-chegada {
+  font-size: 0.82rem;
+  color: var(--texto-sec);
+  margin-top: 2px;
+}
+
 .vagao-slot {
   display: flex;
   flex-direction: column;
@@ -174,19 +189,19 @@ body {
 
 /* Estados */
 .bolinha.vazio {
-  background: radial-gradient(circle at 35% 35%, #4ade80, #16a34a);
+  background: radial-gradient(circle at 35% 35%, #cbd5e1, #64748b);
+  border-color: #475569;
+  box-shadow: none;
+}
+.bolinha.carregado {
+  background: radial-gradient(circle at 35% 35%, #86efac, #16a34a);
   border-color: #15803d;
   box-shadow: 0 0 8px rgba(22,163,74,0.45), inset 0 -2px 4px rgba(0,0,0,0.2);
 }
-.bolinha.carregado {
-  background: radial-gradient(circle at 35% 35%, #fbbf24, #d97706);
-  border-color: #b45309;
-  box-shadow: 0 0 8px rgba(217,119,6,0.45), inset 0 -2px 4px rgba(0,0,0,0.2);
-}
 .bolinha.nao_posicionado {
-  background: radial-gradient(circle at 35% 35%, #94a3b8, #475569);
-  border-color: #334155;
-  box-shadow: 0 0 6px rgba(71,85,105,0.3), inset 0 -2px 4px rgba(0,0,0,0.2);
+  background: radial-gradient(circle at 35% 35%, #fb923c, #ea580c);
+  border-color: #c2410c;
+  box-shadow: 0 0 8px rgba(234,88,12,0.35), inset 0 -2px 4px rgba(0,0,0,0.2);
 }
 .bolinha.estadia {
   animation: pulso-estadia 1.2s infinite;
@@ -213,9 +228,9 @@ body {
 .legenda { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .leg-item { display: flex; align-items: center; gap: 4px; font-size: 0.68rem; color: rgba(255,255,255,0.85); }
 .leg-item .bolinha { width: 12px; height: 12px; border-width: 2px; }
-.leg-vazio      { background: #16a34a; border-color: #15803d; }
-.leg-carregado  { background: #d97706; border-color: #b45309; }
-.leg-nao-pos    { background: #475569; border-color: #334155; }
+.leg-vazio      { background: #94a3b8; border-color: #475569; }
+.leg-carregado  { background: #16a34a; border-color: #15803d; }
+.leg-nao-pos    { background: #ea580c; border-color: #c2410c; }
 
 /* ── INPUTS ── */
 label {
@@ -346,6 +361,7 @@ input:focus, select:focus, textarea:focus {
 .lib-item.selecionado { background: var(--azul-cl); border-color: var(--azul); }
 .lib-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--azul); flex-shrink: 0; }
 .lib-item-id { font-family: 'Courier New', monospace; font-size: 0.88rem; font-weight: 700; flex: 1; }
+.lib-item-comp { font-size: 0.7rem; color: var(--texto-sec); }
 .lib-item-status { font-size: 0.7rem; text-transform: uppercase; color: var(--texto-sec); }
 
 /* ── FORMULÁRIO SECÇÕES ── */

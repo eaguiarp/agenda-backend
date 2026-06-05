@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CD Itaboraí | Controle de Vagões</title>
+  <title>CD Arará | Controle de Vagões</title>
     <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
 
   <div class="header">
     <div class="header-left">
-      <h1>CD Itaboraí</h1>
-      <p>Controle de Estadia de Vagões — Composição Ativa</p>
+      <h1>CD Arará</h1>
+      <p>Controle de Estadia de Vagões — Composições Ativas</p>
     </div>
     <div class="header-right">
       <span id="relogio"></span>
@@ -31,30 +31,9 @@
 
       <!-- FAROL -->
       <div class="card">
-        <div class="card-header">⬤ Condição Operacional — TPV</div>
+        <div class="card-header">⬤ Condição Operacional — Composições Ativas</div>
         <div class="card-body">
-          <div class="farol-grid">
-            <div class="farol-item" id="farol-tpv">
-              <div class="farol-label">TPV Total</div>
-              <div class="farol-valor" id="val-tpv">—</div>
-              <div class="farol-sub">Chegada → Liberação</div>
-            </div>
-            <div class="farol-item" id="farol-pos">
-              <div class="farol-label">Tempo Posicionado</div>
-              <div class="farol-valor" id="val-pos">—</div>
-              <div class="farol-sub">Posicionamento → Liberação</div>
-            </div>
-            <div class="farol-item" id="farol-espera">
-              <div class="farol-label">Espera MRS</div>
-              <div class="farol-valor" id="val-espera">—</div>
-              <div class="farol-sub">Chegada → Posicionamento</div>
-            </div>
-            <div class="farol-item" id="farol-estadia">
-              <div class="farol-label">⚠ Estadia</div>
-              <div class="farol-valor" id="val-estadia">0</div>
-              <div class="farol-sub">Vagões acima de 24h</div>
-            </div>
-          </div>
+          <div class="farol-grid" id="farol-grid"></div>
         </div>
       </div>
 
@@ -83,7 +62,7 @@
       <!-- PAINEL DE VAGÕES -->
       <div class="card">
         <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-          <span>🚃 Vagões da Composição</span>
+          <span>🚃 Vagões das Composições</span>
           <div class="legenda">
             <span class="leg-item"><span class="bolinha leg-vazio"></span> Vazio</span>
             <span class="leg-item"><span class="bolinha leg-carregado"></span> Carregado</span>
@@ -152,7 +131,7 @@
         <div class="card-body">
           <p class="info-text">Marque os vagões a liberar. O formulário será gerado automaticamente.</p>
           <div id="lista-liberacao" class="lista-liberacao">
-            <div class="vazio-msg">Nenhum vagão na composição ativa.</div>
+            <div class="vazio-msg">Nenhum vagão nas composições ativas.</div>
           </div>
         </div>
       </div>
@@ -168,30 +147,6 @@
             <div class="input-group">
               <label>Data</label>
               <input type="date" id="lib-data">
-            </div>
-          </div>
-
-          <div class="section-title">MRS — Estação</div>
-          <div class="form-grid-2">
-            <div class="input-group">
-              <label>Hora Início</label>
-              <input type="time" id="lib-est-ini">
-            </div>
-            <div class="input-group">
-              <label>Hora Fim</label>
-              <input type="time" id="lib-est-fim">
-            </div>
-          </div>
-
-          <div class="section-title">MRS — Conserva (Posicionamento)</div>
-          <div class="form-grid-2">
-            <div class="input-group">
-              <label>Hora</label>
-              <input type="time" id="lib-cons-hora">
-            </div>
-            <div class="input-group">
-              <label>Hora Posicionamento</label>
-              <input type="time" id="lib-pos-hora">
             </div>
           </div>
 
@@ -223,7 +178,7 @@
       <div id="bloco-gestao" style="display:none;">
 
         <div class="card">
-          <div class="card-header">📊 Relatório TPV — Composição Atual</div>
+          <div class="card-header">📊 Relatório TPV — Composições Ativas</div>
           <div class="card-body">
             <div id="tabela-relatorio-wrap">
               <div class="vazio-msg">Sem dados para exibir.</div>
@@ -247,9 +202,6 @@
               <input type="password" id="cfg-senha-nova" placeholder="Nova senha">
             </div>
             <button class="btn btn-primary" id="btn-salvar-cfg">Salvar Configurações</button>
-            <button class="btn btn-danger" id="btn-encerrar-comp" style="margin-top:10px;width:100%;">
-              ⚠ Encerrar Composição Atual
-            </button>
           </div>
         </div>
 

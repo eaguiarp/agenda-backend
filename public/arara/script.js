@@ -1,10 +1,10 @@
 
 // ── ESTADO GLOBAL ──────────────────────────────────────────────────
-const STORAGE_KEY = 'arara_composicao_v1';
+const STORAGE_KEY = 'arara_composicoes_ativas_v1';
 const STORAGE_CFG = 'arara_config_v1';
 const SENHA_PADRAO = '1234';
 
-let composicao = null; // { chegadaDt, vagoes: [{id, status, posDt, inicioDt, fimDt, nf, peso}] }
+let composicoesAtivas = [];
 let config = { limite_estadia: 24, senha: SENHA_PADRAO };
 let vagaoSelecionado = null; // id do vagão em edição
 let logado = false;
@@ -12,7 +12,27 @@ let logado = false;
 // ── INIT ───────────────────────────────────────────────────────────
 function init() {
   const salvo = localStorage.getItem(STORAGE_KEY);
-  if (salvo) composicao = JSON.parse(salvo);
+  if (salvo) {
+    composicoesAtivas = JSON.parse(salvo) || [];
+  } else {
+    const antigo = localStorage.getItem('arara_composicao_v1');
+    if (antigo) {
+      try {
+        const comp = JSON.parse(antigo);
+        if (comp && comp.chegadaDt && Array.isArray(comp.vagoes)) {
+          composicoesAtivas = [{
+            id: `COMP-LEGACY-${Date.now().toString().slice(-4)}`,
+            chegadaDt: comp.chegadaDt,
+            vagoes: comp.vagoes
+          }];
+          salvar();
+          localStorage.removeItem('arara_composicao_v1');
+        }
+      } catch (err) {
+        console.warn('Falha ao migrar dados legados:', err);
+      }
+    }
+  }
   const cfgSalvo = localStorage.getItem(STORAGE_CFG);
   if (cfgSalvo) config = { ...config, ...JSON.parse(cfgSalvo) };
 
@@ -22,6 +42,8 @@ function init() {
   configurarLogin();
   configurarGestao();
   configurarLiberacao();
+  atualizarComposicoesAtivas();
+  atualizarEstadoRegistroComposicao();
   renderPainel();
   renderFarol();
   renderLiberacao();
@@ -33,15 +55,35 @@ function init() {
 
   // Relógio
   atualizarRelogio();
-  setInterval(atualizarRelogio, 1000);
-  setInterval(renderFarol, 30000);
+  setInterval(() => {
+    atualizarRelogio();
+    atualizarComposicoesAtivas();
+    renderFarol();
+  }, 1000);
 }
 
 function salvar() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(composicao));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(composicoesAtivas));
 }
 function salvarConfig() {
   localStorage.setItem(STORAGE_CFG, JSON.stringify(config));
+}
+
+function atualizarEstadoRegistroComposicao() {
+  const btn = document.getElementById('btn-nova-comp');
+  if (!btn) return;
+  btn.disabled = composicoesAtivas.length >= 3;
+}
+
+function atualizarComposicoesAtivas() {
+  const anterior = composicoesAtivas.length;
+  composicoesAtivas = composicoesAtivas.filter(comp => {
+    const temVagoes = Array.isArray(comp.vagoes) && comp.vagoes.length > 0;
+    const restante = temVagoes && comp.vagoes.some(v => v.status !== 'vazio');
+    return temVagoes && restante;
+  });
+  if (composicoesAtivas.length !== anterior) salvar();
+  atualizarEstadoRegistroComposicao();
 }
 
 // ── RELÓGIO ────────────────────────────────────────────────────────
@@ -69,77 +111,92 @@ function configurarAbas() {
 // ── PAINEL DE VAGÕES ───────────────────────────────────────────────
 function renderPainel() {
   const div = document.getElementById('painel-vagoes');
-  if (!composicao || composicao.vagoes.length === 0) {
+  if (composicoesAtivas.length === 0) {
     div.innerHTML = '<div class="vazio-msg">Nenhuma composição ativa. Registre uma acima.</div>';
     return;
   }
+
   div.innerHTML = '';
-  composicao.vagoes.forEach(v => {
-    const emEstadia = calcularEstadia(v);
-    const slot = document.createElement('div');
-    slot.className = 'vagao-slot' + (emEstadia ? ' em-estadia' : '');
-    slot.innerHTML = `
-      <div class="bolinha ${v.status}${emEstadia ? ' estadia' : ''}"></div>
-      <div class="vagao-id">${formatarId(v.id)}</div>
+  composicoesAtivas.forEach(comp => {
+    const restantes = comp.vagoes.filter(v => v.status !== 'vazio').length;
+    const chegada = formatarDataHoraChegada(comp.chegadaDt);
+    const compSegment = document.createElement('div');
+    compSegment.className = 'composicao-secao';
+    compSegment.innerHTML = `
+      <div class="composicao-titulo">
+        <div>📦 ${comp.id} — ${restantes} vagão(s) restantes</div>
+        <div class="composicao-chegada">Chegada: ${chegada}</div>
+      </div>
+      <div class="painel-vagoes"></div>
     `;
-    slot.addEventListener('click', () => abrirModal(v.id));
-    div.appendChild(slot);
+
+    const grid = compSegment.querySelector('.painel-vagoes');
+    comp.vagoes.forEach(v => {
+      const emEstadia = calcularEstadia(v, comp.chegadaDt);
+      const slot = document.createElement('div');
+      slot.className = 'vagao-slot' + (emEstadia ? ' em-estadia' : '');
+      slot.innerHTML = `
+        <div class="bolinha ${v.status}${emEstadia ? ' estadia' : ''}"></div>
+        <div class="vagao-id">${formatarId(v.id)}</div>
+      `;
+      slot.addEventListener('click', () => abrirModal(v.id));
+      grid.appendChild(slot);
+    });
+
+    div.appendChild(compSegment);
   });
 }
 
 function formatarId(id) {
-  // Quebra em 2 linhas: tipo + número
   if (id.length > 4) return id.substring(0, 3) + '\n' + id.substring(3);
   return id;
 }
 
-function calcularEstadia(vagao) {
-  if (!composicao) return false;
+function formatarDataHoraChegada(chegadaDt) {
+  if (!chegadaDt) return '—';
+  const dt = new Date(chegadaDt);
+  return dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function calcularEstadia(vagao, chegadaDt) {
+  if (!chegadaDt) return false;
   const limite = (config.limite_estadia || 24) * 3600000;
-  const chegada = new Date(composicao.chegadaDt).getTime();
-  const agora = Date.now();
-  return (agora - chegada) > limite;
+  const chegada = new Date(chegadaDt).getTime();
+  return (Date.now() - chegada) > limite;
+}
+
+function encontrarVagao(id) {
+  for (const comp of composicoesAtivas) {
+    const vagao = comp.vagoes.find(v => v.id === id);
+    if (vagao) return { comp, vagao };
+  }
+  return { comp: null, vagao: null };
 }
 
 // ── FAROL ──────────────────────────────────────────────────────────
 function renderFarol() {
-  if (!composicao || composicao.vagoes.length === 0) {
-    ['tpv','pos','espera','estadia'].forEach(k => {
-      document.getElementById('val-' + k).textContent = '—';
-    });
+  const grid = document.getElementById('farol-grid');
+  if (!grid) return;
+  if (composicoesAtivas.length === 0) {
+    grid.innerHTML = '<div class="farol-item"><div class="farol-label">Sem composição ativa</div><div class="farol-valor">—</div><div class="farol-sub">Registre até 3 composições</div></div>';
     return;
   }
 
-  const chegada = new Date(composicao.chegadaDt);
-  const agora = new Date();
+  grid.innerHTML = '';
   const limiteMs = (config.limite_estadia || 24) * 3600000;
 
-  // TPV total = agora - chegada (ou fim se todos liberados)
-  const tpvMs = agora - chegada;
-  document.getElementById('val-tpv').textContent = formatarDuracao(tpvMs);
-  const farolTpv = document.getElementById('farol-tpv');
-  farolTpv.className = 'farol-item ' + corFarol(tpvMs, limiteMs);
-
-  // Vagões posicionados: pega o mais cedo
-  const posicionados = composicao.vagoes.filter(v => v.posDt);
-  if (posicionados.length > 0) {
-    const primeiroPosMs = Math.min(...posicionados.map(v => new Date(v.posDt).getTime()));
-    const esperaMs = primeiroPosMs - chegada.getTime();
-    const posMs = agora.getTime() - primeiroPosMs;
-    document.getElementById('val-espera').textContent = formatarDuracao(esperaMs);
-    document.getElementById('val-pos').textContent = formatarDuracao(posMs);
-    document.getElementById('farol-espera').className = 'farol-item ' + corFarol(esperaMs, 6 * 3600000);
-    document.getElementById('farol-pos').className = 'farol-item ' + corFarol(posMs, limiteMs);
-  } else {
-    document.getElementById('val-espera').textContent = 'Aguardando';
-    document.getElementById('val-pos').textContent = '—';
-  }
-
-  // Contagem estadia
-  const emEstadia = composicao.vagoes.filter(v => calcularEstadia(v)).length;
-  document.getElementById('val-estadia').textContent = emEstadia;
-  const farolEst = document.getElementById('farol-estadia');
-  farolEst.className = 'farol-item ' + (emEstadia > 0 ? 'vermelho' : 'verde');
+  composicoesAtivas.slice(0, 3).forEach(comp => {
+    const restantes = comp.vagoes.filter(v => v.status !== 'vazio').length;
+    const tpvMs = Date.now() - new Date(comp.chegadaDt).getTime();
+    const item = document.createElement('div');
+    item.className = 'farol-item ' + corFarol(tpvMs, limiteMs);
+    item.innerHTML = `
+      <div class="farol-label">${comp.id}</div>
+      <div class="farol-valor">${formatarDuracao(tpvMs)}</div>
+      <div class="farol-sub">${restantes} vagão(s) restantes</div>
+    `;
+    grid.appendChild(item);
+  });
 }
 
 function corFarol(ms, limite) {
@@ -168,6 +225,11 @@ function configurarFormComposicao() {
       return;
     }
 
+    if (composicoesAtivas.length >= 3) {
+      alert('Já existem 3 composições ativas. Libere uma antes de registrar outra.');
+      return;
+    }
+
     const ids = vagoesRaw
       .split(/[\n,]+/)
       .map(s => s.trim().toUpperCase().replace(/[^A-Z0-9]/g, ''))
@@ -177,25 +239,26 @@ function configurarFormComposicao() {
       alert('Nenhum ID de vagão válido encontrado.');
       return;
     }
-    if (ids.length > 30) {
-      alert('Máximo de 30 vagões por composição.');
+    if (ids.length > 20) {
+      alert('Máximo de 20 vagões por composição.');
       return;
     }
 
-    if (composicao && composicao.vagoes.length > 0) {
-      if (!confirm('Já existe uma composição ativa. Deseja substituir?')) return;
-    }
-
-    composicao = {
-      chegadaDt: dataVal + 'T' + horaVal,
+    const compId = `COMP-${dataVal.replace(/-/g, '')}-${horaVal.replace(/:/g, '')}-${Date.now().toString().slice(-4)}`;
+    const novaComp = {
+      id: compId,
+      chegadaDt: `${dataVal}T${horaVal}`,
       vagoes: ids.map(id => ({ id, status: 'nao_posicionado', posDt: null, inicioDt: null, fimDt: null, nf: '', peso: '' }))
     };
+
+    composicoesAtivas.push(novaComp);
     salvar();
+    atualizarEstadoRegistroComposicao();
     renderPainel();
     renderFarol();
     renderLiberacao();
     document.getElementById('comp-vagoes').value = '';
-    mostrarMsg('Composição registrada com ' + ids.length + ' vagão(s).', 'sucesso');
+    mostrarMsg(`Composição ${compId} registrada com ${ids.length} vagão(s).`, 'sucesso');
   });
 }
 
@@ -211,18 +274,17 @@ function configurarModal() {
 }
 
 function abrirModal(id) {
-  if (!composicao) return;
+  const { comp, vagao } = encontrarVagao(id);
+  if (!comp || !vagao) return;
   vagaoSelecionado = id;
-  const v = composicao.vagoes.find(x => x.id === id);
-  if (!v) return;
 
-  document.getElementById('modal-vagao-id').textContent = v.id;
-  document.getElementById('modal-status').value = v.status;
-  document.getElementById('modal-dt-pos').value = v.posDt || '';
-  document.getElementById('modal-dt-inicio').value = v.inicioDt || '';
-  document.getElementById('modal-dt-fim').value = v.fimDt || '';
-  document.getElementById('modal-nf').value = v.nf || '';
-  document.getElementById('modal-peso').value = v.peso || '';
+  document.getElementById('modal-vagao-id').textContent = `${vagao.id} (${comp.id})`;
+  document.getElementById('modal-status').value = vagao.status;
+  document.getElementById('modal-dt-pos').value = vagao.posDt || '';
+  document.getElementById('modal-dt-inicio').value = vagao.inicioDt || '';
+  document.getElementById('modal-dt-fim').value = vagao.fimDt || '';
+  document.getElementById('modal-nf').value = vagao.nf || '';
+  document.getElementById('modal-peso').value = vagao.peso || '';
 
   atualizarCamposModal();
   document.getElementById('vagao-modal').style.display = 'flex';
@@ -241,16 +303,17 @@ function fecharModal() {
 }
 
 function salvarVagao() {
-  if (!vagaoSelecionado || !composicao) return;
-  const v = composicao.vagoes.find(x => x.id === vagaoSelecionado);
-  if (!v) return;
-  v.status = document.getElementById('modal-status').value;
-  v.posDt = document.getElementById('modal-dt-pos').value || null;
-  v.inicioDt = document.getElementById('modal-dt-inicio').value || null;
-  v.fimDt = document.getElementById('modal-dt-fim').value || null;
-  v.nf = document.getElementById('modal-nf').value;
-  v.peso = document.getElementById('modal-peso').value;
+  if (!vagaoSelecionado) return;
+  const { comp, vagao } = encontrarVagao(vagaoSelecionado);
+  if (!comp || !vagao) return;
+  vagao.status = document.getElementById('modal-status').value;
+  vagao.posDt = document.getElementById('modal-dt-pos').value || null;
+  vagao.inicioDt = document.getElementById('modal-dt-inicio').value || null;
+  vagao.fimDt = document.getElementById('modal-dt-fim').value || null;
+  vagao.nf = document.getElementById('modal-nf').value;
+  vagao.peso = document.getElementById('modal-peso').value;
   salvar();
+  atualizarComposicoesAtivas();
   fecharModal();
   renderPainel();
   renderFarol();
@@ -259,9 +322,12 @@ function salvarVagao() {
 }
 
 function removerVagao() {
-  if (!vagaoSelecionado || !composicao) return;
+  if (!vagaoSelecionado) return;
+  const { comp } = encontrarVagao(vagaoSelecionado);
+  if (!comp) return;
   if (!confirm('Remover vagão ' + vagaoSelecionado + '?')) return;
-  composicao.vagoes = composicao.vagoes.filter(x => x.id !== vagaoSelecionado);
+  comp.vagoes = comp.vagoes.filter(x => x.id !== vagaoSelecionado);
+  atualizarComposicoesAtivas();
   salvar();
   fecharModal();
   renderPainel();
@@ -277,17 +343,23 @@ function configurarLiberacao() {
 
 function renderLiberacao() {
   const div = document.getElementById('lista-liberacao');
-  if (!composicao || composicao.vagoes.length === 0) {
+  let vagoes = [];
+  composicoesAtivas.forEach(comp => {
+    comp.vagoes.forEach(v => vagoes.push({ ...v, compId: comp.id }));
+  });
+
+  if (vagoes.length === 0) {
     div.innerHTML = '<div class="vazio-msg">Nenhum vagão na composição ativa.</div>';
     return;
   }
   div.innerHTML = '';
-  composicao.vagoes.forEach(v => {
+  vagoes.forEach(v => {
     const item = document.createElement('label');
     item.className = 'lib-item';
     item.innerHTML = `
       <input type="checkbox" class="lib-check" data-id="${v.id}">
       <span class="lib-item-id">${v.id}</span>
+      <span class="lib-item-comp">${v.compId}</span>
       <span class="lib-item-status">${labelStatus(v.status)}</span>
     `;
     item.querySelector('.lib-check').addEventListener('change', (e) => {
@@ -309,19 +381,15 @@ function gerarFormulario() {
   const ids = Array.from(checks).map(c => c.dataset.id);
   const plts = document.getElementById('lib-plts').value || '—';
   const dataFmt = formatarDataExtenso(document.getElementById('lib-data').value);
-  const estIni = document.getElementById('lib-est-ini').value || '—';
-  const estFim = document.getElementById('lib-est-fim').value || '—';
-  const consHora = document.getElementById('lib-cons-hora').value || '—';
-  const posHora = document.getElementById('lib-pos-hora').value || '—';
+  const placeholder = '_______';
 
-  // Preenche os dois blocos (CSN e MRS) igualmente
   ['csn','mrs'].forEach(bloco => {
     document.getElementById(`imp-plts-${bloco}`).textContent = plts;
     document.getElementById(`imp-data-${bloco}`).textContent = dataFmt;
-    document.getElementById(`imp-est-ini-${bloco}`).textContent = estIni;
-    document.getElementById(`imp-est-fim-${bloco}`).textContent = estFim;
-    document.getElementById(`imp-cons-${bloco}`).textContent = consHora;
-    document.getElementById(`imp-pos-${bloco}`).textContent = posHora;
+    document.getElementById(`imp-est-ini-${bloco}`).textContent = placeholder;
+    document.getElementById(`imp-est-fim-${bloco}`).textContent = placeholder;
+    document.getElementById(`imp-cons-${bloco}`).textContent = placeholder;
+    document.getElementById(`imp-pos-${bloco}`).textContent = placeholder;
 
     const listaEl = document.getElementById(`imp-lista-${bloco}`);
     listaEl.innerHTML = '';
@@ -374,17 +442,6 @@ function configurarGestao() {
     alert('Configurações salvas.');
   });
 
-  document.getElementById('btn-encerrar-comp').addEventListener('click', () => {
-    if (!confirm('Encerrar composição atual? Os dados serão apagados.')) return;
-    composicao = null;
-    salvar();
-    renderPainel();
-    renderFarol();
-    renderLiberacao();
-    renderGestao();
-    alert('Composição encerrada.');
-  });
-
   document.getElementById('btn-exportar-csv').addEventListener('click', exportarCSV);
   document.getElementById('btn-imprimir-rel').addEventListener('click', () => window.print());
 }
@@ -392,27 +449,33 @@ function configurarGestao() {
 function renderGestao() {
   if (!logado) return;
   const wrap = document.getElementById('tabela-relatorio-wrap');
-  if (!composicao || composicao.vagoes.length === 0) {
+  const vagoes = [];
+  composicoesAtivas.forEach(comp => {
+    comp.vagoes.forEach(v => vagoes.push({ ...v, compId: comp.id, chegadaDt: comp.chegadaDt }));
+  });
+
+  if (vagoes.length === 0) {
     wrap.innerHTML = '<div class="vazio-msg">Sem dados para exibir.</div>';
     return;
   }
 
-  const chegada = new Date(composicao.chegadaDt);
   const limiteMs = (config.limite_estadia || 24) * 3600000;
 
   let html = `<table class="tabela-rel">
     <thead><tr>
-      <th>Vagão</th><th>Status</th><th>NF</th><th>Peso</th>
+      <th>Composição</th><th>Vagão</th><th>Status</th><th>NF</th><th>Peso</th>
       <th>Posicionamento</th><th>Início C/D</th><th>Fim C/D</th>
       <th>Espera MRS</th><th>TPV</th><th>Estadia</th>
     </tr></thead><tbody>`;
 
-  composicao.vagoes.forEach(v => {
+  vagoes.forEach(v => {
+    const chegada = new Date(v.chegadaDt);
     const posMs = v.posDt ? new Date(v.posDt) - chegada : null;
     const tpvMs = v.fimDt ? new Date(v.fimDt) - chegada : Date.now() - chegada.getTime();
     const emEstadia = tpvMs > limiteMs;
 
     html += `<tr>
+      <td>${v.compId}</td>
       <td style="font-family:monospace;font-weight:700;">${v.id}</td>
       <td>${labelStatus(v.status)}</td>
       <td>${v.nf || '—'}</td>
@@ -433,32 +496,30 @@ function renderGestao() {
 
 // ── EXPORT CSV ────────────────────────────────────────────────────
 function exportarCSV() {
-  if (!composicao) return;
-  const linhas = [
-    ['Vagão','Status','NF','Peso','Posicionamento','InicioCargaDesc','FimCargaDesc','EsperaMRS','TPV_horas','EmEstadia']
-  ];
-  const chegada = new Date(composicao.chegadaDt);
-  const limiteMs = (config.limite_estadia || 24) * 3600000;
+  const linhaCabecalho = ['Composição','Vagão','Status','NF','Peso','Posicionamento','InicioCargaDesc','FimCargaDesc','EsperaMRS','TPV_horas','EmEstadia'];
+  const linhas = [linhaCabecalho];
 
-  composicao.vagoes.forEach(v => {
-    const posMs = v.posDt ? new Date(v.posDt) - chegada : '';
-    const tpvMs = v.fimDt ? new Date(v.fimDt) - chegada : Date.now() - chegada.getTime();
-    linhas.push([
-      v.id, v.status, v.nf || '', v.peso || '',
-      v.posDt || '', v.inicioDt || '', v.fimDt || '',
-      posMs !== '' ? (posMs / 3600000).toFixed(2) : '',
-      (tpvMs / 3600000).toFixed(2),
-      tpvMs > limiteMs ? 'SIM' : 'NAO'
-    ]);
+  composicoesAtivas.forEach(comp => {
+    const chegada = new Date(comp.chegadaDt);
+    const limiteMs = (config.limite_estadia || 24) * 3600000;
+    comp.vagoes.forEach(v => {
+      const posMs = v.posDt ? new Date(v.posDt) - chegada : '';
+      const tpvMs = v.fimDt ? new Date(v.fimDt) - chegada : Date.now() - chegada.getTime();
+      linhas.push([
+        comp.id,
+        v.id,
+        v.status,
+        v.nf || '',
+        v.peso || '',
+        v.posDt || '',
+        v.inicioDt || '',
+        v.fimDt || '',
+        posMs !== '' ? (posMs / 3600000).toFixed(2) : '',
+        (tpvMs / 3600000).toFixed(2),
+        tpvMs > limiteMs ? 'SIM' : 'NAO'
+      ]);
+    });
   });
-
-const novaComp = {
-    id: `COMP-${dataFormatoBR(data) || 'NOVA'}`, // Exemplo de ID gerado
-    dataChegada: data,
-    horaChegada: hora,
-    vagoes: vagoesLista
-};
-
 
   const csv = linhas.map(r => r.join(';')).join('\n');
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
