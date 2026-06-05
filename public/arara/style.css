@@ -161,6 +161,71 @@ body::after {
 .farol-item.alerta-estadia .farol-valor { color: var(--vermelho); }
 .farol-item.alerta-estadia { background: linear-gradient(145deg, rgba(255,230,230,0.85) 0%, rgba(255,180,180,0.4) 100%); }
 
+.farol-item.clicavel { cursor: pointer; }
+.farol-item.clicavel:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(0,60,140,0.2); }
+.farol-item.alerta-estadia.clicavel:hover { box-shadow: 0 8px 22px rgba(220,38,38,0.3); }
+.farol-item.alerta-risco.clicavel:hover   { box-shadow: 0 8px 22px rgba(202,138,4,0.3); }
+
+/* ── ANÉIS DE ALERTA NAS BOLINHAS ── */
+.bolinha-wrapper {
+  position: relative; display: flex; flex-direction: column; align-items: center;
+  cursor: pointer;
+}
+
+/* Anel estadia — vermelho pulsante */
+@keyframes pulso-estadia {
+  0%   { box-shadow: 0 0 0 0 rgba(220,38,38,0.7),  0 2px 8px rgba(220,38,38,0.4); }
+  60%  { box-shadow: 0 0 0 6px rgba(220,38,38,0),   0 2px 8px rgba(220,38,38,0.4); }
+  100% { box-shadow: 0 0 0 0 rgba(220,38,38,0),     0 2px 8px rgba(220,38,38,0.4); }
+}
+/* Anel risco — amarelo pulsante mais lento */
+@keyframes pulso-risco {
+  0%   { box-shadow: 0 0 0 0 rgba(202,138,4,0.7),  0 2px 8px rgba(202,138,4,0.35); }
+  60%  { box-shadow: 0 0 0 5px rgba(202,138,4,0),  0 2px 8px rgba(202,138,4,0.35); }
+  100% { box-shadow: 0 0 0 0 rgba(202,138,4,0),    0 2px 8px rgba(202,138,4,0.35); }
+}
+
+.bolinha.alerta-estadia {
+  animation: pulso-estadia 1.4s ease-out infinite;
+  outline: 2.5px solid rgba(220,38,38,0.6);
+  outline-offset: 1.5px;
+}
+.bolinha.alerta-risco {
+  animation: pulso-risco 2s ease-out infinite;
+  outline: 2.5px solid rgba(202,138,4,0.6);
+  outline-offset: 1.5px;
+}
+
+/* ── MODAL ALERTA ── */
+.modal-alerta-lista {
+  display: flex; flex-direction: column; gap: 8px;
+  max-height: 55vh; overflow-y: auto;
+  padding-right: 2px;
+}
+.alerta-vagao-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.55);
+  cursor: pointer; transition: background 0.15s, transform 0.1s;
+}
+.alerta-vagao-item:hover { background: rgba(255,255,255,0.82); transform: translateX(3px); }
+.alerta-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+.alerta-dot.estadia { background: radial-gradient(circle at 35% 35%, #f87171, #dc2626);
+  box-shadow: 0 0 6px rgba(220,38,38,0.6); }
+.alerta-dot.risco   { background: radial-gradient(circle at 35% 35%, #fcd34d, #ca8a04);
+  box-shadow: 0 0 6px rgba(202,138,4,0.6); }
+.alerta-id   { font-family: 'Exo 2', sans-serif; font-weight: 800; font-size: 0.9rem; flex: 1; }
+.alerta-tempo { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+.alerta-tempo.estadia { background: rgba(220,38,38,0.12); color: #dc2626; border: 1px solid rgba(220,38,38,0.25); }
+.alerta-tempo.risco   { background: rgba(202,138,4,0.12);  color: #b45309; border: 1px solid rgba(202,138,4,0.25); }
+.alerta-hint { font-size: 0.62rem; color: var(--texto-sec); margin-top: 2px; }
+.modal-alerta-header-info {
+  font-size: 0.78rem; color: var(--texto-sec); font-weight: 600;
+  padding: 8px 12px; background: rgba(255,255,255,0.45); border-radius: 8px;
+  margin-bottom: 10px;
+}
+
 @media (max-width: 550px) { .farol-grid-6 { grid-template-columns: repeat(2, 1fr); } }
 
 /* ── PÁTIO FIFO ── */

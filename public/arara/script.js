@@ -31,6 +31,8 @@ function init() {
   configurarLiberacao();
   configurarGestao();
 
+  document.getElementById('alerta-modal-fechar').addEventListener('click', fecharModalAlerta);
+
   document.getElementById('cfg-limite').value = config.limite_estadia;
 
   const hoje = new Date().toISOString().split('T')[0];
@@ -123,7 +125,7 @@ function renderPainelFIFO() {
     if (visiveis.length > 0) {
       const chave = formatarDataResumo(comp.chegadaDt);
       resumosDict[chave] = (resumosDict[chave] || 0) + visiveis.length;
-      visiveis.forEach(v => vagoesFila.push(v));
+      visiveis.forEach(v => vagoesFila.push({ ...v, chegadaDt: comp.chegadaDt }));
     }
   });
 
@@ -141,13 +143,25 @@ function renderPainelFIFO() {
 
     if (i < vagoesFila.length) {
       const v = vagoesFila[i];
-      // Classe CSS de cor
       const cssClass = statusToCss(v.status);
-      // ID exibido sem quebra de linha — apenas os últimos 7 chars
-      const idCurto = v.id.length > 7 ? v.id.slice(-7) : v.id;
+      const idCurto  = v.id.length > 7 ? v.id.slice(-7) : v.id;
+
+      // Calcula alerta da bolinha
+      const tpvMs = Date.now() - new Date(v.chegadaDt).getTime();
+      const limiteEstadia = config.limite_estadia * 3600000;
+      const limiteRisco   = (config.limite_estadia - 4) * 3600000;
+      let alertaClass = '';
+      let tooltipExtra = '';
+      if (tpvMs >= limiteEstadia) {
+        alertaClass  = 'alerta-estadia';
+        tooltipExtra = ` ⚠ ESTADIA ${formatarMs(tpvMs)}`;
+      } else if (tpvMs >= limiteRisco) {
+        alertaClass  = 'alerta-risco';
+        tooltipExtra = ` ⚠ RISCO ${formatarMs(tpvMs)}`;
+      }
 
       slot.innerHTML = `
-        <div class="bolinha ${cssClass}" title="${v.id} — ${statusLabel(v.status)}" style="cursor:pointer;"></div>
+        <div class="bolinha ${cssClass} ${alertaClass}" title="${v.id} — ${statusLabel(v.status)}${tooltipExtra}" style="cursor:pointer;"></div>
         <div class="vagao-id">${idCurto}</div>
       `;
       slot.querySelector('.bolinha').addEventListener('click', () => abrirModal(v.id));
@@ -283,33 +297,48 @@ function renderFarol() {
   const limiteEstadia = config.limite_estadia * 3600000;
   const limiteRisco   = (config.limite_estadia - 4) * 3600000;
 
-  let maxTpvMs = 0, somaPosMs = 0, countPos = 0, somaEsperaMs = 0, countEspera = 0, estourados = 0, risco = 0;
+  let maxTpvMs = 0, somaPosMs = 0, countPos = 0, somaEsperaMs = 0, countEspera = 0;
+  let vagoes_estadia = [], vagoes_risco = [];
 
   ativos.forEach(v => {
     const chegadaMs = new Date(v.chegadaDt).getTime();
     const tpv = agora - chegadaMs;
     if (tpv > maxTpvMs) maxTpvMs = tpv;
-    if (tpv >= limiteEstadia) estourados++;
-    else if (tpv >= limiteRisco) risco++;
+
+    if (tpv >= limiteEstadia)      vagoes_estadia.push({ ...v, tpvMs: tpv });
+    else if (tpv >= limiteRisco)   vagoes_risco.push({ ...v, tpvMs: tpv });
 
     if (v.posDt) { somaPosMs += (agora - new Date(v.posDt).getTime()); countPos++; }
     else         { somaEsperaMs += tpv; countEspera++; }
   });
+
+  // Ordena do mais antigo para o mais novo
+  vagoes_estadia.sort((a, b) => b.tpvMs - a.tpvMs);
+  vagoes_risco.sort((a, b) => b.tpvMs - a.tpvMs);
 
   const backlog = ativos.length > 30 ? ativos.length - 30 : 0;
 
   document.getElementById('val-tpv').innerText    = maxTpvMs > 0 ? formatarMs(maxTpvMs) : '—';
   document.getElementById('val-pos').innerText    = countPos > 0 ? formatarMs(somaPosMs / countPos) : '—';
   document.getElementById('val-espera').innerText = countEspera > 0 ? formatarMs(somaEsperaMs / countEspera) : '—';
-  document.getElementById('val-estadia').innerText = estourados;
-  document.getElementById('val-risco').innerText   = risco;
+  document.getElementById('val-estadia').innerText = vagoes_estadia.length;
+  document.getElementById('val-risco').innerText   = vagoes_risco.length;
   document.getElementById('val-backlog').innerText  = backlog;
 
-  // Visual dinâmico nos faróis
+  // Visual dinâmico
   const fe = document.getElementById('farol-estadia');
   const fr = document.getElementById('farol-risco');
-  fe.classList.toggle('alerta-estadia', estourados > 0);
-  fr.classList.toggle('alerta-risco', risco > 0);
+  fe.classList.toggle('alerta-estadia', vagoes_estadia.length > 0);
+  fr.classList.toggle('alerta-risco',   vagoes_risco.length > 0);
+
+  // Cards clicáveis
+  fe.classList.toggle('clicavel', vagoes_estadia.length > 0);
+  fr.classList.toggle('clicavel', vagoes_risco.length > 0);
+
+  fe.onclick = vagoes_estadia.length > 0
+    ? () => abrirModalAlerta('estadia', vagoes_estadia) : null;
+  fr.onclick = vagoes_risco.length > 0
+    ? () => abrirModalAlerta('risco', vagoes_risco) : null;
 }
 
 function formatarMs(ms) {
@@ -317,6 +346,54 @@ function formatarMs(ms) {
   const m = Math.floor((ms % 3600000) / 60000);
   return `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m`;
 }
+
+// ── MODAL DE ALERTA (Estadia / Risco) ──
+function abrirModalAlerta(tipo, vagoes) {
+  const isEstadia = tipo === 'estadia';
+  const cor       = isEstadia ? '#dc2626' : '#b45309';
+  const titulo    = isEstadia ? '⚠ Vagões em Estadia' : '⚠ Vagões em Risco';
+  const sub       = isEstadia
+    ? `${vagoes.length} vagão(ões) com mais de ${config.limite_estadia}h no pátio`
+    : `${vagoes.length} vagão(ões) entre ${config.limite_estadia - 4}h e ${config.limite_estadia}h`;
+
+  document.getElementById('alerta-modal-titulo').textContent = titulo;
+  document.getElementById('alerta-modal-sub').textContent    = sub;
+  document.getElementById('alerta-modal-header').style.background =
+    isEstadia
+      ? 'linear-gradient(90deg, rgba(180,20,20,0.88), rgba(220,38,38,0.82))'
+      : 'linear-gradient(90deg, rgba(140,80,0,0.88), rgba(202,138,4,0.82))';
+
+  document.getElementById('alerta-modal-info').textContent =
+    `Clique em um vagão para abrir o painel de status. Listado do mais crítico ao menos crítico.`;
+
+  const lista = document.getElementById('alerta-modal-lista');
+  lista.innerHTML = vagoes.map(v => {
+    const dotClass  = isEstadia ? 'estadia' : 'risco';
+    const tempClass = isEstadia ? 'estadia' : 'risco';
+    const chegada   = new Date(v.chegadaDt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    return `
+      <div class="alerta-vagao-item" onclick="fecharModalAlerta(); setTimeout(()=>abrirModal('${v.id}'),120);">
+        <div class="alerta-dot ${dotClass}"></div>
+        <div>
+          <div class="alerta-id">${v.id}</div>
+          <div class="alerta-hint">Chegada: ${chegada} · ${statusLabel(v.status)}</div>
+        </div>
+        <span class="alerta-tempo ${tempClass}">${formatarMs(v.tpvMs)}</span>
+      </div>`;
+  }).join('');
+
+  document.getElementById('alerta-modal').style.display = 'flex';
+}
+
+function fecharModalAlerta() {
+  document.getElementById('alerta-modal').style.display = 'none';
+}
+
+// Fechar clicando fora
+document.addEventListener('click', e => {
+  const modal = document.getElementById('alerta-modal');
+  if (e.target === modal) fecharModalAlerta();
+});
 
 // ── ABA LIBERAÇÃO ──
 function configurarLiberacao() {
