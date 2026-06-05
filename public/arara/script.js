@@ -118,28 +118,32 @@ function renderPainel() {
 
   div.innerHTML = '';
   composicoesAtivas.forEach(comp => {
+    const totalVagoes = comp.vagoes.length;
     const restantes = comp.vagoes.filter(v => v.status !== 'vazio').length;
-    const chegada = formatarDataHoraChegada(comp.chegadaDt);
+    const titulo = formatarDataFLTs(comp.chegadaDt, totalVagoes);
     const compSegment = document.createElement('div');
     compSegment.className = 'composicao-secao';
     compSegment.innerHTML = `
       <div class="composicao-titulo">
-        <div>📦 ${comp.id} — ${restantes} vagão(s) restantes</div>
-        <div class="composicao-chegada">Chegada: ${chegada}</div>
+        <div>${titulo}</div>
+        <div class="composicao-chegada">${restantes} FLT(s) ativos</div>
       </div>
       <div class="painel-vagoes"></div>
     `;
 
     const grid = compSegment.querySelector('.painel-vagoes');
-    comp.vagoes.forEach(v => {
-      const emEstadia = calcularEstadia(v, comp.chegadaDt);
+    const slots = Array.from({ length: 30 }, (_, index) => comp.vagoes[index] || null);
+    slots.forEach(v => {
+      const isEmpty = !v;
       const slot = document.createElement('div');
-      slot.className = 'vagao-slot' + (emEstadia ? ' em-estadia' : '');
+      slot.className = 'vagao-slot' + (isEmpty ? ' vazio-indisponivel' : '');
+      const statusClass = isEmpty ? 'slot-vazio' : v.status;
+      const emEstadia = !isEmpty && calcularEstadia(v, comp.chegadaDt);
       slot.innerHTML = `
-        <div class="bolinha ${v.status}${emEstadia ? ' estadia' : ''}"></div>
-        <div class="vagao-id">${formatarId(v.id)}</div>
+        <div class="bolinha ${statusClass}${emEstadia ? ' estadia' : ''}"></div>
+        <div class="vagao-id">${isEmpty ? '' : formatarId(v.id)}</div>
       `;
-      slot.addEventListener('click', () => abrirModal(v.id));
+      if (!isEmpty) slot.addEventListener('click', () => abrirModal(v.id));
       grid.appendChild(slot);
     });
 
@@ -150,6 +154,14 @@ function renderPainel() {
 function formatarId(id) {
   if (id.length > 4) return id.substring(0, 3) + '\n' + id.substring(3);
   return id;
+}
+
+function formatarDataFLTs(chegadaDt, quantidade) {
+  if (!chegadaDt) return `— — ${quantidade} FLTs`;
+  const dt = new Date(chegadaDt);
+  const dia = String(dt.getDate()).padStart(2, '0');
+  const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  return `${dia}/${meses[dt.getMonth()]} — ${quantidade} FLTs`;
 }
 
 function formatarDataHoraChegada(chegadaDt) {
@@ -187,16 +199,40 @@ function renderFarol() {
 
   composicoesAtivas.slice(0, 3).forEach(comp => {
     const restantes = comp.vagoes.filter(v => v.status !== 'vazio').length;
-    const tpvMs = Date.now() - new Date(comp.chegadaDt).getTime();
+    const tpvChegLib = calcularTempoChegadaLiberacao(comp);
+    const tpvPosLib = calcularTempoPosicionamentoLiberacao(comp);
     const item = document.createElement('div');
-    item.className = 'farol-item ' + corFarol(tpvMs, limiteMs);
+    item.className = 'farol-item ' + corFarol(tpvChegLib, limiteMs);
     item.innerHTML = `
-      <div class="farol-label">${comp.id}</div>
-      <div class="farol-valor">${formatarDuracao(tpvMs)}</div>
+      <div class="farol-label">${formatarDataFLTs(comp.chegadaDt, comp.vagoes.length)}</div>
+      <div class="farol-valor">${formatarDuracao(tpvChegLib)}</div>
+      <div class="farol-sub">Chegada → Liberação</div>
+      <div class="farol-valor farol-valor-sm">${tpvPosLib !== null ? formatarDuracao(tpvPosLib) : '—'}</div>
+      <div class="farol-sub">Posicionamento → Liberação</div>
       <div class="farol-sub">${restantes} vagão(s) restantes</div>
     `;
     grid.appendChild(item);
   });
+}
+
+function calcularTempoChegadaLiberacao(comp) {
+  const chegada = new Date(comp.chegadaDt).getTime();
+  const duracoes = comp.vagoes.map(v => {
+    if (v.fimDt) return new Date(v.fimDt).getTime() - chegada;
+    return Date.now() - chegada;
+  });
+  return Math.max(...duracoes, 0);
+}
+
+function calcularTempoPosicionamentoLiberacao(comp) {
+  const duracoes = comp.vagoes.map(v => {
+    if (!v.posDt) return null;
+    const inicio = new Date(v.posDt).getTime();
+    if (v.fimDt) return new Date(v.fimDt).getTime() - inicio;
+    return Date.now() - inicio;
+  }).filter(v => v !== null);
+  if (duracoes.length === 0) return null;
+  return Math.max(...duracoes, 0);
 }
 
 function corFarol(ms, limite) {
