@@ -1,0 +1,135 @@
+:root {
+  --azul:      #0056A4;
+  --azul-esc:  #003f7a;
+  --azul-cl:   #e8f0f9;
+  --branco:    #ffffff;
+  --fundo:     #f4f6f9;
+  --borda:     #cccccc;
+  --texto:     #1a1a1a;
+  --texto-sec: #666666;
+  --sombra:    0 2px 8px rgba(0,0,0,0.08);
+  --radius:    8px;
+  --verde:     #16a34a; /* Carregado */
+  --amarelo:   #ca8a04; /* Risco */
+  --vermelho:  #dc2626; /* Estadia */
+  --laranja:   #ea580c; /* Não posicionado */
+  --cinza:     #94a3b8; /* Vazio/Limpo */
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* ── HEADER & ABAS ── */
+.header {
+  background: var(--azul); color: var(--branco); padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 200;
+}
+.header-left h1 { font-size: 1.05rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+.header-left p  { font-size: 0.72rem; opacity: 0.8; margin-top: 1px; }
+.header-right   { font-size: 0.82rem; font-weight: 600; opacity: 0.9; }
+
+.tab-bar {
+  background: var(--azul-esc); display: flex; overflow-x: auto;
+  position: sticky; top: 57px; z-index: 190;
+}
+.tab-btn {
+  background: transparent; border: none; color: rgba(255,255,255,0.7);
+  padding: 11px 20px; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+  border-bottom: 3px solid transparent; transition: all 0.2s;
+}
+.tab-btn:hover, .tab-btn.active { color: #fff; background: rgba(255,255,255,0.12); border-bottom-color: #fff; }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.container { max-width: 780px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+/* ── CARDS ── */
+.card { background: var(--branco); border: 1px solid var(--borda); border-radius: var(--radius); box-shadow: var(--sombra); }
+.card-header { background: var(--azul); color: var(--branco); padding: 9px 16px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; }
+.card-body { padding: 16px; }
+
+/* ── FAROL DE INDICADORES (6 BLOCKS) ── */
+.farol-grid-6 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.farol-item {
+  border: 1px solid var(--borda); border-radius: 8px; padding: 10px;
+  text-align: center; background: var(--fundo);
+}
+.farol-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--texto-sec); margin-bottom: 4px; }
+.farol-valor { font-size: 1.3rem; font-weight: 800; color: var(--azul); line-height: 1.1; }
+.farol-sub   { font-size: 0.6rem; color: var(--texto-sec); margin-top: 4px; }
+
+@media (max-width: 550px) { .farol-grid-6 { grid-template-columns: repeat(2, 1fr); } }
+
+/* ── PÁTIO FIFO ── */
+.patio-resumo { text-align: center; font-size: 0.85rem; font-weight: 700; color: var(--texto-sec); margin-bottom: 15px; }
+
+.painel-vagoes-fifo {
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  gap: 8px;
+  justify-items: center;
+}
+@media (max-width: 650px) { .painel-vagoes-fifo { grid-template-columns: repeat(10, 1fr); } }
+@media (max-width: 450px) { .painel-vagoes-fifo { grid-template-columns: repeat(5, 1fr); } }
+
+.vagao-slot-fifo {
+  display: flex; flex-direction: column; align-items: center; width: 32px; height: 50px;
+}
+.bolinha { width: 22px; height: 22px; border-radius: 50%; margin-bottom: 4px; transition: transform 0.1s; }
+.bolinha:hover { transform: scale(1.1); }
+.vagao-id { font-size: 0.55rem; font-weight: 700; text-align: center; line-height: 1.1; word-break: break-all; }
+
+/* ── CORES OPERACIONAIS ── */
+.vazio, .leg-vazio { background-color: var(--cinza); border: none; }
+.nao_posicionado, .leg-nao-pos { background-color: var(--laranja); border: none; }
+.carregado, .leg-carregado { background-color: var(--verde); border: none; }
+
+/* Slot Desativado (Transparente + Borda fina, sem sombra) */
+.slot-vazio { background-color: transparent; border: 1px solid #d1d5db; pointer-events: none; }
+
+.legenda { display: flex; gap: 10px; font-size: 0.7rem; font-weight: normal; }
+.leg-item { display: flex; align-items: center; gap: 4px; }
+.leg-item .bolinha { width: 12px; height: 12px; margin: 0; }
+
+/* ── FORMS E MODAL ── */
+.comp-form-grid, .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.comp-full { grid-column: 1 / -1; }
+.input-group label { display: block; font-size: 0.75rem; font-weight: 600; margin-bottom: 4px; color: var(--texto-sec); }
+input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--borda); border-radius: 4px; font-family: inherit; }
+
+.btn { padding: 10px; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+.btn:hover { opacity: 0.9; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: var(--azul); color: #fff; }
+.btn-full { width: 100%; }
+
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.modal-box { background: #fff; width: 90%; max-width: 380px; border-radius: 8px; overflow: hidden; }
+.modal-header { background: var(--azul); color: #fff; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+.modal-close { background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; }
+.modal-body { padding: 16px; }
+
+/* ── IMPRESSÃO (Sem páginas em branco) ── */
+@media print {
+  body > *:not(#formulario-impressao) { display: none !important; }
+  #formulario-impressao { display: block !important; position: relative; width: 100%; background: #fff; color: #000; }
+  .form-impresso { page-break-after: always; padding: 0; margin: 0; font-family: Arial, sans-serif; font-size: 11pt; border: none !important; box-shadow: none !important; }
+  .form-titulo { font-size: 12pt; font-weight: bold; text-align: center; margin-bottom: 10px; border: 1px solid #000; padding: 4px; }
+  .form-subtitulo { font-size: 9pt; text-align: center; margin-bottom: 15px; }
+  .form-dados-topo { display: flex; justify-content: space-between; margin-bottom: 15px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { border: 1px solid #000; padding: 8px; text-align: center; font-size: 10pt; }
+  th { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; }
+}

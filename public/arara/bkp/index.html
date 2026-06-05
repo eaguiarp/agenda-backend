@@ -24,9 +24,6 @@
     <button class="tab-btn" data-tab="gestao">📊 Gestão</button>
   </div>
 
-  <!-- ══════════════════════════════════════
-       ABA PAINEL
-  ══════════════════════════════════════ -->
   <div id="tab-painel" class="tab-content active">
     <div class="container">
 
@@ -50,13 +47,13 @@
               <div class="farol-sub">Aguardando manobra</div>
             </div>
             <div class="farol-item" id="farol-estadia">
-              <div class="farol-label">⚠ Estadia (&gt; 24h)</div>
-              <div class="farol-valor" id="val-estadia">0</div>
+              <div class="farol-label" style="color:var(--vermelho);">⚠ Estadia (> 24h)</div>
+              <div class="farol-valor" id="val-estadia" style="color:var(--vermelho);">0</div>
               <div class="farol-sub">Vagões estourados</div>
             </div>
             <div class="farol-item" id="farol-risco">
-              <div class="farol-label">⚠ Risco (20h–24h)</div>
-              <div class="farol-valor" id="val-risco">0</div>
+              <div class="farol-label" style="color:var(--amarelo);">⚠ Risco (20h-24h)</div>
+              <div class="farol-valor" id="val-risco" style="color:var(--amarelo);">0</div>
               <div class="farol-sub">Prestes a estourar</div>
             </div>
             <div class="farol-item" id="farol-backlog">
@@ -69,20 +66,18 @@
       </div>
 
       <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
           <span>🚃 Pátio de Arará — FIFO</span>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <span class="leg-item"><span class="bolinha nao_posicionado"></span> Não Posic.</span>
-            <span class="leg-item"><span class="bolinha posicionado"></span> Posicionado</span>
-            <span class="leg-item"><span class="bolinha vazio"></span> Vazio</span>
-            <span class="leg-item"><span class="bolinha liberado_aguardando"></span> Liberado</span>
+          <div class="legenda">
+            <span class="leg-item"><span class="bolinha leg-vazio"></span> Vazio</span>
+            <span class="leg-item"><span class="bolinha leg-nao-pos"></span> Não Posic.</span>
+            <span class="leg-item"><span class="bolinha leg-carregado"></span> Carregado</span>
           </div>
         </div>
         <div class="card-body">
-          <div class="patio-resumo-wrapper">
-            <span class="patio-resumo" id="patio-resumo">Pátio Atual: Nenhuma composição ativa.</span>
-          </div>
-          <div id="painel-vagoes-fifo" class="painel-vagoes-fifo"></div>
+          <div class="patio-resumo" id="patio-resumo">Pátio Atual: Nenhuma composição ativa.</div>
+          <div id="painel-vagoes-fifo" class="painel-vagoes-fifo">
+            </div>
         </div>
       </div>
 
@@ -107,75 +102,46 @@
         </div>
       </div>
 
-      <!-- MODAL VAGÃO -->
       <div id="vagao-modal" class="modal-overlay" style="display:none;">
         <div class="modal-box">
           <div class="modal-header">
-            <div>
-              <div id="modal-vagao-id">Vagão</div>
-              <div class="modal-vagao-badge" id="modal-vagao-chegada"></div>
-            </div>
+            <span id="modal-vagao-id">Vagão</span>
             <button class="modal-close" id="modal-fechar">✕</button>
           </div>
           <div class="modal-body">
-            <div>
-              <div class="input-group" style="margin-bottom:8px;"><label>Status do Vagão</label></div>
-              <div class="status-options">
-                <div class="status-opt" data-val="nao_posicionado">
-                  <div class="opt-dot nao_posicionado"></div>
-                  Não Posicionado
-                </div>
-                <div class="status-opt" data-val="posicionado">
-                  <div class="opt-dot posicionado"></div>
-                  Posicionado
-                </div>
-                <div class="status-opt" data-val="vazio">
-                  <div class="opt-dot vazio"></div>
-                  Vazio
-                </div>
-                <div class="status-opt" data-val="liberado">
-                  <div class="opt-dot liberado_aguardando"></div>
-                  Liberado
-                </div>
-              </div>
+            <div class="input-group">
+              <label>Status</label>
+              <select id="modal-status">
+                <option value="nao_posicionado">Não Posicionado</option>
+                <option value="carregado">Carregado</option>
+                <option value="vazio">Vazio (Liberado)</option>
+              </select>
             </div>
-
-            <div class="input-group" id="grp-posicionamento" style="display:none;">
+            <div class="input-group" id="grp-posicionamento">
               <label>Data/Hora Posicionamento</label>
               <input type="datetime-local" id="modal-dt-pos">
             </div>
             <div class="input-group" id="grp-fim" style="display:none;">
-              <label>Data/Hora Liberação</label>
+              <label>Data/Hora Liberação (Fim)</label>
               <input type="datetime-local" id="modal-dt-fim">
             </div>
-
-            <button class="btn btn-primary btn-full" id="modal-salvar">Salvar Status</button>
+            <div class="acoes-modal" style="margin-top:15px;">
+              <button class="btn btn-primary btn-full" id="modal-salvar">Salvar Status</button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════
-       ABA LIBERAÇÃO
-  ══════════════════════════════════════ -->
   <div id="tab-liberacao" class="tab-content">
     <div class="container">
-
       <div class="card">
-        <div class="card-header">📋 Vagões para Liberação</div>
+        <div class="card-header">📋 Seleção para Liberação</div>
         <div class="card-body">
-          <p class="info-text">Vagões com status <strong>Liberado</strong> aguardando devolução à MRS. Selecione para gerar formulário ou confirmar devolução.</p>
+          <p class="info-text">Selecione os vagões vazios. O formulário será gerado com espaços em branco para preenchimento manual de horas no pátio.</p>
           <div id="lista-liberacao" class="lista-liberacao">
-            <div class="vazio-msg">Nenhum vagão liberado aguardando devolução.</div>
-          </div>
-          <div class="lib-acoes">
-            <button class="btn btn-success" id="btn-confirmar-devolucao" style="flex:1;">
-              ✅ Confirmar Devolução MRS
-            </button>
-            <button class="btn btn-outline" id="btn-gerar-form" style="flex:1;">
-              🖨 Gerar Formulário
-            </button>
+            <div class="vazio-msg">Nenhum vagão vazio para liberar.</div>
           </div>
         </div>
       </div>
@@ -193,84 +159,30 @@
               <input type="date" id="lib-data">
             </div>
           </div>
+          <button class="btn btn-primary btn-full" id="btn-gerar-form" style="margin-top:15px;">
+            🖨 Gerar Formulário para Impressão
+          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════
-       ABA GESTÃO
-  ══════════════════════════════════════ -->
   <div id="tab-gestao" class="tab-content">
     <div class="container">
-
       <div class="card">
-        <div class="card-header">⚙ Configurações Operacionais</div>
+        <div class="card-header">📊 Gestão e Configuração</div>
         <div class="card-body">
-          <div class="input-group" style="max-width:280px;">
+          <p class="info-text">Área reservada para relatórios e parametrização do pátio.</p>
+          <div class="input-group" style="margin-top:15px;">
             <label>Limite de Estadia (horas)</label>
             <input type="number" id="cfg-limite" value="24" min="1" max="72">
           </div>
-          <div style="margin-top:12px;">
-            <button class="btn btn-primary" id="btn-salvar-cfg">Salvar Configurações</button>
-          </div>
+          <button class="btn btn-primary" id="btn-salvar-cfg">Salvar Configurações</button>
         </div>
       </div>
-
-      <div class="card">
-        <div class="card-header">
-          <span>👥 Usuários & Privilégios</span>
-          <button class="btn btn-outline btn-sm" id="btn-show-add-user">＋ Adicionar</button>
-        </div>
-        <div class="card-body">
-
-          <div id="add-user-panel" class="add-user-form" style="display:none; margin-bottom:14px;">
-            <h4>Novo Usuário</h4>
-            <div class="form-grid-2">
-              <div class="input-group">
-                <label>Nome Completo</label>
-                <input type="text" id="user-nome" placeholder="Ex: João Silva">
-              </div>
-              <div class="input-group">
-                <label>Login</label>
-                <input type="text" id="user-login" placeholder="Ex: joao.silva">
-              </div>
-              <div class="input-group">
-                <label>Senha</label>
-                <input type="password" id="user-senha" placeholder="••••••••">
-              </div>
-              <div class="input-group">
-                <label>Nível de Acesso</label>
-                <select id="user-nivel">
-                  <option value="view">Visualizador — só leitura</option>
-                  <option value="op" selected>Operador — lançamentos</option>
-                  <option value="admin">Administrador — acesso total</option>
-                </select>
-              </div>
-            </div>
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-success" id="btn-add-user">Adicionar Usuário</button>
-              <button class="btn btn-outline" id="btn-cancel-add-user">Cancelar</button>
-            </div>
-          </div>
-
-          <div id="user-list" class="user-list">
-            <!-- Preenchido pelo JS -->
-          </div>
-
-          <div class="divider"></div>
-          <p class="info-text" style="margin-top:0;">
-            <strong>Admin</strong> — acesso total incl. configurações e usuários.<br>
-            <strong>Operador</strong> — lançamentos, status e liberações.<br>
-            <strong>Visualizador</strong> — somente leitura no painel.
-          </p>
-        </div>
-      </div>
-
     </div>
   </div>
 
-  <!-- FORMULÁRIO IMPRESSÃO -->
   <div id="formulario-impressao" style="display:none;">
     <div class="form-impresso">
       <div class="form-titulo">LIBERAÇÃO VAGÕES — VIA CSN</div>
@@ -292,7 +204,8 @@
         </table>
       </div>
     </div>
-    <div class="form-impresso">
+
+    <div class="form-impresso form-impresso-mrs">
       <div class="form-titulo">LIBERAÇÃO VAGÕES — VIA MRS</div>
       <p class="form-subtitulo">Informamos que os vagões discriminados abaixo estão vazios, vistoriados e liberados, podendo assim retornarem à Fábrica de Volta Redonda — UPV.</p>
       <div class="form-dados-topo">
