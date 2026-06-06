@@ -46,6 +46,7 @@ let statusSelecionado      = null;
 let motivoEstadiaPendente  = null;
 let modoSelecaoLote        = false;
 let vagoesSelecionadosLote = []; // array de { id, _dbId }
+let _loteAguardandoMotivo  = false;
 
 const STATUS_VISIVEIS = ['nao_posicionado', 'posicionado', 'vazio', 'liberado'];
 
@@ -204,7 +205,7 @@ function configurarTeclas() {
     const modaisAbertos = document.querySelector('.modal-overlay[style*="flex"]');
     if (modaisAbertos) {
       if (e.key === 'Escape') {
-        fecharModal(); fecharModalAlerta();
+        fecharModal(); fecharModalAlerta(); fecharModalLote();
         if (document.getElementById('tv-overlay').style.display !== 'none') fecharModoTV();
       }
       return;
@@ -356,8 +357,10 @@ function renderPainelFIFO() {
 // ════════════════════════════════════════
 //  SELEÇÃO EM LOTE
 // ════════════════════════════════════════
+let statusLoteSelecionado = null;
+
 function configurarSelecaoLote() {
-  // Botão para entrar/sair do modo seleção
+  // Ativar/desativar modo seleção
   document.getElementById('btn-modo-selecao')?.addEventListener('click', () => {
     modoSelecaoLote = !modoSelecaoLote;
     const btnModo = document.getElementById('btn-modo-selecao');
@@ -381,34 +384,105 @@ function configurarSelecaoLote() {
     atualizarBarraLote();
   });
 
-  // Cancelar
+  // Cancelar (barra)
   document.getElementById('btn-lote-cancelar')?.addEventListener('click', cancelarSelecaoLote);
 
-  // Salvar lote
-  document.getElementById('btn-lote-salvar')?.addEventListener('click', async () => {
-    if (vagoesSelecionadosLote.length === 0) return;
-    const novoStatus = document.getElementById('lote-novo-status').value;
-    if (!novoStatus) { alert('Selecione um status.'); return; }
-
-    const btn = document.getElementById('btn-lote-salvar');
-    btn.disabled = true; btn.textContent = 'Salvando…';
-
-    const ok = await api('POST', '/atualizar-lote', {
-      vagoes: vagoesSelecionadosLote.map(s => s.id),
-      status: novoStatus
-    });
-
-    btn.disabled = false; btn.textContent = 'Aplicar';
-
-    if (ok) {
-      alert(`${vagoesSelecionadosLote.length} vagão(ões) atualizados para "${statusLabel(novoStatus)}".`);
-      cancelarSelecaoLote();
-      await carregarTudo();
-    } else {
-      alert('Erro ao atualizar lote.');
-    }
+  // Abrir modal de lote ao clicar "Alterar Status"
+  document.getElementById('btn-lote-salvar')?.addEventListener('click', () => {
+    if (vagoesSelecionadosLote.length === 0) { alert('Selecione ao menos um vagão.'); return; }
+    abrirModalLote();
   });
+
+  // Opções de status dentro do modal de lote
+  document.querySelectorAll('.lote-status-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.lote-status-opt').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      statusLoteSelecionado = opt.dataset.val;
+      atualizarCamposModalLote(statusLoteSelecionado);
+    });
+  });
+
+  // Fechar modal de lote
+  document.getElementById('lote-modal-fechar')?.addEventListener('click', fecharModalLote);
+
+  // Salvar lote
+  document.getElementById('lote-modal-salvar')?.addEventListener('click', salvarLote);
 }
+
+function abrirModalLote() {
+  statusLoteSelecionado = null;
+  document.querySelectorAll('.lote-status-opt').forEach(o => o.classList.remove('selected'));
+  document.getElementById('lote-grp-posicionamento').style.display = 'none';
+  document.getElementById('lote-grp-fim').style.display = 'none';
+  document.getElementById('lote-dt-pos').value = '';
+  document.getElementById('lote-dt-fim').value = '';
+  const n = vagoesSelecionadosLote.length;
+  document.getElementById('lote-modal-sub').textContent =
+    `${n} vagão(ões) selecionado(s)`;
+  document.getElementById('lote-modal').style.display = 'flex';
+}
+
+function fecharModalLote() {
+  document.getElementById('lote-modal').style.display = 'none';
+  statusLoteSelecionado = null;
+}
+
+function atualizarCamposModalLote(status) {
+  document.getElementById('lote-grp-posicionamento').style.display =
+    ['posicionado', 'vazio', 'liberado'].includes(status) ? 'block' : 'none';
+  document.getElementById('lote-grp-fim').style.display =
+    ['vazio', 'liberado'].includes(status) ? 'block' : 'none';
+}
+
+async function salvarLote() {
+  if (!statusLoteSelecionado) { alert('Selecione um status.'); return; }
+  if (vagoesSelecionadosLote.length === 0) return;
+
+  // Verifica se algum vagão do lote está em estadia e o status é relevante
+  const agora = Date.now();
+  const limEst = (config.limite_estadia || 24) * 3600000;
+  const algumEmEstadia = vagoesSelecionadosLote.some(sel => {
+    for (const comp of composicoesAtivas) {
+      if (comp.vagoes.find(v => v.id === sel.id)) {
+        return (agora - new Date(comp.chegadaDt).getTime()) >= limEst;
+      }
+    }
+    return false;
+  });
+
+  if (algumEmEstadia && !motivoEstadiaPendente) {
+    // Guarda intenção e pede motivo (reusa modal existente)
+    _loteAguardandoMotivo = true;
+    abrirModalMotivo();
+    return;
+  }
+
+  const btn = document.getElementById('lote-modal-salvar');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+
+  const ok = await api('POST', '/atualizar-lote', {
+    vagoes:  vagoesSelecionadosLote.map(s => s._dbId),
+    status:  statusLoteSelecionado,
+    posDt:   document.getElementById('lote-dt-pos').value || null,
+    fimDt:   document.getElementById('lote-dt-fim').value || null,
+    motivo:  motivoEstadiaPendente || null
+  });
+
+  btn.disabled = false; btn.textContent = 'Salvar Status';
+  motivoEstadiaPendente = null;
+  _loteAguardandoMotivo = false;
+
+  if (ok) {
+    fecharModalLote();
+    alert(`${vagoesSelecionadosLote.length} vagão(ões) atualizados para "${statusLabel(statusLoteSelecionado)}".`);
+    cancelarSelecaoLote();
+    await carregarTudo();
+  } else {
+    alert('Erro ao atualizar lote.');
+  }
+}
+
 
 function toggleSelecaoLote(v) {
   const idx = vagoesSelecionadosLote.findIndex(s => s.id === v.id);
@@ -528,11 +602,16 @@ function configurarModalMotivo() {
     const custom = document.getElementById('motivo-custom').value.trim();
     motivoEstadiaPendente = (sel === 'Outro' && custom) ? custom : sel;
     document.getElementById('motivo-modal').style.display = 'none';
-    salvarStatusVagao();
+    if (_loteAguardandoMotivo) {
+      salvarLote();
+    } else {
+      salvarStatusVagao();
+    }
   });
   document.getElementById('motivo-fechar').addEventListener('click', () => {
     document.getElementById('motivo-modal').style.display = 'none';
     motivoEstadiaPendente = null;
+    _loteAguardandoMotivo = false;
   });
   document.getElementById('motivo-select').addEventListener('change', e => {
     document.getElementById('grp-motivo-custom').style.display = e.target.value === 'Outro' ? 'block' : 'none';
@@ -652,6 +731,7 @@ document.addEventListener('click', e => {
   if (e.target === document.getElementById('alerta-modal')) fecharModalAlerta();
   if (e.target === document.getElementById('motivo-modal'))
     document.getElementById('motivo-modal').style.display = 'none';
+  if (e.target === document.getElementById('lote-modal')) fecharModalLote();
 });
 
 // ════════════════════════════════════════

@@ -128,20 +128,46 @@
 
     </div>
 
-    <!-- ══ MENU FLUTUANTE (SELEÇÃO EM LOTE) ══ -->
+    <!-- ══ BARRA FLUTUANTE (SELEÇÃO EM LOTE) ══ -->
     <div id="barra-lote-flutuante" class="barra-lote-flutuante" style="display:none;">
-      <span id="lote-contador" class="barra-lote-contador">0 vagões selecionados</span>
-      <select id="lote-novo-status" class="barra-lote-select">
-        <option value="">Alterar status…</option>
-        <option value="nao_posicionado">Não Posicionado</option>
-        <option value="posicionado">Posicionado</option>
-        <option value="vazio">Vazio</option>
-        <option value="liberado">Liberado (Devolvido MRS)</option>
-      </select>
+      <span id="lote-contador" class="barra-lote-contador">Clique nos vagões para selecionar</span>
       <div class="barra-lote-acoes">
-        <button class="btn btn-outline btn-sm" id="btn-lote-selecionar-todos">Todos</button>
-        <button class="btn btn-success btn-sm" id="btn-lote-salvar">Aplicar</button>
+        <button class="btn btn-outline btn-sm" id="btn-lote-selecionar-todos">Selecionar Todos</button>
+        <button class="btn btn-success btn-sm" id="btn-lote-salvar">Alterar Status</button>
         <button class="btn btn-outline btn-sm" id="btn-lote-cancelar">Cancelar</button>
+      </div>
+    </div>
+
+    <!-- ══ MODAL DE LOTE ══ -->
+    <div id="lote-modal" class="modal-overlay" style="display:none;">
+      <div class="modal-box">
+        <div class="modal-header">
+          <div>
+            <div id="lote-modal-titulo">Alterar Status em Lote</div>
+            <div class="modal-vagao-badge" id="lote-modal-sub"></div>
+          </div>
+          <button class="modal-close" id="lote-modal-fechar">✕</button>
+        </div>
+        <div class="modal-body">
+          <div>
+            <div class="input-group" style="margin-bottom:8px;"><label>Novo Status</label></div>
+            <div class="status-options">
+              <div class="status-opt lote-status-opt" data-val="nao_posicionado"><div class="opt-dot nao_posicionado"></div>Não Posicionado</div>
+              <div class="status-opt lote-status-opt" data-val="posicionado"><div class="opt-dot posicionado"></div>Posicionado</div>
+              <div class="status-opt lote-status-opt" data-val="vazio"><div class="opt-dot vazio"></div>Vazio</div>
+              <div class="status-opt lote-status-opt" data-val="liberado"><div class="opt-dot liberado_aguardando"></div>Liberado</div>
+            </div>
+          </div>
+          <div class="input-group" id="lote-grp-posicionamento" style="display:none;">
+            <label>Data/Hora Posicionamento</label>
+            <input type="datetime-local" id="lote-dt-pos">
+          </div>
+          <div class="input-group" id="lote-grp-fim" style="display:none;">
+            <label>Data/Hora Liberação</label>
+            <input type="datetime-local" id="lote-dt-fim">
+          </div>
+          <button class="btn btn-primary btn-full" id="lote-modal-salvar">Salvar Status</button>
+        </div>
       </div>
     </div>
 
