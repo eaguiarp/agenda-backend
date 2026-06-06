@@ -97,26 +97,55 @@ async function init() {
   setInterval(atualizarRelogio, 1000);
 }
 
-async function carregarTudo() {
-  const [comps, cfg, log] = await Promise.all([
-    api('GET', '/composicoes'),
-    api('GET', '/config'),
-    api('GET', '/log?limite=100')
-  ]);
+aasync function carregarTudo() {
+  try {
+    // 1. Faz as 4 requisições em paralelo direto no banco do Railway
+    // Usamos o .catch(() => ...) como escudo para o caso de alguma rota falhar, não derrubar a tela inteira
+    const [ativos, comps, cfg, log] = await Promise.all([
+      api('GET', '/ativos').catch(() => []),
+      api('GET', '/composicoes').catch(() => []),
+      api('GET', '/config').catch(() => ({ limite_estadia: 24 })),
+      api('GET', '/log?limite=100').catch(() => [])
+    ]);
 
-  if (comps) composicoesAtivas = comps;
-  if (cfg)   config = cfg;
-  if (log)   logEntradas = log.map(e => ({
-    ts:              e.criado_em,
-    vagaoId:         e.vagao_id,
-    statusAnterior:  e.status_anterior,
-    statusNovo:      e.status_novo,
-    motivo:          e.motivo,
-    usuario:         e.usuario
-  }));
+    // 2. Alimenta a variável que alimenta o grid das 30 bolinhas com os VAGÕES ATIVOS
+    composicoesAtivas = Array.isArray(ativos) ? ativos : [];
 
-  document.getElementById('cfg-limite').value = config.limite_estadia;
-  atualizarInterface();
+    // 3. Se o seu sistema tiver uma lista/histórico de trens na interface, alimentamos ela aqui
+    // (Caso use uma variável global chamada 'historicoComposicoes' ou similar, ajuste aqui)
+    
+    // 4. Alimenta as configurações de estadia
+    if (cfg) config = cfg;
+
+    // 5. Alimenta e mapeia os logs de auditoria exatamente no padrão que seu front-end já lê
+    if (log && Array.isArray(log)) {
+      logEntradas = log.map(e => ({
+        ts:              e.criado_em,
+        vagaoId:         e.vagao_id,
+        statusAnterior:  e.status_anterior,
+        statusNovo:      e.status_novo,
+        motivo:          e.motivo,
+        usuario:         e.usuario
+      }));
+    } else {
+      logEntradas = [];
+    }
+
+    // 6. Atualiza o input de configuração na tela se o elemento existir
+    const inputCfg = document.getElementById('cfg-limite');
+    if (inputCfg && config.limite_estadia) {
+      inputCfg.value = config.limite_estadia;
+    }
+
+    // 7. Atualiza a interface visual (desenha as bolinhas, monta gráficos, etc.)
+    atualizarInterface();
+
+  } catch (err) {
+    console.error("Erro crítico no ciclo de atualização do pátio:", err);
+    // Garante que a interface tente se desenhar mesmo vazia para não congelar o navegador
+    composicoesAtivas = [];
+    atualizarInterface();
+  }
 }
 
 function atualizarInterface() {
