@@ -84,7 +84,7 @@
       </div>
 
       <div class="card">
-        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;position:relative;">
           <div style="display:flex;align-items:center;gap:15px;">
             <span>🚃 Pátio de Arará — FIFO</span>
             <button id="btn-modo-selecao" class="btn-selecao-toggle">▢ Seleção Múltipla</button>
@@ -94,6 +94,14 @@
             <span class="leg-item"><span class="bolinha posicionado" style="width:12px;height:12px;"></span> Posicionado</span>
             <span class="leg-item"><span class="bolinha vazio" style="width:12px;height:12px;"></span> Vazio</span>
             <span class="leg-item"><span class="bolinha liberado" style="width:12px;height:12px;"></span> Liberado</span>
+          </div>
+          <div id="barra-lote-flutuante" class="barra-lote-flutuante" style="display:none;">
+            <span id="lote-contador" class="barra-lote-contador">Clique nos vagões para selecionar</span>
+            <div class="barra-lote-acoes">
+              <button class="btn btn-outline btn-sm" id="btn-lote-selecionar-todos">Selecionar Todos</button>
+              <button class="btn btn-success btn-sm" id="btn-lote-salvar">Alterar Status</button>
+              <button class="btn btn-outline btn-sm" id="btn-lote-cancelar">Cancelar</button>
+            </div>
           </div>
         </div>
 
@@ -128,16 +136,6 @@
 
     </div>
 
-    <!-- ══ BARRA FLUTUANTE (SELEÇÃO EM LOTE) ══ -->
-    <div id="barra-lote-flutuante" class="barra-lote-flutuante" style="display:none;">
-      <span id="lote-contador" class="barra-lote-contador">Clique nos vagões para selecionar</span>
-      <div class="barra-lote-acoes">
-        <button class="btn btn-outline btn-sm" id="btn-lote-selecionar-todos">Selecionar Todos</button>
-        <button class="btn btn-success btn-sm" id="btn-lote-salvar">Alterar Status</button>
-        <button class="btn btn-outline btn-sm" id="btn-lote-cancelar">Cancelar</button>
-      </div>
-    </div>
-
     <!-- ══ MODAL DE LOTE ══ -->
     <div id="lote-modal" class="modal-overlay" style="display:none;">
       <div class="modal-box">
@@ -151,7 +149,7 @@
         <div class="modal-body">
           <div>
             <div class="input-group" style="margin-bottom:8px;"><label>Novo Status</label></div>
-            <div class="status-options" id="lote-status-options">
+            <div class="status-options">
               <div class="status-opt lote-status-opt" data-val="nao_posicionado"><div class="opt-dot nao_posicionado"></div>Não Posicionado</div>
               <div class="status-opt lote-status-opt" data-val="posicionado"><div class="opt-dot posicionado"></div>Posicionado</div>
               <div class="status-opt lote-status-opt" data-val="vazio"><div class="opt-dot vazio"></div>Vazio</div>
@@ -304,6 +302,25 @@
       <div class="tv-farol-item" id="tv-farol-estadia">
         <div class="tv-farol-label">⚠ Em Estadia</div>
         <div class="tv-farol-valor" id="tv-estadia">0</div>
+      </div>
+    </div>
+
+    <div class="tv-farol-row">
+      <div class="tv-farol-item" id="tv-farol-liberados">
+        <div class="tv-farol-label">Quantidade de Vagões Liberados</div>
+        <div class="tv-farol-valor" id="tv-liberados">0</div>
+      </div>
+      <div class="tv-farol-item" id="tv-farol-nao-posicionados">
+        <div class="tv-farol-label">Quantidade de Vagões Não Posicionados</div>
+        <div class="tv-farol-valor" id="tv-nao-posicionados">0</div>
+      </div>
+      <div class="tv-farol-item" id="tv-farol-vazios">
+        <div class="tv-farol-label">Quantidade de Vagões Vazios</div>
+        <div class="tv-farol-valor" id="tv-vazios">0</div>
+      </div>
+      <div class="tv-farol-item" id="tv-farol-tempo-lib">
+        <div class="tv-farol-label">Tempo desde o posicionamento até a liberação</div>
+        <div class="tv-farol-valor" id="tv-tempo-posicao-liberacao">—</div>
       </div>
     </div>
 

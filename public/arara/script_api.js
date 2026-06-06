@@ -548,10 +548,11 @@ const MOTIVOS_ESTADIA = [
 ];
 
 function configurarModal() {
+  const modal = document.getElementById('vagao-modal');
   document.getElementById('modal-fechar').addEventListener('click', fecharModal);
-  document.querySelectorAll('.status-opt').forEach(opt => {
+  modal.querySelectorAll('.status-opt').forEach(opt => {
     opt.addEventListener('click', () => {
-      document.querySelectorAll('.status-opt').forEach(o => o.classList.remove('selected'));
+      modal.querySelectorAll('.status-opt').forEach(o => o.classList.remove('selected'));
       opt.classList.add('selected');
       statusSelecionado = opt.dataset.val;
       atualizarCamposModal(statusSelecionado);
@@ -640,7 +641,8 @@ function abrirModal(id) {
     + ' · TPV: ' + formatarMs(tpvMs);
 
   statusSelecionado = vagao.status;
-  document.querySelectorAll('.status-opt').forEach(o =>
+  const modal = document.getElementById('vagao-modal');
+  modal.querySelectorAll('.status-opt').forEach(o =>
     o.classList.toggle('selected', o.dataset.val === statusSelecionado));
 
   document.getElementById('modal-dt-pos').value = vagao.posDt || '';
@@ -764,28 +766,6 @@ function renderTV() {
   document.getElementById('tv-estadia').textContent = estourados;
   document.getElementById('tv-risco').textContent   = risco;
   document.getElementById('tv-total').textContent   = ativos.length;
-
-  const liberados = ativos.filter(v => v.status === 'liberado').length;
-  const naoPosicionados = ativos.filter(v => v.status === 'nao_posicionado').length;
-  const vazios = ativos.filter(v => v.status === 'vazio').length;
-  let somaLiberacaoMs = 0;
-  let liberadosComTempo = 0;
-  ativos.filter(v => v.status === 'liberado').forEach(v => {
-    if (v.posDt && v.fimDt) {
-      const inicio = new Date(v.posDt);
-      const fim = new Date(v.fimDt);
-      if (!Number.isNaN(inicio.getTime()) && !Number.isNaN(fim.getTime()) && fim >= inicio) {
-        somaLiberacaoMs += fim - inicio;
-        liberadosComTempo++;
-      }
-    }
-  });
-  document.getElementById('tv-liberados').textContent = liberados;
-  document.getElementById('tv-nao-posicionados').textContent = naoPosicionados;
-  document.getElementById('tv-vazios').textContent = vazios;
-  document.getElementById('tv-tempo-posicao-liberacao').textContent = liberadosComTempo > 0
-    ? formatarMs(Math.round(somaLiberacaoMs / liberadosComTempo))
-    : '—';
 
   document.getElementById('tv-farol-estadia').classList.toggle('alerta-estadia', estourados > 0);
   document.getElementById('tv-farol-risco').classList.toggle('alerta-risco',     risco > 0);
