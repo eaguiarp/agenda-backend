@@ -647,6 +647,11 @@ input:focus, select:focus, textarea:focus {
 .tv-farol-item.alerta-estadia .tv-farol-valor { color: #fca5a5; text-shadow: 0 0 20px rgba(220,38,38,0.6); }
 .tv-farol-item.alerta-risco   .tv-farol-valor { color: #fde68a; text-shadow: 0 0 20px rgba(202,138,4,0.6); }
 
+#tv-overlay .vagao-id {
+  color: #fff;
+  text-shadow: 0 0 4px rgba(0,0,0,0.45);
+}
+
 .tv-patio-wrap {
   flex: 1; padding: 10px 28px 0;
   display: flex; flex-direction: column; overflow: hidden;

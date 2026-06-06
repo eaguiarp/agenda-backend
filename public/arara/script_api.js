@@ -591,12 +591,6 @@ async function salvarStatusVagao() {
   if (ok) { fecharModal(); await carregarTudo(); }
 }
 
-  btn.disabled = false; btn.textContent = 'Salvar Status';
-  motivoEstadiaPendente = null;
-
-  if (ok) { fecharModal(); await carregarTudo(); }
-}
-
 function abrirModalMotivo() {
   const sel = document.getElementById('motivo-select');
   sel.innerHTML = MOTIVOS_ESTADIA.map(m => `<option>${m}</option>`).join('');
@@ -770,6 +764,28 @@ function renderTV() {
   document.getElementById('tv-estadia').textContent = estourados;
   document.getElementById('tv-risco').textContent   = risco;
   document.getElementById('tv-total').textContent   = ativos.length;
+
+  const liberados = ativos.filter(v => v.status === 'liberado').length;
+  const naoPosicionados = ativos.filter(v => v.status === 'nao_posicionado').length;
+  const vazios = ativos.filter(v => v.status === 'vazio').length;
+  let somaLiberacaoMs = 0;
+  let liberadosComTempo = 0;
+  ativos.filter(v => v.status === 'liberado').forEach(v => {
+    if (v.posDt && v.fimDt) {
+      const inicio = new Date(v.posDt);
+      const fim = new Date(v.fimDt);
+      if (!Number.isNaN(inicio.getTime()) && !Number.isNaN(fim.getTime()) && fim >= inicio) {
+        somaLiberacaoMs += fim - inicio;
+        liberadosComTempo++;
+      }
+    }
+  });
+  document.getElementById('tv-liberados').textContent = liberados;
+  document.getElementById('tv-nao-posicionados').textContent = naoPosicionados;
+  document.getElementById('tv-vazios').textContent = vazios;
+  document.getElementById('tv-tempo-posicao-liberacao').textContent = liberadosComTempo > 0
+    ? formatarMs(Math.round(somaLiberacaoMs / liberadosComTempo))
+    : '—';
 
   document.getElementById('tv-farol-estadia').classList.toggle('alerta-estadia', estourados > 0);
   document.getElementById('tv-farol-risco').classList.toggle('alerta-risco',     risco > 0);
