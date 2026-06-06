@@ -698,6 +698,44 @@ input:focus, select:focus, textarea:focus {
   animation: pulsoSelecao 1.5s infinite alternate;
 }
 
+.barra-lote-flutuante {
+  position: absolute;
+  right: 16px;
+  bottom: -38px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(12px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 2;
+}
+
+.barra-lote-flutuante[style*="display:none"] {
+  opacity: 0;
+}
+
+.barra-lote-flutuante:not([style*="display:none"]) {
+  opacity: 1;
+}
+
+.barra-lote-acoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.barra-lote-contador {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--texto);
+  white-space: nowrap;
+}
+
 @keyframes pulsoSelecao {
   0% { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #38bdf8; }
   100% { box-shadow: 0 0 0 2px #fff, 0 0 0 8px #0284c7; }

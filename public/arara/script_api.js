@@ -462,7 +462,7 @@ async function salvarLote() {
   btn.disabled = true; btn.textContent = 'Salvando…';
 
   const ok = await api('POST', '/atualizar-lote', {
-    vagoes:  vagoesSelecionadosLote.map(s => s._dbId),
+    vagoes:  vagoesSelecionadosLote.map(s => s.id),   // vagao_id strings (ex: "FLT7580461")
     status:  statusLoteSelecionado,
     posDt:   document.getElementById('lote-dt-pos').value || null,
     fimDt:   document.getElementById('lote-dt-fim').value || null,
@@ -572,12 +572,12 @@ async function salvarStatusVagao() {
   }
 
   const vagao = res.vagao;
-  if (!vagao._dbId) return;
+  if (!vagao.id) return;
 
   const btn = document.getElementById('modal-salvar');
   btn.disabled = true; btn.textContent = 'Salvando…';
 
-  const ok = await api('PATCH', `/${vagao._dbId}/status`, {
+  const ok = await api('PATCH', `/${vagao.id}/status`, {
     status: statusSelecionado,
     posDt:  document.getElementById('modal-dt-pos').value || null,
     fimDt:  document.getElementById('modal-dt-fim').value || null,

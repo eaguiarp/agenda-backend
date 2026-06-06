@@ -84,7 +84,7 @@
       </div>
 
       <div class="card">
-        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;position:relative;">
           <div style="display:flex;align-items:center;gap:15px;">
             <span>🚃 Pátio de Arará — FIFO</span>
             <button id="btn-modo-selecao" class="btn-selecao-toggle">▢ Seleção Múltipla</button>
@@ -94,6 +94,14 @@
             <span class="leg-item"><span class="bolinha posicionado" style="width:12px;height:12px;"></span> Posicionado</span>
             <span class="leg-item"><span class="bolinha vazio" style="width:12px;height:12px;"></span> Vazio</span>
             <span class="leg-item"><span class="bolinha liberado" style="width:12px;height:12px;"></span> Liberado</span>
+          </div>
+          <div id="barra-lote-flutuante" class="barra-lote-flutuante" style="display:none;">
+            <span id="lote-contador" class="barra-lote-contador">Clique nos vagões para selecionar</span>
+            <div class="barra-lote-acoes">
+              <button class="btn btn-outline btn-sm" id="btn-lote-selecionar-todos">Selecionar Todos</button>
+              <button class="btn btn-success btn-sm" id="btn-lote-salvar">Alterar Status</button>
+              <button class="btn btn-outline btn-sm" id="btn-lote-cancelar">Cancelar</button>
+            </div>
           </div>
         </div>
 
@@ -126,16 +134,6 @@
         </div>
       </div>
 
-    </div>
-
-    <!-- ══ BARRA FLUTUANTE (SELEÇÃO EM LOTE) ══ -->
-    <div id="barra-lote-flutuante" class="barra-lote-flutuante" style="display:none;">
-      <span id="lote-contador" class="barra-lote-contador">Clique nos vagões para selecionar</span>
-      <div class="barra-lote-acoes">
-        <button class="btn btn-outline btn-sm" id="btn-lote-selecionar-todos">Selecionar Todos</button>
-        <button class="btn btn-success btn-sm" id="btn-lote-salvar">Alterar Status</button>
-        <button class="btn btn-outline btn-sm" id="btn-lote-cancelar">Cancelar</button>
-      </div>
     </div>
 
     <!-- ══ MODAL DE LOTE ══ -->
