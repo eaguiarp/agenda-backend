@@ -7,6 +7,9 @@ let config = { limite_estadia: 24 };
 let usuarios = [];
 let vagaoSelecionado = null;
 let statusSelecionado = null;
+let modoSelecaoMultipla = false;
+let vagoesSelecionados = new Set(); // IDs selecionados no modo múltiplo
+let statusLoteSelecionado = null;
 
 // ── INIT ──
 function init() {
@@ -31,6 +34,8 @@ function init() {
   configurarLiberacao();
   configurarGestao();
 
+  configurarSelecaoMultipla();
+  configurarModalLote();
   document.getElementById('alerta-modal-fechar').addEventListener('click', fecharModalAlerta);
 
   document.getElementById('cfg-limite').value = config.limite_estadia;
@@ -146,7 +151,6 @@ function renderPainelFIFO() {
       const cssClass = statusToCss(v.status);
       const idCurto  = v.id.length > 7 ? v.id.slice(-7) : v.id;
 
-      // Calcula alerta da bolinha
       const tpvMs = Date.now() - new Date(v.chegadaDt).getTime();
       const limiteEstadia = config.limite_estadia * 3600000;
       const limiteRisco   = (config.limite_estadia - 4) * 3600000;
@@ -160,11 +164,25 @@ function renderPainelFIFO() {
         tooltipExtra = ` ⚠ RISCO ${formatarMs(tpvMs)}`;
       }
 
-      slot.innerHTML = `
-        <div class="bolinha ${cssClass} ${alertaClass}" title="${v.id} — ${statusLabel(v.status)}${tooltipExtra}" style="cursor:pointer;"></div>
-        <div class="vagao-id">${idCurto}</div>
-      `;
-      slot.querySelector('.bolinha').addEventListener('click', () => abrirModal(v.id));
+      const isSelecionado = vagoesSelecionados.has(v.id);
+
+      if (modoSelecaoMultipla) {
+        slot.innerHTML = `
+          <div class="bolinha ${cssClass} ${alertaClass} ${isSelecionado ? 'bolinha-selecionada' : ''}"
+               title="${v.id} — ${statusLabel(v.status)}${tooltipExtra}" style="cursor:pointer;"></div>
+          <div class="vagao-id">${idCurto}</div>
+          ${isSelecionado ? '<div class="sel-check">✓</div>' : ''}
+        `;
+        slot.classList.toggle('slot-selecionado', isSelecionado);
+        slot.style.cursor = 'pointer';
+        slot.addEventListener('click', () => toggleSelecaoVagao(v.id));
+      } else {
+        slot.innerHTML = `
+          <div class="bolinha ${cssClass} ${alertaClass}" title="${v.id} — ${statusLabel(v.status)}${tooltipExtra}" style="cursor:pointer;"></div>
+          <div class="vagao-id">${idCurto}</div>
+        `;
+        slot.querySelector('.bolinha').addEventListener('click', () => abrirModal(v.id));
+      }
     } else {
       slot.innerHTML = `<div class="bolinha slot-vazio"></div><div class="vagao-id"></div>`;
     }
@@ -280,6 +298,141 @@ function fecharModal() {
   document.getElementById('vagao-modal').style.display = 'none';
   vagaoSelecionado = null;
   statusSelecionado = null;
+}
+
+// ── SELEÇÃO MÚLTIPLA ──
+function configurarSelecaoMultipla() {
+  document.getElementById('btn-selecao-multipla').addEventListener('click', () => {
+    modoSelecaoMultipla = !modoSelecaoMultipla;
+    vagoesSelecionados.clear();
+    atualizarBarraLote();
+    renderPainelFIFO();
+    const btn = document.getElementById('btn-selecao-multipla');
+    if (modoSelecaoMultipla) {
+      btn.textContent = '✕ Cancelar Seleção';
+      btn.classList.add('btn-ativo');
+    } else {
+      btn.textContent = '☑ Selecionar Vários';
+      btn.classList.remove('btn-ativo');
+    }
+  });
+
+  document.getElementById('btn-selecionar-todos').addEventListener('click', () => {
+    let vagoesFila = [];
+    composicoesAtivas.forEach(comp => {
+      comp.vagoes.filter(v => STATUS_VISIVEIS.includes(v.status)).forEach(v => {
+        vagoesFila.push(v.id);
+      });
+    });
+    const primeiros30 = vagoesFila.slice(0, 30);
+    const todosSelecionados = primeiros30.every(id => vagoesSelecionados.has(id));
+    if (todosSelecionados) {
+      vagoesSelecionados.clear();
+    } else {
+      primeiros30.forEach(id => vagoesSelecionados.add(id));
+    }
+    atualizarBarraLote();
+    renderPainelFIFO();
+  });
+}
+
+function toggleSelecaoVagao(id) {
+  if (vagoesSelecionados.has(id)) {
+    vagoesSelecionados.delete(id);
+  } else {
+    vagoesSelecionados.add(id);
+  }
+  atualizarBarraLote();
+  renderPainelFIFO();
+}
+
+function atualizarBarraLote() {
+  const barra = document.getElementById('barra-lote');
+  const contador = document.getElementById('lote-contador');
+  if (!barra) return;
+  if (modoSelecaoMultipla) {
+    barra.style.display = 'flex';
+    const n = vagoesSelecionados.size;
+    contador.textContent = n === 0 ? 'Nenhum vagão selecionado' : `${n} vagão(ões) selecionado(s)`;
+    document.getElementById('btn-alterar-lote').disabled = n === 0;
+  } else {
+    barra.style.display = 'none';
+  }
+}
+
+// ── MODAL DE STATUS EM LOTE ──
+function configurarModalLote() {
+  document.getElementById('modal-lote-fechar').addEventListener('click', fecharModalLote);
+  document.getElementById('modal-lote-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-lote-overlay')) fecharModalLote();
+  });
+
+  document.querySelectorAll('.status-opt-lote').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.status-opt-lote').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      statusLoteSelecionado = opt.dataset.val;
+      atualizarCamposModalLote(statusLoteSelecionado);
+    });
+  });
+
+  document.getElementById('btn-alterar-lote').addEventListener('click', () => {
+    if (vagoesSelecionados.size === 0) return;
+    statusLoteSelecionado = null;
+    document.querySelectorAll('.status-opt-lote').forEach(o => o.classList.remove('selected'));
+    document.getElementById('grp-lote-posicionamento').style.display = 'none';
+    document.getElementById('grp-lote-fim').style.display = 'none';
+    document.getElementById('modal-lote-overlay').style.display = 'flex';
+    document.getElementById('modal-lote-titulo').textContent =
+      `Alterar ${vagoesSelecionados.size} vagão(ões)`;
+  });
+
+  document.getElementById('modal-lote-salvar').addEventListener('click', salvarStatusLote);
+}
+
+function atualizarCamposModalLote(status) {
+  document.getElementById('grp-lote-posicionamento').style.display =
+    (status === 'posicionado' || status === 'vazio' || status === 'liberado') ? 'block' : 'none';
+  document.getElementById('grp-lote-fim').style.display =
+    (status === 'vazio' || status === 'liberado') ? 'block' : 'none';
+}
+
+function salvarStatusLote() {
+  if (!statusLoteSelecionado) { alert('Selecione um status.'); return; }
+  const posDt = document.getElementById('modal-lote-dt-pos').value || null;
+  const fimDt = document.getElementById('modal-lote-dt-fim').value ||
+    (['liberado','vazio'].includes(statusLoteSelecionado) ? new Date().toISOString().slice(0,16) : null);
+
+  let count = 0;
+  composicoesAtivas.forEach(comp => {
+    comp.vagoes.forEach(v => {
+      if (vagoesSelecionados.has(v.id)) {
+        v.status = statusLoteSelecionado;
+        if (posDt) v.posDt = posDt;
+        if (fimDt) v.fimDt = fimDt;
+        count++;
+      }
+    });
+    if (statusLoteSelecionado === 'devolvido') {
+      comp.vagoes = comp.vagoes.filter(v => !vagoesSelecionados.has(v.id));
+    }
+  });
+  composicoesAtivas = composicoesAtivas.filter(c => c.vagoes.length > 0);
+
+  fecharModalLote();
+  modoSelecaoMultipla = false;
+  vagoesSelecionados.clear();
+  const btn = document.getElementById('btn-selecao-multipla');
+  btn.textContent = '☑ Selecionar Vários';
+  btn.classList.remove('btn-ativo');
+  atualizarBarraLote();
+  salvarDados();
+  alert(`Status de ${count} vagão(ões) atualizado para "${statusLabel(statusLoteSelecionado)}".`);
+}
+
+function fecharModalLote() {
+  document.getElementById('modal-lote-overlay').style.display = 'none';
+  statusLoteSelecionado = null;
 }
 
 // ── FAROL ──

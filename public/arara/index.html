@@ -5,6 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CD Arará | Controle de Vagões</title>
   <link rel="stylesheet" href="./style.css" />
+  <style>
+    /* ── Seleção múltipla ── */
+    .vagao-slot-fifo { position: relative; }
+    .slot-selecionado { outline: 2px solid var(--accent, #6366f1); border-radius: 8px; background: rgba(99,102,241,0.13); }
+    .bolinha-selecionada { box-shadow: 0 0 0 3px var(--accent, #6366f1) !important; }
+    .sel-check {
+      position: absolute; top: -4px; right: -4px;
+      background: var(--accent, #6366f1); color: #fff;
+      border-radius: 50%; width: 16px; height: 16px;
+      font-size: 9px; display: flex; align-items: center; justify-content: center;
+      font-weight: 800; line-height:1;
+    }
+    .btn-ativo { background: var(--accent, #6366f1) !important; color: #fff !important; border-color: var(--accent, #6366f1) !important; }
+    .btn-sm { padding: 4px 10px !important; font-size: 0.78rem !important; }
+  </style>
 </head>
 <body>
 
@@ -71,12 +86,18 @@
       <div class="card">
         <div class="card-header">
           <span>🚃 Pátio de Arará — FIFO</span>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
             <span class="leg-item"><span class="bolinha nao_posicionado"></span> Não Posic.</span>
             <span class="leg-item"><span class="bolinha posicionado"></span> Posicionado</span>
             <span class="leg-item"><span class="bolinha vazio"></span> Vazio</span>
             <span class="leg-item"><span class="bolinha liberado_aguardando"></span> Liberado</span>
+            <button class="btn btn-outline btn-sm" id="btn-selecao-multipla">☑ Selecionar Vários</button>
           </div>
+        </div>
+        <div id="barra-lote" style="display:none; align-items:center; gap:10px; padding:10px 16px; background:rgba(99,102,241,0.12); border-bottom:1px solid rgba(99,102,241,0.25); flex-wrap:wrap;">
+          <span id="lote-contador" style="font-size:0.85rem; color:var(--accent); font-weight:600; flex:1;"></span>
+          <button class="btn btn-outline btn-sm" id="btn-selecionar-todos">Selecionar Todos</button>
+          <button class="btn btn-primary btn-sm" id="btn-alterar-lote" disabled>⚡ Alterar Status</button>
         </div>
         <div class="card-body">
           <div class="patio-resumo-wrapper">
@@ -327,6 +348,51 @@
           <tr><th>MRS – CONSERVA</th><th>HORA</th><th>POSICIONAMENTO</th></tr>
           <tr><td>_______</td><td>_______</td><td>_______</td></tr>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL STATUS EM LOTE -->
+  <div id="modal-lote-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div>
+          <div id="modal-lote-titulo">Alterar Status em Lote</div>
+          <div class="modal-vagao-badge">Aplica o mesmo status a todos os selecionados</div>
+        </div>
+        <button class="modal-close" id="modal-lote-fechar">✕</button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <div class="input-group" style="margin-bottom:8px;"><label>Novo Status</label></div>
+          <div class="status-options">
+            <div class="status-opt-lote status-opt" data-val="nao_posicionado">
+              <div class="opt-dot nao_posicionado"></div>
+              Não Posicionado
+            </div>
+            <div class="status-opt-lote status-opt" data-val="posicionado">
+              <div class="opt-dot posicionado"></div>
+              Posicionado
+            </div>
+            <div class="status-opt-lote status-opt" data-val="vazio">
+              <div class="opt-dot vazio"></div>
+              Vazio
+            </div>
+            <div class="status-opt-lote status-opt" data-val="liberado">
+              <div class="opt-dot liberado_aguardando"></div>
+              Liberado
+            </div>
+          </div>
+        </div>
+        <div class="input-group" id="grp-lote-posicionamento" style="display:none;">
+          <label>Data/Hora Posicionamento</label>
+          <input type="datetime-local" id="modal-lote-dt-pos">
+        </div>
+        <div class="input-group" id="grp-lote-fim" style="display:none;">
+          <label>Data/Hora Liberação</label>
+          <input type="datetime-local" id="modal-lote-dt-fim">
+        </div>
+        <button class="btn btn-primary btn-full" id="modal-lote-salvar">Aplicar a Todos</button>
       </div>
     </div>
   </div>
