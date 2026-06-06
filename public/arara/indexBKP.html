@@ -128,20 +128,27 @@
 
     </div>
 
-    <!-- ══ MENU FLUTUANTE (SELEÇÃO EM LOTE) ══ -->
+    <!-- ══ MENU FLUTUANTE GLASSMORPHISM (SELEÇÃO EM LOTE) ══ -->
     <div id="barra-lote-flutuante" class="barra-lote-flutuante" style="display:none;">
-      <span id="lote-contador" class="barra-lote-contador">0 vagões selecionados</span>
-      <select id="lote-novo-status" class="barra-lote-select">
-        <option value="">Alterar status…</option>
-        <option value="nao_posicionado">Não Posicionado</option>
-        <option value="posicionado">Posicionado</option>
-        <option value="vazio">Vazio</option>
-        <option value="liberado">Liberado (Devolvido MRS)</option>
-      </select>
-      <div class="barra-lote-acoes">
-        <button class="btn btn-outline btn-sm" id="btn-lote-selecionar-todos">Todos</button>
-        <button class="btn btn-success btn-sm" id="btn-lote-salvar">Aplicar</button>
-        <button class="btn btn-outline btn-sm" id="btn-lote-cancelar">Cancelar</button>
+      <div class="barra-lote-container">
+        <div class="barra-lote-info">
+          <span id="lote-contador">0 vagões selecionados</span>
+        </div>
+        
+        <div class="barra-lote-controls">
+          <div class="input-group" style="margin:0;">
+            <select id="lote-novo-status">
+              <option value="">Selecione novo status...</option>
+              <option value="nao_posicionado">Não Posicionado</option>
+              <option value="posicionado">Posicionado</option>
+              <option value="vazio">Vazio</option>
+              <option value="liberado">Liberado (Devolvido MRS)</option>
+            </select>
+          </div>
+          
+          <button class="btn btn-success btn-sm" id="btn-lote-salvar">Atualizar Lote</button>
+          <button class="btn btn-outline btn-sm" id="btn-lote-cancelar">Cancelar</button>
+        </div>
       </div>
     </div>
 

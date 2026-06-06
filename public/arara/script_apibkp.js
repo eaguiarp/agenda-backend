@@ -1,3 +1,4 @@
+cat > /home/claude/script_api.js << 'ENDOFFILE'
 // ============================================================
 // public/arara/script.js — versão com backend PostgreSQL
 // ============================================================
@@ -360,11 +361,9 @@ function configurarSelecaoLote() {
   // Botão para entrar/sair do modo seleção
   document.getElementById('btn-modo-selecao')?.addEventListener('click', () => {
     modoSelecaoLote = !modoSelecaoLote;
-    const btnModo = document.getElementById('btn-modo-selecao');
     if (modoSelecaoLote) {
-      btnModo.textContent = '✕ Cancelar Seleção';
-      btnModo.classList.add('ativo');
-      atualizarBarraLote();
+      document.getElementById('btn-modo-selecao').textContent = '✕ Cancelar Seleção';
+      document.getElementById('btn-modo-selecao').classList.add('ativo');
     } else {
       cancelarSelecaoLote();
     }
@@ -427,11 +426,9 @@ function atualizarBarraLote() {
   const barra = document.getElementById('barra-lote-flutuante');
   if (!barra) return;
   const n = vagoesSelecionadosLote.length;
-  barra.style.display = modoSelecaoLote ? 'flex' : 'none';
+  barra.style.display = (modoSelecaoLote && n > 0) ? 'flex' : 'none';
   const contador = document.getElementById('lote-contador');
-  if (contador) contador.textContent = n === 0
-    ? 'Clique nos vagões para selecionar'
-    : `${n} vagão(ões) selecionado(s)`;
+  if (contador) contador.textContent = `${n} vagão(ões) selecionado(s)`;
 }
 
 function cancelarSelecaoLote() {
@@ -851,3 +848,4 @@ function renderUsuarios() {
 }
 
 window.onload = init;
+ENDOFFILE
