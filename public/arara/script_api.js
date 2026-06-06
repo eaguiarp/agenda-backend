@@ -88,6 +88,8 @@ async function init() {
   configurarTeclas();       // ← ADICIONE ESTA LINHA
 
   document.getElementById('alerta-modal-fechar').addEventListener('click', fecharModalAlerta);
+  const tvFechar = document.getElementById('tv-fechar');
+  if (tvFechar) tvFechar.addEventListener('click', fecharModoTV);
 
   // Corrigir: usar carregarTudo() em vez de atualizarDados()
   await carregarTudo();     // ← Mude de atualizarDados() para carregarTudo()
@@ -107,10 +109,29 @@ async function carregarTudo() {
       api('GET', '/log?limite=100').catch(() => [])
     ]);
 
-    // Força todas a serem estruturas válidas, mesmo que o backend retorne algo inesperado
-    vagoesAtivos = Array.isArray(ativos) ? ativos : [];
-    composicoesAtivas = Array.isArray(comps) ? comps : [];
-    const listaComposicoes = composicoesAtivas;
+    const listaAtivos = Array.isArray(ativos) ? ativos : [];
+    const listaComps  = Array.isArray(comps)  ? comps  : [];
+    vagoesAtivos = listaAtivos;
+
+    // Monta composicoesAtivas com vagoes[] aninhados
+    // Backend retorna composicoes e vagoes separados;
+    // frontend espera: [{ chegadaDt, vagoes: [{id, status, posDt, fimDt, _dbId}] }]
+    composicoesAtivas = listaComps
+      .map(comp => {
+        const chegadaDt = comp.chegada_dt || comp.chegadaDt;
+        const vagoesDaComp = listaAtivos
+          .filter(v => v.composicao_id === comp.id)
+          .map(v => ({
+            id:    v.vagao_id,
+            status: v.status,
+            posDt: v.pos_dt  ? String(v.pos_dt).slice(0,16) : null,
+            fimDt: v.fim_dt  ? String(v.fim_dt).slice(0,16) : null,
+            _dbId: v.id
+          }));
+        return { id: comp.id, chegadaDt, vagoes: vagoesDaComp };
+      })
+      .filter(comp => comp.vagoes.length > 0);
+
     if (cfg) config = cfg;
 
     if (log && Array.isArray(log)) {
@@ -827,7 +848,7 @@ async function exportarCSV() {
 function configurarGestao() {
   document.getElementById('btn-salvar-cfg').addEventListener('click', async () => {
     const limite = parseInt(document.getElementById('cfg-limite').value) || 24;
-    const ok = await api('PATCH', '/config', { limite_estadia: limite });
+    const ok = await api('POST', '/config', { limite_estadia: limite });
     if (ok) { config.limite_estadia = limite; alert('Configuração salva!'); renderFarol(); }
   });
 
