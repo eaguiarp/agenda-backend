@@ -18,7 +18,13 @@ function getHeaders() {
 
 async function api(method, path, body) {
   try {
-    const res = await fetch('/api/vagoes' + path, {
+    let endpoint = path;
+    if (!path.startsWith('/')) endpoint = '/' + path;
+    const url = endpoint.startsWith('/api') ? endpoint : '/api/vagoes' + endpoint;
+
+    console.log('Chamando:', method, url); // Debug
+
+    const res = await fetch(url, {
       method,
       headers: getHeaders(),
       body: body ? JSON.stringify(body) : undefined
@@ -65,7 +71,7 @@ const STATUS_VISIVEIS = ['nao_posicionado', 'posicionado', 'vazio', 'liberado'];
 // ════════════════════════════════════════
 //  INIT REVISADO
 // ════════════════════════════════════════
-function init() {
+async function init() {
   // Pega credenciais salvas se houver
   const u = localStorage.getItem('arara_user');
   const s = localStorage.getItem('arara_pass');
@@ -76,51 +82,15 @@ function init() {
   configurarFormComposicao();
   configurarLiberacao();
   configurarGestao();
+  configurarBusca();        // ← ADICIONE ESTA LINHA
+  configurarTeclas();       // ← ADICIONE ESTA LINHA
 
   document.getElementById('alerta-modal-fechar').addEventListener('click', fecharModalAlerta);
 
-  // Inicialização das escutas do Modo de Seleção em Lote (Movido para o lugar correto)
-  const btnModo = document.getElementById('btn-modo-selecao');
-  btnModo?.addEventListener('click', () => {
-    modoSelecaoLote = !modoSelecaoLote;
-    if (modoSelecaoLote) {
-      btnModo.classList.add('ativo');
-      btnModo.innerText = '✕ Cancelar Seleção';
-    } else {
-      cancelarSelecaoLote();
-    }
-  });
-
-  document.getElementById('btn-lote-cancelar')?.addEventListener('click', cancelarSelecaoLote);
-
-  document.getElementById('btn-lote-salvar')?.addEventListener('click', async () => {
-    if (vagoesSelecionadosLote.length === 0) return;
-    const novoStatus = document.getElementById('lote-novo-status').value;
-    
-    const sucesso = await api('POST', '/atualizar-lote', {
-      vagoes: vagoesSelecionadosLote,
-      status: novoStatus
-    });
-
-    if (sucesso) {
-      alert('Lote atualizado com sucesso!');
-      cancelarSelecaoLote();
-      const dados = await api('GET', '/ativos');
-      if (dados) renderPainel(dados);
-    } else {
-      alert('Erro ao atualizar lote.');
-    }
-  });
-
-  document.getElementById('btn-exportar-csv')?.addEventListener('click', exportarCSV);
-  document.getElementById('btn-abrir-tv')?.addEventListener('click', abrirModoTV);
-
-  configurarModalMotivo();
-  renderUsuarios();
-
-  // Carrega dados iniciais do banco PostgreSQL
-  atualizarDados();
-  setInterval(atualizarDados, 10000);
+  // Corrigir: usar carregarTudo() em vez de atualizarDados()
+  await carregarTudo();     // ← Mude de atualizarDados() para carregarTudo()
+  
+  setInterval(carregarTudo, 10000);  // ← Mude também aqui
   
   // Relógio em tempo real na barra superior
   setInterval(atualizarRelogio, 1000);

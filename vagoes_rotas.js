@@ -28,7 +28,7 @@ module.exports = function(app, db, verificarAcesso) {
   }
 
   // 1. ROTA: BUSCAR VAGÕES ATIVOS (Retorna os não liberados para o painel de 30 bolinhas)
-  app.get(['/ativos', '/api/vagoes/ativos'], checarAutenticacao, async (req, res) => {
+  app.get('/api/vagoes/ativos', checarAutenticacao, async (req, res) => {
     try {
       const query = `
         SELECT v.*, c.chegada_dt 
@@ -46,7 +46,7 @@ module.exports = function(app, db, verificarAcesso) {
   });
 
   // 2. ROTA: ATUALIZAÇÃO EM LOTE (Crucial para a Seleção Múltipla)
-  app.post(['/atualizar-lote', '/api/vagoes/atualizar-lote'], checarAutenticacao, async (req, res) => {
+  app.post('/api/vagoes/atualizar-lote', checarAutenticacao, async (req, res) => {
     const { vagoes, status } = req.body; // vagoes = ['FLT1', 'FLT2', ...]
     const operador = req.headers['usuario'] || 'Sistema (Lote)';
 
@@ -90,7 +90,7 @@ module.exports = function(app, db, verificarAcesso) {
   });
 
   // 3. ROTA: REGISTRAR NOVA COMPOSIÇÃO (Tratamento clássico)
-  app.post(['/nova-composicao', '/api/vagoes/nova-composicao'], checarAutenticacao, async (req, res) => {
+  app.post('/api/vagoes/composicoes', checarAutenticacao, async (req, res) => {
     const { chegadaDt, vagoes } = req.body; // vagoes = ['FLT1', ...]
     if (!chegadaDt || !Array.isArray(vagoes) || vagoes.length === 0) {
       return res.status(400).json({ erro: 'Dados da composição incompletos.' });
@@ -127,7 +127,7 @@ module.exports = function(app, db, verificarAcesso) {
   });
 
   // 4. ROTA: ATUALIZAR UM VAGÃO INDIVIDUAL
-  app.post(['/atualizar', '/api/vagoes/atualizar'], checarAutenticacao, async (req, res) => {
+  app.post('/api/vagoes/atualizar', checarAutenticacao, async (req, res) => {
     const { id, status, posDt, fimDt } = req.body;
     if (!id || !status) return res.status(400).json({ erro: 'Dados incompletos.' });
 
@@ -154,7 +154,7 @@ module.exports = function(app, db, verificarAcesso) {
   });
 
   // 5. ROTA: BUSCAR CONFIGURAÇÕES (Limite de estadia)
-  app.get(['/config', '/api/vagoes/config'], checarAutenticacao, async (req, res) => {
+  app.get('/api/vagoes/config', checarAutenticacao, async (req, res) => {
     try {
       const resultado = await db.query('SELECT chave, valor FROM vagoes_config');
       const cfg = {};
@@ -166,7 +166,7 @@ module.exports = function(app, db, verificarAcesso) {
   });
 
   // 6. ROTA: SALVAR CONFIGURAÇÃO
-  app.post(['/config', '/api/vagoes/config'], checarAutenticacao, async (req, res) => {
+  app.post('/api/vagoes/config', checarAutenticacao, async (req, res) => {
     const { limite_estadia } = req.body;
     try {
       await db.query(

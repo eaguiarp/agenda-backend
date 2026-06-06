@@ -12,6 +12,14 @@ const { Resend } = require('resend');
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// IMPORTAR as rotas dos vagões
+const vagoesRotas = require('./vagoes_rotas.js');
+
+// Registrar as rotas com o app, db e função de auth
+vagoesRotas(app, pool, verificarAcesso);
 
 // ========================================================
 // 📁 PASTA DE UPLOADS TEMPORÁRIOS
@@ -109,12 +117,7 @@ app.get("/eu", auth(1, 'CD Itaborai'), (req, res) => {
 });
 
 // ========================================================
-// 📁 ARQUIVOS ESTÁTICOS
-// ========================================================
-app.use(express.static(path.join(__dirname, "public")));
-
-// ========================================================
-// 🔧 ROTA DE MIGRAÇÃO
+//  ROTA DE MIGRAÇÃO
 // ========================================================
 app.get("/criar-banco", async (req, res) => {
   try {
