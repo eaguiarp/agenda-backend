@@ -58,6 +58,7 @@ function pedirLogin() {
 
 // ── ESTADO LOCAL (cache da API) ──
 let composicoesAtivas = [];
+let vagoesAtivos = [];
 let config  = { limite_estadia: 24 };
 let usuarios = [];
 let logEntradas = [];
@@ -106,9 +107,10 @@ async function carregarTudo() {
       api('GET', '/log?limite=100').catch(() => [])
     ]);
 
-    // Força todas a serem um array válido, mesmo que venham nulas/vazias do backend
-    composicoesAtivas = Array.isArray(ativos) ? ativos : [];
-    const listaComposicoes = Array.isArray(comps) ? comps : [];
+    // Força todas a serem estruturas válidas, mesmo que o backend retorne algo inesperado
+    vagoesAtivos = Array.isArray(ativos) ? ativos : [];
+    composicoesAtivas = Array.isArray(comps) ? comps : [];
+    const listaComposicoes = composicoesAtivas;
     if (cfg) config = cfg;
 
     if (log && Array.isArray(log)) {
@@ -135,6 +137,7 @@ async function carregarTudo() {
     console.error("Erro crítico no ciclo de atualização do pátio:", err);
     // ESCUDO TOTAL: Garante que nenhuma variável usada no render fique undefined
     composicoesAtivas = [];
+    vagoesAtivos = [];
     logEntradas = [];
     atualizarInterface();
   }
@@ -162,11 +165,16 @@ function atualizarRelogio() {
 function atualizarBadgeTitulo() {
   let estourados = 0;
   const agora = Date.now();
-  const limiteEstadia = config.limite_estadia * 3600000;
+  const limiteEstadia = (config.limite_estadia || 24) * 3600000;
+  if (!composicoesAtivas || !Array.isArray(composicoesAtivas)) {
+    composicoesAtivas = [];
+  }
   composicoesAtivas.forEach(comp => {
+    if (!comp || !Array.isArray(comp.vagoes)) return;
     comp.vagoes.forEach(v => {
-      if (STATUS_VISIVEIS.includes(v.status)) {
-        if ((agora - new Date(comp.chegadaDt).getTime()) >= limiteEstadia) estourados++;
+      if (STATUS_VISIVEIS.includes(v?.status)) {
+        const chegada = new Date(comp.chegadaDt || comp.chegada_dt).getTime();
+        if (!Number.isNaN(chegada) && (agora - chegada) >= limiteEstadia) estourados++;
       }
     });
   });
@@ -325,7 +333,10 @@ function renderPainelFIFO(vagoes) {
     composicoesAtivas = [];
   }
   if (!vagoes || !Array.isArray(vagoes)) {
-    vagoes = composicoesAtivas;
+    vagoes = Array.isArray(vagoesAtivos) ? vagoesAtivos : [];
+    if (!Array.isArray(vagoes) || vagoes.length === 0) {
+      vagoes = composicoesAtivas.flatMap(comp => Array.isArray(comp.vagoes) ? comp.vagoes : []);
+    }
   }
 
   const container = document.getElementById('painel-vagoes-fifo');
@@ -551,10 +562,20 @@ function fecharModal() {
 // ════════════════════════════════════════
 function renderFarol() {
   let ativos = [];
+  if (!composicoesAtivas || !Array.isArray(composicoesAtivas)) {
+    composicoesAtivas = [];
+  }
+
   composicoesAtivas.forEach(comp => {
-    comp.vagoes.forEach(v => {
-      if (STATUS_VISIVEIS.includes(v.status)) ativos.push({ ...v, chegadaDt: comp.chegadaDt });
-    });
+    if (comp && Array.isArray(comp.vagoes)) {
+      comp.vagoes.forEach(v => {
+        if (STATUS_VISIVEIS.includes(v.status)) ativos.push({ ...v, chegadaDt: comp.chegadaDt });
+      });
+    } else if (comp && typeof comp.status === 'string') {
+      if (STATUS_VISIVEIS.includes(comp.status)) {
+        ativos.push({ ...comp, chegadaDt: comp.chegada_dt || comp.chegadaDt });
+      }
+    }
   });
 
   const agora  = Date.now();
@@ -635,19 +656,34 @@ function fecharModoTV() { document.getElementById('tv-overlay').style.display = 
 
 function renderTV() {
   const agora  = Date.now();
-  const limEst = config.limite_estadia * 3600000;
-  const limRis = (config.limite_estadia - 4) * 3600000;
+  const limEst = (config.limite_estadia || 24) * 3600000;
+  const limRis = ((config.limite_estadia || 24) - 4) * 3600000;
   let ativos = [], estourados = 0, risco = 0, maxTpv = 0;
 
+  if (!composicoesAtivas || !Array.isArray(composicoesAtivas)) {
+    composicoesAtivas = [];
+  }
+
   composicoesAtivas.forEach(comp => {
-    comp.vagoes.forEach(v => {
-      if (STATUS_VISIVEIS.includes(v.status)) {
-        const tpv = agora - new Date(comp.chegadaDt).getTime();
-        ativos.push({ ...v, chegadaDt: comp.chegadaDt, tpvMs: tpv });
+    if (comp && Array.isArray(comp.vagoes)) {
+      const chegadaBase = new Date(comp.chegadaDt || comp.chegada_dt).getTime();
+      comp.vagoes.forEach(v => {
+        if (STATUS_VISIVEIS.includes(v?.status)) {
+          const tpv = Number.isNaN(chegadaBase) ? 0 : (agora - chegadaBase);
+          ativos.push({ ...v, chegadaDt: comp.chegadaDt || comp.chegada_dt, tpvMs: tpv });
+          if (tpv > maxTpv) maxTpv = tpv;
+          if (tpv >= limEst) estourados++; else if (tpv >= limRis) risco++;
+        }
+      });
+    } else if (comp && typeof comp.status === 'string') {
+      const chegadaBase = new Date(comp.chegadaDt || comp.chegada_dt).getTime();
+      if (STATUS_VISIVEIS.includes(comp.status)) {
+        const tpv = Number.isNaN(chegadaBase) ? 0 : (agora - chegadaBase);
+        ativos.push({ ...comp, chegadaDt: comp.chegadaDt || comp.chegada_dt, tpvMs: tpv });
         if (tpv > maxTpv) maxTpv = tpv;
         if (tpv >= limEst) estourados++; else if (tpv >= limRis) risco++;
       }
-    });
+    }
   });
 
   document.getElementById('tv-relogio').textContent =
