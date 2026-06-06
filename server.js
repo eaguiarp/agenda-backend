@@ -18,9 +18,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 // IMPORTAR as rotas dos vagões
 const vagoesRotas = require('./vagoes_rotas.js');
 
-// Registrar as rotas com o app, db e função de auth
-vagoesRotas(app, pool, verificarAcesso);
-
 // ========================================================
 // 📁 PASTA DE UPLOADS TEMPORÁRIOS
 // ========================================================
@@ -76,8 +73,7 @@ async function verificarAcesso(user, pass, nivelMinimo) {
   }
 }
 
-const registrarRotasVagoes = require('./vagoes_rotas');
-registrarRotasVagoes(app, pool, verificarAcesso);
+vagoesRotas(app, pool, verificarAcesso);
 
 function auth(nivelMinimo, realm) {
   return basicAuth({
