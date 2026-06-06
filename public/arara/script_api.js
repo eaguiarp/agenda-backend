@@ -1,42 +1,25 @@
+cat > /home/claude/script_api.js << 'ENDOFFILE'
 // ============================================================
 // public/arara/script.js — versão com backend PostgreSQL
-// Substitui o localStorage por chamadas à API /api/vagoes/*
 // ============================================================
 
-// ── CONFIGURAÇÃO ──
-// Credenciais do usuário logado (integrar com o sistema de login
-// do AgendaCD-PWA futuramente; por ora, pede no primeiro acesso)
+// ── AUTH ──
 let AUTH = { usuario: '', senha: '' };
 
 function getHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    'usuario': AUTH.usuario,
-    'senha':   AUTH.senha
-  };
+  return { 'Content-Type': 'application/json', 'usuario': AUTH.usuario, 'senha': AUTH.senha };
 }
 
 async function api(method, path, body) {
   try {
-    let endpoint = path;
-    if (!path.startsWith('/')) endpoint = '/' + path;
-    const url = endpoint.startsWith('/api') ? endpoint : '/api/vagoes' + endpoint;
-
-    console.log('Chamando:', method, url); // Debug
-
+    const url = '/api/vagoes' + (path.startsWith('/') ? path : '/' + path);
     const res = await fetch(url, {
       method,
       headers: getHeaders(),
       body: body ? JSON.stringify(body) : undefined
     });
-    if (res.status === 401 || res.status === 403) {
-      pedirLogin();
-      return null;
-    }
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.erro || `HTTP ${res.status}`);
-    }
+    if (res.status === 401 || res.status === 403) { pedirLogin(); return null; }
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.erro || `HTTP ${res.status}`); }
     return await res.json();
   } catch (e) {
     console.error('[api]', method, path, e);
@@ -44,7 +27,6 @@ async function api(method, path, body) {
   }
 }
 
-// ── LOGIN SIMPLES ──
 function pedirLogin() {
   const u = prompt('Usuário:');
   const s = prompt('Senha:');
@@ -56,25 +38,22 @@ function pedirLogin() {
   }
 }
 
-// ── ESTADO LOCAL (cache da API) ──
-let composicoesAtivas = [];
-let vagoesAtivos = [];
-let config  = { limite_estadia: 24 };
-let usuarios = [];
-let logEntradas = [];
-let vagaoSelecionado  = null;
-let statusSelecionado = null;
-let modoSelecaoLote = false;
-let vagoesSelecionadosLote = []; // Guardará os IDs selecionados
-let motivoEstadiaPendente = null;
+// ── ESTADO ──
+let composicoesAtivas      = [];
+let config                 = { limite_estadia: 24 };
+let logEntradas            = [];
+let vagaoSelecionado       = null;
+let statusSelecionado      = null;
+let motivoEstadiaPendente  = null;
+let modoSelecaoLote        = false;
+let vagoesSelecionadosLote = []; // array de { id, _dbId }
 
 const STATUS_VISIVEIS = ['nao_posicionado', 'posicionado', 'vazio', 'liberado'];
 
 // ════════════════════════════════════════
-//  INIT REVISADO
+//  INIT
 // ════════════════════════════════════════
 async function init() {
-  // Pega credenciais salvas se houver
   const u = localStorage.getItem('arara_user');
   const s = localStorage.getItem('arara_pass');
   if (u && s) AUTH = { usuario: u, senha: s };
@@ -82,24 +61,34 @@ async function init() {
   configurarAbas();
   configurarModal();
   configurarFormComposicao();
+  configurarSelecaoLote();   // ← própria função, fora do form
   configurarLiberacao();
   configurarGestao();
-  configurarBusca();        // ← ADICIONE ESTA LINHA
-  configurarTeclas();       // ← ADICIONE ESTA LINHA
+  configurarBusca();
+  configurarTeclas();
 
   document.getElementById('alerta-modal-fechar').addEventListener('click', fecharModalAlerta);
   const tvFechar = document.getElementById('tv-fechar');
   if (tvFechar) tvFechar.addEventListener('click', fecharModoTV);
 
-  // Corrigir: usar carregarTudo() em vez de atualizarDados()
-  await carregarTudo();     // ← Mude de atualizarDados() para carregarTudo()
-  
-  setInterval(carregarTudo, 10000);  // ← Mude também aqui
-  
-  // Relógio em tempo real na barra superior
+  const hoje = new Date().toISOString().split('T')[0];
+  document.getElementById('comp-data').value = hoje;
+  document.getElementById('lib-data').value  = hoje;
+
+  await carregarTudo();
+
   setInterval(atualizarRelogio, 1000);
+  setInterval(() => {
+    renderFarol();
+    atualizarBadgeTitulo();
+    if (document.getElementById('tv-overlay').style.display !== 'none') renderTV();
+  }, 1000);
+  setInterval(carregarTudo, 30000);
 }
 
+// ════════════════════════════════════════
+//  CARREGAR DADOS DA API
+// ════════════════════════════════════════
 async function carregarTudo() {
   try {
     const [ativos, comps, cfg, log] = await Promise.all([
@@ -111,22 +100,19 @@ async function carregarTudo() {
 
     const listaAtivos = Array.isArray(ativos) ? ativos : [];
     const listaComps  = Array.isArray(comps)  ? comps  : [];
-    vagoesAtivos = listaAtivos;
 
-    // Monta composicoesAtivas com vagoes[] aninhados
-    // Backend retorna composicoes e vagoes separados;
-    // frontend espera: [{ chegadaDt, vagoes: [{id, status, posDt, fimDt, _dbId}] }]
+    // Monta composicoesAtivas com vagoes[] aninhados a partir das duas listas separadas
     composicoesAtivas = listaComps
       .map(comp => {
         const chegadaDt = comp.chegada_dt || comp.chegadaDt;
         const vagoesDaComp = listaAtivos
           .filter(v => v.composicao_id === comp.id)
           .map(v => ({
-            id:    v.vagao_id,
+            id:     v.vagao_id,
             status: v.status,
-            posDt: v.pos_dt  ? String(v.pos_dt).slice(0,16) : null,
-            fimDt: v.fim_dt  ? String(v.fim_dt).slice(0,16) : null,
-            _dbId: v.id
+            posDt:  v.pos_dt  ? String(v.pos_dt).slice(0, 16)  : null,
+            fimDt:  v.fim_dt  ? String(v.fim_dt).slice(0, 16)  : null,
+            _dbId:  v.id
           }));
         return { id: comp.id, chegadaDt, vagoes: vagoesDaComp };
       })
@@ -134,31 +120,23 @@ async function carregarTudo() {
 
     if (cfg) config = cfg;
 
-    if (log && Array.isArray(log)) {
-      logEntradas = log.map(e => ({
-        ts:              e.criado_em,
-        vagaoId:         e.vagao_id,
-        statusAnterior:  e.status_anterior,
-        statusNovo:      e.status_novo,
-        motivo:          e.motivo,
-        usuario:         e.usuario
-      }));
-    } else {
-      logEntradas = [];
-    }
+    logEntradas = Array.isArray(log) ? log.map(e => ({
+      ts:             e.criado_em,
+      vagaoId:        e.vagao_id,
+      statusAnterior: e.status_anterior,
+      statusNovo:     e.status_novo,
+      motivo:         e.motivo,
+      usuario:        e.usuario
+    })) : [];
 
     const inputCfg = document.getElementById('cfg-limite');
-    if (inputCfg && config.limite_estadia) {
-      inputCfg.value = config.limite_estadia;
-    }
+    if (inputCfg) inputCfg.value = config.limite_estadia;
 
     atualizarInterface();
 
   } catch (err) {
-    console.error("Erro crítico no ciclo de atualização do pátio:", err);
-    // ESCUDO TOTAL: Garante que nenhuma variável usada no render fique undefined
+    console.error('Erro ao carregar dados:', err);
     composicoesAtivas = [];
-    vagoesAtivos = [];
     logEntradas = [];
     atualizarInterface();
   }
@@ -177,8 +155,8 @@ function atualizarInterface() {
 //  RELÓGIO + BADGE TÍTULO
 // ════════════════════════════════════════
 function atualizarRelogio() {
-  const agora = new Date();
   const el = document.getElementById('relogio');
+  const agora = new Date();
   if (el) el.textContent = agora.toLocaleDateString('pt-BR') + ' '
     + agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
@@ -186,16 +164,11 @@ function atualizarRelogio() {
 function atualizarBadgeTitulo() {
   let estourados = 0;
   const agora = Date.now();
-  const limiteEstadia = (config.limite_estadia || 24) * 3600000;
-  if (!composicoesAtivas || !Array.isArray(composicoesAtivas)) {
-    composicoesAtivas = [];
-  }
+  const limEst = (config.limite_estadia || 24) * 3600000;
   composicoesAtivas.forEach(comp => {
-    if (!comp || !Array.isArray(comp.vagoes)) return;
     comp.vagoes.forEach(v => {
-      if (STATUS_VISIVEIS.includes(v?.status)) {
-        const chegada = new Date(comp.chegadaDt || comp.chegada_dt).getTime();
-        if (!Number.isNaN(chegada) && (agora - chegada) >= limiteEstadia) estourados++;
+      if (STATUS_VISIVEIS.includes(v.status)) {
+        if ((agora - new Date(comp.chegadaDt).getTime()) >= limEst) estourados++;
       }
     });
   });
@@ -231,13 +204,15 @@ function configurarTeclas() {
     if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
     const modaisAbertos = document.querySelector('.modal-overlay[style*="flex"]');
     if (modaisAbertos) {
-      if (e.key === 'Escape') { fecharModal(); fecharModalAlerta();
-        if (document.getElementById('tv-overlay').style.display !== 'none') fecharModoTV(); }
+      if (e.key === 'Escape') {
+        fecharModal(); fecharModalAlerta();
+        if (document.getElementById('tv-overlay').style.display !== 'none') fecharModoTV();
+      }
       return;
     }
-    switch(e.key.toLowerCase()) {
-      case 'n': irParaAba('painel');
-        setTimeout(() => document.getElementById('comp-vagoes').focus(), 100); break;
+    if (e.key === 'Escape' && modoSelecaoLote) { cancelarSelecaoLote(); return; }
+    switch (e.key.toLowerCase()) {
+      case 'n': irParaAba('painel'); setTimeout(() => document.getElementById('comp-vagoes').focus(), 100); break;
       case 'l': irParaAba('liberacao'); break;
       case 'g': irParaAba('gestao');    break;
       case 't': abrirModoTV();          break;
@@ -265,8 +240,7 @@ function highlightBusca(q) {
     if (!bolinha || bolinha.classList.contains('slot-vazio')) return;
     const id = bolinha.getAttribute('data-id') || '';
     if (q && id.includes(q)) {
-      slot.style.opacity = '1'; slot.style.transform = 'scale(1.2)';
-      bolinha.style.outline = '2.5px solid #fff';
+      slot.style.opacity = '1'; slot.style.transform = 'scale(1.2)'; bolinha.style.outline = '2.5px solid #fff';
     } else if (q) {
       slot.style.opacity = '0.25'; slot.style.transform = ''; bolinha.style.outline = '';
     } else {
@@ -305,117 +279,76 @@ function configurarFormComposicao() {
       alert(`${ids.length} vagão(ões) inserido(s) no pátio.`);
       await carregarTudo();
     }
-
-    // ── ESCOUTAS PARA SELEÇÃO EM LOTE ──
-  const btnModo = document.getElementById('btn-modo-selecao');
-  btnModo?.addEventListener('click', () => {
-    modoSelecaoLote = !modoSelecaoLote;
-    if (modoSelecaoLote) {
-      btnModo.classList.add('ativo');
-      btnModo.innerText = '✕ Cancelar Seleção';
-    } else {
-      cancelarSelecaoLote();
-    }
-  });
-
-  document.getElementById('btn-lote-cancelar')?.addEventListener('click', cancelarSelecaoLote);
-
-  document.getElementById('btn-lote-salvar')?.addEventListener('click', async () => {
-    if (vagoesSelecionadosLote.length === 0) return;
-    const novoStatus = document.getElementById('lote-novo-status').value;
-    
-    // Dispara a atualização em massa para o Backend PostgreSQL
-    const sucesso = await api('POST', '/atualizar-lote', {
-      vagoes: vagoesSelecionadosLote,
-      status: novoStatus
-    });
-
-    if (sucesso) {
-      alert('Lote atualizado com sucesso!');
-      cancelarSelecaoLote();
-      // Recarrega os dados atualizados do banco Railway
-      const dados = await api('GET', '/ativos');
-      if (dados) renderPainel(dados);
-    } else {
-      alert('Erro ao atualizar lote.');
-    }
-  });
-
-
   });
 }
 
 // ════════════════════════════════════════
-//  PAINEL FIFO REVISADO
+//  PAINEL FIFO
 // ════════════════════════════════════════
-function renderPainelFIFO(vagoes) {
-  // Se a variável não for um array válido por qualquer motivo, transforma em array vazio e impede o crash
-  if (!composicoesAtivas || !Array.isArray(composicoesAtivas)) {
-    composicoesAtivas = [];
-  }
-  if (!vagoes || !Array.isArray(vagoes)) {
-    vagoes = Array.isArray(vagoesAtivos) ? vagoesAtivos : [];
-    if (!Array.isArray(vagoes) || vagoes.length === 0) {
-      vagoes = composicoesAtivas.flatMap(comp => Array.isArray(comp.vagoes) ? comp.vagoes : []);
-    }
-  }
-
+function renderPainelFIFO() {
   const container = document.getElementById('painel-vagoes-fifo');
-  const resumo = document.getElementById('patio-resumo');
+  const resumo    = document.getElementById('patio-resumo');
   if (!container) return;
   container.innerHTML = '';
 
-  // Filtra vagões ativos (vazio continua no pátio, liberado some)
-  const ativos = vagoes.filter(v => v && v.status !== 'liberado');
+  // Monta fila plana mantendo referência à chegadaDt da composição
+  let vagoesFila = [];
+  let resumosDict = {};
+  composicoesAtivas.forEach(comp => {
+    const visiveis = comp.vagoes.filter(v => STATUS_VISIVEIS.includes(v.status));
+    if (visiveis.length > 0) {
+      const chave = formatarDataResumo(comp.chegadaDt);
+      resumosDict[chave] = (resumosDict[chave] || 0) + visiveis.length;
+      visiveis.forEach(v => vagoesFila.push({ ...v, chegadaDt: comp.chegadaDt }));
+    }
+  });
 
-  if (ativos.length === 0) {
-    if (resumo) resumo.textContent = 'Pátio Atual: Limpo (Sem operações ativas)';
+  if (vagoesFila.length === 0) {
+    if (resumo) resumo.textContent = 'Pátio Atual: Limpo — Sem operações ativas';
   } else {
-    const resumosDict = {};
-    ativos.forEach(v => {
-      const chave = formatarDataResumo(v.chegada_dt);
-      resumosDict[chave] = (resumosDict[chave] || 0) + 1;
-    });
-    const stringResumo = Object.keys(resumosDict).map(k => `[${k} — ${resumosDict[k]} FLTs]`).join(' ');
-    if (resumo) resumo.textContent = `Pátio Atual: ${stringResumo}`;
+    if (resumo) resumo.textContent = 'Pátio: ' + Object.keys(resumosDict).map(k => `${k} — ${resumosDict[k]} FLTs`).join(' | ');
   }
 
-  // Monta rigorosamente os 30 slots fixos na tela (Grid FIFO)
+  const agora  = Date.now();
+  const limEst = (config.limite_estadia || 24) * 3600000;
+  const limRis = ((config.limite_estadia || 24) - 4) * 3600000;
+
   for (let i = 0; i < 30; i++) {
     const slot = document.createElement('div');
     slot.className = 'vagao-slot-fifo';
 
-    if (i < ativos.length) {
-      const v = ativos[i];
-      const estaSelecionado = vagoesSelecionadosLote.includes(v.vagao_id);
-      
-      slot.innerHTML = `
-        <div class="bolinha ${v.status} ${estaSelecionado ? 'selecionada' : ''}" data-id="${v.vagao_id}" title="${v.vagao_id}" style="cursor:pointer;"></div>
-        <div class="vagao-id">${v.vagao_id}</div>
-      `;
+    if (i < vagoesFila.length) {
+      const v = vagoesFila[i];
+      const cssClass = statusToCss(v.status);
+      const idCurto  = v.id.length > 7 ? v.id.slice(-7) : v.id;
+      const tpvMs    = agora - new Date(v.chegadaDt).getTime();
 
-      // Clique inteligente na bolinha
-      slot.querySelector('.bolinha').addEventListener('click', (e) => {
+      // Alerta de estadia/risco
+      let alertaClass = '';
+      let tooltipExtra = '';
+      if (tpvMs >= limEst)      { alertaClass = 'alerta-estadia'; tooltipExtra = ` ⚠ ESTADIA ${formatarMs(tpvMs)}`; }
+      else if (tpvMs >= limRis) { alertaClass = 'alerta-risco';   tooltipExtra = ` ⚠ RISCO ${formatarMs(tpvMs)}`; }
+
+      // Seleção em lote
+      const estaSelecionado = vagoesSelecionadosLote.some(s => s.id === v.id);
+      const classeSelecao   = estaSelecionado ? 'selecionada' : '';
+
+      slot.innerHTML = `
+        <div class="bolinha ${cssClass} ${alertaClass} ${classeSelecao}"
+          data-id="${v.id}"
+          title="${v.id} — ${statusLabel(v.status)}${tooltipExtra}"
+          style="cursor:pointer;"></div>
+        <div class="vagao-id">${idCurto}</div>`;
+
+      slot.querySelector('.bolinha').addEventListener('click', () => {
         if (modoSelecaoLote) {
-          if (vagoesSelecionadosLote.includes(v.vagao_id)) {
-            vagoesSelecionadosLote = vagoesSelecionadosLote.filter(id => id !== v.vagao_id);
-            e.target.classList.remove('selecionada');
-          } else {
-            vagoesSelecionadosLote.push(v.vagao_id);
-            e.target.classList.add('selecionada');
-          }
-          atualizarBarraFlutuanteLote();
+          toggleSelecaoLote(v);
         } else {
-          // Garante a abertura correta passando o ID sequencial do banco primeiro
-          abrirModal(v.id, v.vagao_id, v.status, v.pos_dt, v.fim_dt);
+          abrirModal(v.id);
         }
       });
     } else {
-      // Slot invisível/desativado para manter simetria perfeita de 30 posições
-      slot.innerHTML = `
-        <div class="bolinha slot-vazio"></div>
-        <div class="vagao-id"></div>
-      `;
+      slot.innerHTML = `<div class="bolinha slot-vazio"></div><div class="vagao-id"></div>`;
     }
     container.appendChild(slot);
   }
@@ -424,57 +357,117 @@ function renderPainelFIFO(vagoes) {
 // ════════════════════════════════════════
 //  SELEÇÃO EM LOTE
 // ════════════════════════════════════════
-function atualizarBarraFlutuanteLote() {
+function configurarSelecaoLote() {
+  // Botão para entrar/sair do modo seleção
+  document.getElementById('btn-modo-selecao')?.addEventListener('click', () => {
+    modoSelecaoLote = !modoSelecaoLote;
+    if (modoSelecaoLote) {
+      document.getElementById('btn-modo-selecao').textContent = '✕ Cancelar Seleção';
+      document.getElementById('btn-modo-selecao').classList.add('ativo');
+    } else {
+      cancelarSelecaoLote();
+    }
+  });
+
+  // Selecionar todos
+  document.getElementById('btn-lote-selecionar-todos')?.addEventListener('click', () => {
+    vagoesSelecionadosLote = [];
+    composicoesAtivas.forEach(comp => {
+      comp.vagoes.filter(v => STATUS_VISIVEIS.includes(v.status))
+        .forEach(v => vagoesSelecionadosLote.push({ id: v.id, _dbId: v._dbId }));
+    });
+    renderPainelFIFO();
+    atualizarBarraLote();
+  });
+
+  // Cancelar
+  document.getElementById('btn-lote-cancelar')?.addEventListener('click', cancelarSelecaoLote);
+
+  // Salvar lote
+  document.getElementById('btn-lote-salvar')?.addEventListener('click', async () => {
+    if (vagoesSelecionadosLote.length === 0) return;
+    const novoStatus = document.getElementById('lote-novo-status').value;
+    if (!novoStatus) { alert('Selecione um status.'); return; }
+
+    const btn = document.getElementById('btn-lote-salvar');
+    btn.disabled = true; btn.textContent = 'Salvando…';
+
+    const ok = await api('POST', '/atualizar-lote', {
+      vagoes: vagoesSelecionadosLote.map(s => s.id),
+      status: novoStatus
+    });
+
+    btn.disabled = false; btn.textContent = 'Aplicar';
+
+    if (ok) {
+      alert(`${vagoesSelecionadosLote.length} vagão(ões) atualizados para "${statusLabel(novoStatus)}".`);
+      cancelarSelecaoLote();
+      await carregarTudo();
+    } else {
+      alert('Erro ao atualizar lote.');
+    }
+  });
+}
+
+function toggleSelecaoLote(v) {
+  const idx = vagoesSelecionadosLote.findIndex(s => s.id === v.id);
+  if (idx >= 0) {
+    vagoesSelecionadosLote.splice(idx, 1);
+  } else {
+    vagoesSelecionadosLote.push({ id: v.id, _dbId: v._dbId });
+  }
+  // Atualiza só a bolinha clicada sem re-renderizar o painel inteiro
+  const bolinha = document.querySelector(`.bolinha[data-id="${v.id}"]`);
+  if (bolinha) bolinha.classList.toggle('selecionada', vagoesSelecionadosLote.some(s => s.id === v.id));
+  atualizarBarraLote();
+}
+
+function atualizarBarraLote() {
   const barra = document.getElementById('barra-lote-flutuante');
   if (!barra) return;
-
-  if (vagoesSelecionadosLote.length > 0) {
-    barra.style.display = 'flex';
-    const txtContador = document.getElementById('lote-contador');
-    if (txtContador) {
-      txtContador.innerText = `${vagoesSelecionadosLote.length} vagão(ões) selecionado(s)`;
-    }
-  } else {
-    barra.style.display = 'none';
-  }
+  const n = vagoesSelecionadosLote.length;
+  barra.style.display = (modoSelecaoLote && n > 0) ? 'flex' : 'none';
+  const contador = document.getElementById('lote-contador');
+  if (contador) contador.textContent = `${n} vagão(ões) selecionado(s)`;
 }
 
 function cancelarSelecaoLote() {
   modoSelecaoLote = false;
   vagoesSelecionadosLote = [];
   const btnModo = document.getElementById('btn-modo-selecao');
-  if (btnModo) {
-    btnModo.classList.remove('ativo');
-    btnModo.innerText = '▢ Seleção Múltipla';
-  }
+  if (btnModo) { btnModo.textContent = '▢ Seleção Múltipla'; btnModo.classList.remove('ativo'); }
   const barra = document.getElementById('barra-lote-flutuante');
   if (barra) barra.style.display = 'none';
-  
-  // Remove as classes de brilho selecionado visualmente das bolinhas
+  // Remove visual de seleção de todas as bolinhas
   document.querySelectorAll('.bolinha.selecionada').forEach(el => el.classList.remove('selecionada'));
 }
 
+// ════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════
 function statusToCss(s) {
-  return {nao_posicionado:'nao_posicionado',posicionado:'posicionado',vazio:'vazio',liberado:'liberado_aguardando'}[s]||'vazio';
+  return { nao_posicionado:'nao_posicionado', posicionado:'posicionado', vazio:'vazio', liberado:'liberado_aguardando' }[s] || 'vazio';
 }
 function statusLabel(s) {
-  return {nao_posicionado:'Não Posicionado',posicionado:'Posicionado',vazio:'Vazio',liberado:'Liberado'}[s]||s;
+  return { nao_posicionado:'Não Posicionado', posicionado:'Posicionado', vazio:'Vazio', liberado:'Liberado' }[s] || s;
 }
 function formatarDataResumo(dtString) {
   const dt = new Date(dtString);
   return `${String(dt.getDate()).padStart(2,'0')}/${ ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][dt.getMonth()] }`;
 }
 function formatarMs(ms) {
-  return `${String(Math.floor(ms/3600000)).padStart(2,'0')}h ${String(Math.floor((ms%3600000)/60000)).padStart(2,'0')}m`;
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  return `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m`;
 }
 
 // ════════════════════════════════════════
 //  MODAL VAGÃO
 // ════════════════════════════════════════
 const MOTIVOS_ESTADIA = [
-  'Aguardando manobra MRS','Problema mecânico no vagão',
-  'Fila de carregamento','Aguardando documento/NF',
-  'Operação suspensa','Outro'
+  'Aguardando manobra MRS', 'Problema mecânico no vagão',
+  'Fila de carregamento', 'Aguardando documento/NF',
+  'Operação suspensa', 'Outro'
 ];
 
 function configurarModal() {
@@ -494,24 +487,24 @@ async function salvarStatusVagao() {
   if (!vagaoSelecionado || !statusSelecionado) return;
 
   const res = encontrarVagao(vagaoSelecionado);
-  if (res) {
-    const tpvMs = Date.now() - new Date(res.comp.chegadaDt).getTime();
-    if (tpvMs >= config.limite_estadia * 3600000 && !motivoEstadiaPendente) {
-      abrirModalMotivo(); return;
-    }
+  if (!res) return;
+
+  const tpvMs = Date.now() - new Date(res.comp.chegadaDt).getTime();
+  if (tpvMs >= (config.limite_estadia || 24) * 3600000 && !motivoEstadiaPendente) {
+    abrirModalMotivo(); return;
   }
 
-  const vagao = res?.vagao;
-  if (!vagao?._dbId) return;
+  const vagao = res.vagao;
+  if (!vagao._dbId) return;
 
   const btn = document.getElementById('modal-salvar');
   btn.disabled = true; btn.textContent = 'Salvando…';
 
   const ok = await api('PATCH', `/${vagao._dbId}/status`, {
-    status:  statusSelecionado,
-    posDt:   document.getElementById('modal-dt-pos').value || null,
-    fimDt:   document.getElementById('modal-dt-fim').value || null,
-    motivo:  motivoEstadiaPendente || null
+    status: statusSelecionado,
+    posDt:  document.getElementById('modal-dt-pos').value || null,
+    fimDt:  document.getElementById('modal-dt-fim').value || null,
+    motivo: motivoEstadiaPendente || null
   });
 
   btn.disabled = false; btn.textContent = 'Salvar Status';
@@ -530,7 +523,7 @@ function configurarModalMotivo() {
   document.getElementById('motivo-confirmar').addEventListener('click', () => {
     const sel    = document.getElementById('motivo-select').value;
     const custom = document.getElementById('motivo-custom').value.trim();
-    motivoEstadiaPendente = sel === 'Outro' && custom ? custom : sel;
+    motivoEstadiaPendente = (sel === 'Outro' && custom) ? custom : sel;
     document.getElementById('motivo-modal').style.display = 'none';
     salvarStatusVagao();
   });
@@ -545,22 +538,22 @@ function configurarModalMotivo() {
 
 function atualizarCamposModal(status) {
   document.getElementById('grp-posicionamento').style.display =
-    (['posicionado','vazio','liberado'].includes(status)) ? 'block' : 'none';
+    ['posicionado','vazio','liberado'].includes(status) ? 'block' : 'none';
   document.getElementById('grp-fim').style.display =
-    (['vazio','liberado'].includes(status)) ? 'block' : 'none';
+    ['vazio','liberado'].includes(status) ? 'block' : 'none';
 }
 
 function abrirModal(id) {
   const res = encontrarVagao(id);
   if (!res) return;
-  vagaoSelecionado  = id;
+  vagaoSelecionado = id;
   motivoEstadiaPendente = null;
   const { vagao, comp } = res;
 
   const tpvMs = Date.now() - new Date(comp.chegadaDt).getTime();
   document.getElementById('modal-vagao-id').textContent = id;
   document.getElementById('modal-vagao-chegada').textContent =
-    'Chegada: ' + new Date(comp.chegadaDt).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+    'Chegada: ' + new Date(comp.chegadaDt).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
     + ' · TPV: ' + formatarMs(tpvMs);
 
   statusSelecionado = vagao.status;
@@ -583,25 +576,15 @@ function fecharModal() {
 // ════════════════════════════════════════
 function renderFarol() {
   let ativos = [];
-  if (!composicoesAtivas || !Array.isArray(composicoesAtivas)) {
-    composicoesAtivas = [];
-  }
-
   composicoesAtivas.forEach(comp => {
-    if (comp && Array.isArray(comp.vagoes)) {
-      comp.vagoes.forEach(v => {
-        if (STATUS_VISIVEIS.includes(v.status)) ativos.push({ ...v, chegadaDt: comp.chegadaDt });
-      });
-    } else if (comp && typeof comp.status === 'string') {
-      if (STATUS_VISIVEIS.includes(comp.status)) {
-        ativos.push({ ...comp, chegadaDt: comp.chegada_dt || comp.chegadaDt });
-      }
-    }
+    comp.vagoes.forEach(v => {
+      if (STATUS_VISIVEIS.includes(v.status)) ativos.push({ ...v, chegadaDt: comp.chegadaDt });
+    });
   });
 
   const agora  = Date.now();
-  const limEst = config.limite_estadia * 3600000;
-  const limRis = (config.limite_estadia - 4) * 3600000;
+  const limEst = (config.limite_estadia || 24) * 3600000;
+  const limRis = ((config.limite_estadia || 24) - 4) * 3600000;
   let maxTpvMs = 0, somaPosMs = 0, countPos = 0, somaEsperaMs = 0, countEspera = 0;
   let vagoes_estadia = [], vagoes_risco = [];
 
@@ -614,12 +597,12 @@ function renderFarol() {
     else         { somaEsperaMs += tpv;                                  countEspera++; }
   });
 
-  vagoes_estadia.sort((a,b) => b.tpvMs - a.tpvMs);
-  vagoes_risco.sort((a,b)   => b.tpvMs - a.tpvMs);
+  vagoes_estadia.sort((a, b) => b.tpvMs - a.tpvMs);
+  vagoes_risco.sort((a, b)   => b.tpvMs - a.tpvMs);
 
   document.getElementById('val-tpv').innerText     = maxTpvMs > 0 ? formatarMs(maxTpvMs) : '—';
-  document.getElementById('val-pos').innerText     = countPos > 0 ? formatarMs(somaPosMs/countPos) : '—';
-  document.getElementById('val-espera').innerText  = countEspera > 0 ? formatarMs(somaEsperaMs/countEspera) : '—';
+  document.getElementById('val-pos').innerText     = countPos > 0 ? formatarMs(somaPosMs / countPos) : '—';
+  document.getElementById('val-espera').innerText  = countEspera > 0 ? formatarMs(somaEsperaMs / countEspera) : '—';
   document.getElementById('val-estadia').innerText = vagoes_estadia.length;
   document.getElementById('val-risco').innerText   = vagoes_risco.length;
   document.getElementById('val-backlog').innerText = Math.max(0, ativos.length - 30);
@@ -635,15 +618,14 @@ function renderFarol() {
 }
 
 // ════════════════════════════════════════
-//  MODAL ALERTA
+//  MODAL ALERTA ESTADIA/RISCO
 // ════════════════════════════════════════
 function abrirModalAlerta(tipo, vagoes) {
-  const isEst  = tipo === 'estadia';
-  document.getElementById('alerta-modal-titulo').textContent =
-    isEst ? '⚠ Vagões em Estadia' : '⚠ Vagões em Risco';
+  const isEst = tipo === 'estadia';
+  document.getElementById('alerta-modal-titulo').textContent = isEst ? '⚠ Vagões em Estadia' : '⚠ Vagões em Risco';
   document.getElementById('alerta-modal-sub').textContent = isEst
     ? `${vagoes.length} vagão(ões) com mais de ${config.limite_estadia}h no pátio`
-    : `${vagoes.length} vagão(ões) entre ${config.limite_estadia-4}h e ${config.limite_estadia}h`;
+    : `${vagoes.length} vagão(ões) entre ${config.limite_estadia - 4}h e ${config.limite_estadia}h`;
   document.getElementById('alerta-modal-header').style.background = isEst
     ? 'linear-gradient(90deg,rgba(180,20,20,.88),rgba(220,38,38,.82))'
     : 'linear-gradient(90deg,rgba(140,80,0,.88),rgba(202,138,4,.82))';
@@ -651,7 +633,7 @@ function abrirModalAlerta(tipo, vagoes) {
     'Clique num vagão para abrir o painel de status. Ordenado do mais crítico ao menos crítico.';
   document.getElementById('alerta-modal-lista').innerHTML = vagoes.map(v => {
     const dc = isEst ? 'estadia' : 'risco';
-    const ch = new Date(v.chegadaDt).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const ch = new Date(v.chegadaDt).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
     return `<div class="alerta-vagao-item" onclick="fecharModalAlerta();setTimeout(()=>abrirModal('${v.id}'),120);">
       <div class="alerta-dot ${dc}"></div>
       <div><div class="alerta-id">${v.id}</div><div class="alerta-hint">Chegada: ${ch} · ${statusLabel(v.status)}</div></div>
@@ -681,34 +663,19 @@ function renderTV() {
   const limRis = ((config.limite_estadia || 24) - 4) * 3600000;
   let ativos = [], estourados = 0, risco = 0, maxTpv = 0;
 
-  if (!composicoesAtivas || !Array.isArray(composicoesAtivas)) {
-    composicoesAtivas = [];
-  }
-
   composicoesAtivas.forEach(comp => {
-    if (comp && Array.isArray(comp.vagoes)) {
-      const chegadaBase = new Date(comp.chegadaDt || comp.chegada_dt).getTime();
-      comp.vagoes.forEach(v => {
-        if (STATUS_VISIVEIS.includes(v?.status)) {
-          const tpv = Number.isNaN(chegadaBase) ? 0 : (agora - chegadaBase);
-          ativos.push({ ...v, chegadaDt: comp.chegadaDt || comp.chegada_dt, tpvMs: tpv });
-          if (tpv > maxTpv) maxTpv = tpv;
-          if (tpv >= limEst) estourados++; else if (tpv >= limRis) risco++;
-        }
-      });
-    } else if (comp && typeof comp.status === 'string') {
-      const chegadaBase = new Date(comp.chegadaDt || comp.chegada_dt).getTime();
-      if (STATUS_VISIVEIS.includes(comp.status)) {
-        const tpv = Number.isNaN(chegadaBase) ? 0 : (agora - chegadaBase);
-        ativos.push({ ...comp, chegadaDt: comp.chegadaDt || comp.chegada_dt, tpvMs: tpv });
+    comp.vagoes.forEach(v => {
+      if (STATUS_VISIVEIS.includes(v.status)) {
+        const tpv = agora - new Date(comp.chegadaDt).getTime();
+        ativos.push({ ...v, chegadaDt: comp.chegadaDt, tpvMs: tpv });
         if (tpv > maxTpv) maxTpv = tpv;
         if (tpv >= limEst) estourados++; else if (tpv >= limRis) risco++;
       }
-    }
+    });
   });
 
   document.getElementById('tv-relogio').textContent =
-    new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
   document.getElementById('tv-tpv').textContent     = maxTpv > 0 ? formatarMs(maxTpv) : '—';
   document.getElementById('tv-estadia').textContent = estourados;
   document.getElementById('tv-risco').textContent   = risco;
@@ -730,7 +697,7 @@ function renderTV() {
     if (i < vagoesFila.length) {
       const v = vagoesFila[i];
       const tpv = agora - new Date(v.chegadaDt).getTime();
-      let alertaCls = tpv >= limEst ? 'alerta-estadia' : tpv >= limRis ? 'alerta-risco' : '';
+      const alertaCls = tpv >= limEst ? 'alerta-estadia' : tpv >= limRis ? 'alerta-risco' : '';
       const idCurto = v.id.length > 7 ? v.id.slice(-7) : v.id;
       slot.innerHTML = `
         <div class="bolinha ${statusToCss(v.status)} ${alertaCls}" style="width:32px;height:32px;" title="${v.id}"></div>
@@ -744,7 +711,7 @@ function renderTV() {
   let resumosDict = {};
   composicoesAtivas.forEach(comp => {
     const n = comp.vagoes.filter(v => STATUS_VISIVEIS.includes(v.status)).length;
-    if (n > 0) { const k = formatarDataResumo(comp.chegadaDt); resumosDict[k] = (resumosDict[k]||0)+n; }
+    if (n > 0) { const k = formatarDataResumo(comp.chegadaDt); resumosDict[k] = (resumosDict[k] || 0) + n; }
   });
   document.getElementById('tv-resumo').textContent = Object.keys(resumosDict).length
     ? 'Pátio: ' + Object.keys(resumosDict).map(k => `${k} — ${resumosDict[k]} FLTs`).join(' | ')
@@ -784,10 +751,7 @@ async function confirmarDevolucaoMRS() {
 
   const vagaoDbIds = cbs.map(cb => parseInt(cb.value));
   const ok = await api('POST', '/devolucao', { vagaoDbIds });
-  if (ok) {
-    alert(`${cbs.length} vagão(ões) devolvido(s) com sucesso.`);
-    await carregarTudo();
-  }
+  if (ok) { alert(`${cbs.length} vagão(ões) devolvido(s) com sucesso.`); await carregarTudo(); }
 }
 
 function gerarFormularioImpressao() {
@@ -815,8 +779,8 @@ function renderLog() {
   const div = document.getElementById('log-lista');
   if (!div) return;
   if (!logEntradas.length) { div.innerHTML = '<div class="vazio-msg">Nenhuma movimentação registrada.</div>'; return; }
-  div.innerHTML = logEntradas.slice(0,100).map(e => {
-    const dt  = new Date(e.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+  div.innerHTML = logEntradas.slice(0, 100).map(e => {
+    const dt  = new Date(e.ts).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
     const ant = e.statusAnterior ? statusLabel(e.statusAnterior) : 'Entrada';
     const nov = e.statusNovo === 'devolvido' ? 'Devolvido MRS' : statusLabel(e.statusNovo);
     const mot = e.motivo ? `<span class="log-motivo">${e.motivo}</span>` : '';
@@ -834,11 +798,12 @@ async function exportarCSV() {
   const header = ['Data/Hora','Vagão','Status Anterior','Status Novo','Motivo','Usuário'];
   const linhas = dados.map(e => [
     new Date(e.criado_em).toLocaleString('pt-BR'),
-    e.vagao_id, e.status_anterior||'Entrada', e.status_novo, e.motivo||'', e.usuario||''
+    e.vagao_id, e.status_anterior || 'Entrada', e.status_novo, e.motivo || '', e.usuario || ''
   ].map(c => `"${c}"`).join(';'));
-  const blob = new Blob(['\uFEFF'+[header.join(';'),...linhas].join('\n')], {type:'text/csv;charset=utf-8;'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `arara_log_${new Date().toISOString().slice(0,10)}.csv`;
+  const blob = new Blob(['\uFEFF' + [header.join(';'), ...linhas].join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `arara_log_${new Date().toISOString().slice(0, 10)}.csv`;
   a.click(); URL.revokeObjectURL(a.href);
 }
 
@@ -852,15 +817,13 @@ function configurarGestao() {
     if (ok) { config.limite_estadia = limite; alert('Configuração salva!'); renderFarol(); }
   });
 
-  document.getElementById('btn-show-add-user').addEventListener('click', () => {
+  document.getElementById('btn-show-add-user')?.addEventListener('click', () => {
     const p = document.getElementById('add-user-panel');
     p.style.display = p.style.display === 'none' ? 'block' : 'none';
   });
-  document.getElementById('btn-cancel-add-user').addEventListener('click', () => {
-    document.getElementById('add-user-panel').style.display = 'none'; limparFormUser();
+  document.getElementById('btn-cancel-add-user')?.addEventListener('click', () => {
+    document.getElementById('add-user-panel').style.display = 'none';
   });
-  // Usuários: continua usando a tabela 'usuarios' existente do AgendaCD
-  // O gerenciamento de usuários fica no sistema principal — aqui só exibe
   document.getElementById('btn-add-user')?.addEventListener('click', () => {
     alert('O cadastro de usuários é gerenciado pelo sistema principal (AgendaCD).\nOs mesmos usuários já têm acesso ao módulo de vagões.');
   });
@@ -872,14 +835,7 @@ function configurarGestao() {
   renderUsuarios();
 }
 
-function limparFormUser() {
-  ['user-nome','user-login','user-senha'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = '';
-  });
-}
-
 function renderUsuarios() {
-  // Exibe mensagem informando que usuários vêm do sistema principal
   const div = document.getElementById('user-list');
   if (!div) return;
   div.innerHTML = `<div class="user-item" style="opacity:.7;">
@@ -892,3 +848,5 @@ function renderUsuarios() {
 }
 
 window.onload = init;
+ENDOFFILE
+echo "OK"
