@@ -50,7 +50,8 @@ function pedirLogin() {
   const s = prompt('Senha:');
   if (u && s) {
     AUTH = { usuario: u, senha: s };
-    localStorage.setItem('arara_auth', JSON.stringify(AUTH));
+    localStorage.setItem('arara_user', u);
+    localStorage.setItem('arara_pass', s);
     init();
   }
 }

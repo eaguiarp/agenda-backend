@@ -16,11 +16,12 @@ module.exports = function(app, db, verificarAcesso) {
     }
     
     try {
-      // Como o nível mínimo para operar o pátio é 'view' (ou 'op'), passamos 'view'
-      const autorizado = await verificarAcesso(usuario, senha, 'view');
+      // Mínimo de acesso para usar o módulo de vagões é o nível de operação
+      const autorizado = await verificarAcesso(usuario, senha, 1);
       if (!autorizado) {
         return res.status(403).json({ erro: 'Acesso negado para este nível de usuário.' });
       }
+      req.usuario = usuario;
       next();
     } catch (err) {
       res.status(500).json({ erro: 'Erro interno na verificação de acesso.' });
@@ -48,7 +49,7 @@ module.exports = function(app, db, verificarAcesso) {
   // 2. ROTA: ATUALIZAÇÃO EM LOTE (Crucial para a Seleção Múltipla)
   app.post('/api/vagoes/atualizar-lote', checarAutenticacao, async (req, res) => {
     const { vagoes, status } = req.body; // vagoes = ['FLT1', 'FLT2', ...]
-    const operador = req.headers['usuario'] || 'Sistema (Lote)';
+    const operador = req.usuario || req.headers['usuario'] || 'Sistema (Lote)';
 
     if (!Array.isArray(vagoes) || vagoes.length === 0 || !status) {
       return res.status(400).json({ erro: 'Dados inválidos para lote.' });
