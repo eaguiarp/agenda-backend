@@ -267,7 +267,7 @@ function configurarFormComposicao() {
     const texto = document.getElementById('comp-vagoes').value;
     if (!data || !hora || !texto.trim()) { alert('Preencha data, hora e os IDs dos vagões.'); return; }
 
-    const ids = texto.split(/[\n,]+/).map(v => v.trim().toUpperCase()).filter(v => v.length > 0);
+    const ids = texto.split(/[\n,\t\r]+/).map(v => v.replace(/\s+/g, '').toUpperCase()).filter(v => v.length > 0);
     const btn = document.getElementById('btn-nova-comp');
     btn.disabled = true; btn.textContent = 'Registrando…';
 
@@ -573,11 +573,12 @@ async function salvarStatusVagao() {
 
   const vagao = res.vagao;
   if (!vagao.id) return;
+  const vagaoIdLimpo = vagao.id.replace(/\s+/g, '');
 
   const btn = document.getElementById('modal-salvar');
   btn.disabled = true; btn.textContent = 'Salvando…';
 
-  const ok = await api('PATCH', `/${vagao.id}/status`, {
+  const ok = await api('PATCH', `/${vagaoIdLimpo}/status`, {
     status: statusSelecionado,
     posDt:  document.getElementById('modal-dt-pos').value || null,
     fimDt:  document.getElementById('modal-dt-fim').value || null,

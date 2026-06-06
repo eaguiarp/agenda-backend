@@ -700,7 +700,8 @@ input:focus, select:focus, textarea:focus {
 
 .barra-lote-flutuante {
   position: absolute;
-  right: 16px;
+  left: 50%;
+  transform: translateX(-50%);
   bottom: -38px;
   display: flex;
   align-items: center;
