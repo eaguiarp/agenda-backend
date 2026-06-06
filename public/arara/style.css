@@ -670,3 +670,87 @@ input:focus, select:focus, textarea:focus {
 }
 .tv-legenda .leg-item { color: rgba(255,255,255,0.75); font-size: 0.75rem; }
 .tv-legenda .leg-item .bolinha::after { display: none; }
+
+/* ── SELEÇÃO MÚLTIPLA & AÇÃO EM LOTE ── */
+.btn-selecao-toggle {
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid var(--borda);
+  color: var(--texto);
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(4px);
+}
+.btn-selecao-toggle.ativo {
+  background: #38bdf8;
+  color: #fff;
+  border-color: #0284c7;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+}
+
+/* Estado de Selecionado na Bolinha (Brilho de Pulso Neon) */
+.bolinha.selecionada {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 3px #fff, 0 0 0 6px #38bdf8, 0 8px 16px rgba(0,0,0,0.2);
+  animation: pulsoSelecao 1.5s infinite alternate;
+}
+
+@keyframes pulsoSelecao {
+  0% { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #38bdf8; }
+  100% { box-shadow: 0 0 0 2px #fff, 0 0 0 8px #0284c7; }
+}
+
+/* Barra Flutuante Estilo iOS / Glassmorphism */
+.barra-lote-glass {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 600px;
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  padding: 12px 20px;
+  box-shadow: 0 12px 40px rgba(13, 42, 74, 0.2);
+  z-index: 999;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lote-conteudo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#lote-contador {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--texto);
+}
+
+.lote-acoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lote-acoes select {
+  width: 140px;
+  padding: 5px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.7);
+}
+
+@keyframes slideUp {
+  from { bottom: -60px; opacity: 0; }
+  to { bottom: 20px; opacity: 1; }
+}

@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CD Arará | Controle de Vagões</title>
   <link rel="stylesheet" href="./style.css" />
-  <link rel="icon" type="image/png" sizes="72x72" href="icon-72.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect fill='%23c41e3a' width='64' height='64'/><g fill='%23fff'><rect x='8' y='16' width='48' height='24' rx='3'/><circle cx='16' cy='44' r='4'/><circle cx='48' cy='44' r='4'/><rect x='24' y='20' width='16' height='8' fill='%23c41e3a'/></g></svg>">
 </head>
 <body>
 
@@ -85,15 +84,19 @@
       </div>
 
       <div class="card">
-        <div class="card-header">
-          <span>🚃 Pátio de Arará — FIFO</span>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <span class="leg-item"><span class="bolinha nao_posicionado"></span> Não Posic.</span>
-            <span class="leg-item"><span class="bolinha posicionado"></span> Posicionado</span>
-            <span class="leg-item"><span class="bolinha vazio"></span> Vazio</span>
-            <span class="leg-item"><span class="bolinha liberado_aguardando"></span> Liberado</span>
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+          <div style="display:flex;align-items:center;gap:15px;">
+            <span>🚃 Pátio de Arará — FIFO</span>
+            <button id="btn-modo-selecao" class="btn-selecao-toggle">▢ Seleção Múltipla</button>
+          </div>
+          <div class="legenda">
+            <span class="leg-item"><span class="bolinha nao_posicionado" style="width:12px;height:12px;"></span> Não Posic.</span>
+            <span class="leg-item"><span class="bolinha posicionado" style="width:12px;height:12px;"></span> Posicionado</span>
+            <span class="leg-item"><span class="bolinha vazio" style="width:12px;height:12px;"></span> Vazio</span>
+            <span class="leg-item"><span class="bolinha liberado" style="width:12px;height:12px;"></span> Liberado</span>
           </div>
         </div>
+
         <div class="card-body">
           <div class="patio-resumo-wrapper">
             <span class="patio-resumo" id="patio-resumo">Pátio Atual: Nenhuma composição ativa.</span>
@@ -124,6 +127,31 @@
       </div>
 
     </div>
+
+    <!-- ══ MENU FLUTUANTE GLASSMORPHISM (SELEÇÃO EM LOTE) ══ -->
+    <div id="barra-lote-flutuante" class="barra-lote-flutuante" style="display:none;">
+      <div class="barra-lote-container">
+        <div class="barra-lote-info">
+          <span id="lote-contador">0 vagões selecionados</span>
+        </div>
+        
+        <div class="barra-lote-controls">
+          <div class="input-group" style="margin:0;">
+            <select id="lote-novo-status">
+              <option value="">Selecione novo status...</option>
+              <option value="nao_posicionado">Não Posicionado</option>
+              <option value="posicionado">Posicionado</option>
+              <option value="vazio">Vazio</option>
+              <option value="liberado">Liberado (Devolvido MRS)</option>
+            </select>
+          </div>
+          
+          <button class="btn btn-success btn-sm" id="btn-lote-salvar">Atualizar Lote</button>
+          <button class="btn btn-outline btn-sm" id="btn-lote-cancelar">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- ══════════════════════════════════════

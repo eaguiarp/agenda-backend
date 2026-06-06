@@ -68,6 +68,9 @@ async function verificarAcesso(user, pass, nivelMinimo) {
   }
 }
 
+const registrarRotasVagoes = require('./vagoes_rotas');
+registrarRotasVagoes(app, pool, verificarAcesso);
+
 function auth(nivelMinimo, realm) {
   return basicAuth({
     authorizer: (user, pass, cb) => {
