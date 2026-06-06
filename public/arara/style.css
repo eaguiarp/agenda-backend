@@ -506,3 +506,167 @@ input:focus, select:focus, textarea:focus {
   th, td { border: 1px solid #000; padding: 8px; text-align: center; font-size: 10pt; }
   th { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; }
 }
+
+/* ── BUSCA HEADER ── */
+.busca-wrap input {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 20px;
+  padding: 5px 14px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-family: 'Nunito', sans-serif;
+  width: 180px;
+  transition: all 0.2s;
+}
+.busca-wrap input::placeholder { color: rgba(255,255,255,0.6); }
+.busca-wrap input:focus {
+  outline: none;
+  background: rgba(255,255,255,0.3);
+  border-color: rgba(255,255,255,0.7);
+  width: 220px;
+}
+
+.btn-tv-header {
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-tv-header:hover { background: rgba(255,255,255,0.32); }
+
+/* ── ATALHOS BAR ── */
+.atalhos-bar {
+  background: rgba(0,50,120,0.55);
+  backdrop-filter: blur(10px);
+  display: flex; gap: 18px; padding: 5px 20px;
+  font-size: 0.68rem; color: rgba(255,255,255,0.7);
+  flex-wrap: wrap; position: sticky; top: 93px; z-index: 180;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.atalhos-bar kbd {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: 'Exo 2', monospace;
+  font-size: 0.65rem;
+  margin-right: 3px;
+}
+
+/* ── LOG ── */
+.log-lista {
+  display: flex; flex-direction: column; gap: 6px;
+  max-height: 400px; overflow-y: auto;
+}
+.log-item {
+  display: grid;
+  grid-template-columns: 90px 110px 1fr;
+  gap: 8px; align-items: start;
+  padding: 8px 12px; border-radius: 8px;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(255,255,255,0.65);
+  font-size: 0.78rem;
+}
+.log-dt    { color: var(--texto-sec); font-weight: 600; white-space: nowrap; }
+.log-id    { font-family: 'Exo 2', sans-serif; font-weight: 800; }
+.log-transicao { color: var(--texto); font-weight: 600; }
+.log-motivo {
+  display: inline-block; margin-left: 6px;
+  font-size: 0.65rem; padding: 1px 7px; border-radius: 20px;
+  background: rgba(220,38,38,0.1); color: #b91c1c;
+  border: 1px solid rgba(220,38,38,0.2); font-weight: 700;
+}
+@media (max-width: 500px) {
+  .log-item { grid-template-columns: 1fr; }
+}
+
+/* ── MODO TV ── */
+#tv-overlay {
+  position: fixed; inset: 0; z-index: 900;
+  background: linear-gradient(160deg, #0a1f40 0%, #0d2f5e 40%, #0a1a38 100%);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+.tv-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 28px;
+  background: rgba(0,0,0,0.3);
+  border-bottom: 1px solid rgba(100,180,255,0.2);
+  flex-shrink: 0;
+}
+.tv-logo {
+  font-family: 'Exo 2', sans-serif;
+  font-size: 1.6rem; font-weight: 900;
+  letter-spacing: 3px; color: #fff;
+  text-shadow: 0 0 20px rgba(100,200,255,0.5);
+}
+.tv-sub { font-size: 0.75rem; color: rgba(255,255,255,0.6); display: block; margin-top: 2px; font-weight: 600; }
+.tv-relogio {
+  font-family: 'Exo 2', sans-serif;
+  font-size: 2.2rem; font-weight: 800; color: #fff;
+  letter-spacing: 2px;
+  text-shadow: 0 0 30px rgba(100,200,255,0.6);
+}
+.tv-fechar {
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.7); font-size: 1.1rem; border-radius: 8px;
+  width: 36px; height: 36px; cursor: pointer; transition: background 0.15s;
+}
+.tv-fechar:hover { background: rgba(255,255,255,0.25); color: #fff; }
+
+.tv-farol-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+  padding: 14px 28px; flex-shrink: 0;
+}
+.tv-farol-item {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(100,180,255,0.2);
+  border-radius: 14px;
+  padding: 14px; text-align: center;
+  transition: background 0.3s;
+}
+.tv-farol-item.alerta-estadia {
+  background: rgba(220,38,38,0.2);
+  border-color: rgba(220,38,38,0.5);
+  box-shadow: 0 0 20px rgba(220,38,38,0.3);
+}
+.tv-farol-item.alerta-risco {
+  background: rgba(202,138,4,0.2);
+  border-color: rgba(202,138,4,0.5);
+  box-shadow: 0 0 20px rgba(202,138,4,0.3);
+}
+.tv-farol-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.65); margin-bottom: 6px; }
+.tv-farol-valor { font-family: 'Exo 2', sans-serif; font-size: 2.4rem; font-weight: 900; color: #fff; line-height: 1;
+  text-shadow: 0 0 20px rgba(150,210,255,0.4); }
+.tv-farol-item.alerta-estadia .tv-farol-valor { color: #fca5a5; text-shadow: 0 0 20px rgba(220,38,38,0.6); }
+.tv-farol-item.alerta-risco   .tv-farol-valor { color: #fde68a; text-shadow: 0 0 20px rgba(202,138,4,0.6); }
+
+.tv-patio-wrap {
+  flex: 1; padding: 10px 28px 0;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.tv-patio-resumo {
+  font-size: 0.82rem; font-weight: 700; color: rgba(255,255,255,0.6);
+  margin-bottom: 12px; text-align: center;
+}
+.tv-painel-grid {
+  grid-template-columns: repeat(15, 1fr) !important;
+  flex: 1;
+}
+@media (max-width: 900px) { .tv-painel-grid { grid-template-columns: repeat(10, 1fr) !important; } }
+
+.tv-legenda {
+  display: flex; gap: 18px; justify-content: center; flex-wrap: wrap;
+  padding: 10px 28px 14px;
+  background: rgba(0,0,0,0.2);
+  border-top: 1px solid rgba(100,180,255,0.15);
+  flex-shrink: 0;
+}
+.tv-legenda .leg-item { color: rgba(255,255,255,0.75); font-size: 0.75rem; }
+.tv-legenda .leg-item .bolinha::after { display: none; }
