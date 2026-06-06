@@ -97,7 +97,7 @@ async function init() {
   setInterval(atualizarRelogio, 1000);
 }
 
-aasync function carregarTudo() {
+async function carregarTudo() {
   try {
     // 1. Faz as 4 requisições em paralelo direto no banco do Railway
     // Usamos o .catch(() => ...) como escudo para o caso de alguma rota falhar, não derrubar a tela inteira
