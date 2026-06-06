@@ -99,8 +99,6 @@ async function init() {
 
 async function carregarTudo() {
   try {
-    // 1. Faz as 4 requisições em paralelo direto no banco do Railway
-    // Usamos o .catch(() => ...) como escudo para o caso de alguma rota falhar, não derrubar a tela inteira
     const [ativos, comps, cfg, log] = await Promise.all([
       api('GET', '/ativos').catch(() => []),
       api('GET', '/composicoes').catch(() => []),
@@ -108,16 +106,11 @@ async function carregarTudo() {
       api('GET', '/log?limite=100').catch(() => [])
     ]);
 
-    // 2. Alimenta a variável que alimenta o grid das 30 bolinhas com os VAGÕES ATIVOS
+    // Força todas a serem um array válido, mesmo que venham nulas/vazias do backend
     composicoesAtivas = Array.isArray(ativos) ? ativos : [];
-
-    // 3. Se o seu sistema tiver uma lista/histórico de trens na interface, alimentamos ela aqui
-    // (Caso use uma variável global chamada 'historicoComposicoes' ou similar, ajuste aqui)
-    
-    // 4. Alimenta as configurações de estadia
+    const listaComposicoes = Array.isArray(comps) ? comps : [];
     if (cfg) config = cfg;
 
-    // 5. Alimenta e mapeia os logs de auditoria exatamente no padrão que seu front-end já lê
     if (log && Array.isArray(log)) {
       logEntradas = log.map(e => ({
         ts:              e.criado_em,
@@ -131,19 +124,18 @@ async function carregarTudo() {
       logEntradas = [];
     }
 
-    // 6. Atualiza o input de configuração na tela se o elemento existir
     const inputCfg = document.getElementById('cfg-limite');
     if (inputCfg && config.limite_estadia) {
       inputCfg.value = config.limite_estadia;
     }
 
-    // 7. Atualiza a interface visual (desenha as bolinhas, monta gráficos, etc.)
     atualizarInterface();
 
   } catch (err) {
     console.error("Erro crítico no ciclo de atualização do pátio:", err);
-    // Garante que a interface tente se desenhar mesmo vazia para não congelar o navegador
+    // ESCUDO TOTAL: Garante que nenhuma variável usada no render fique undefined
     composicoesAtivas = [];
+    logEntradas = [];
     atualizarInterface();
   }
 }
@@ -328,13 +320,21 @@ function configurarFormComposicao() {
 //  PAINEL FIFO REVISADO
 // ════════════════════════════════════════
 function renderPainelFIFO(vagoes) {
+  // Se a variável não for um array válido por qualquer motivo, transforma em array vazio e impede o crash
+  if (!composicoesAtivas || !Array.isArray(composicoesAtivas)) {
+    composicoesAtivas = [];
+  }
+  if (!vagoes || !Array.isArray(vagoes)) {
+    vagoes = composicoesAtivas;
+  }
+
   const container = document.getElementById('painel-vagoes-fifo');
   const resumo = document.getElementById('patio-resumo');
   if (!container) return;
   container.innerHTML = '';
 
   // Filtra vagões ativos (vazio continua no pátio, liberado some)
-  const ativos = vagoes.filter(v => v.status !== 'liberado');
+  const ativos = vagoes.filter(v => v && v.status !== 'liberado');
 
   if (ativos.length === 0) {
     if (resumo) resumo.textContent = 'Pátio Atual: Limpo (Sem operações ativas)';
