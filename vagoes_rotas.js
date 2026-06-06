@@ -87,7 +87,7 @@ module.exports = function(app, db, verificarAcesso) {
 
   // 4. ROTA: ATUALIZAÇÃO EM LOTE (Ação em Massa)
   app.post(['/atualizar-lote', '/api/vagoes/atualizar-lote'], checarAutenticacao, async (req, res) => {
-    const { vagoes, status } = req.body;
+    const { vagoes, status, posDt, fimDt, motivo } = req.body;
     if (!Array.isArray(vagoes) || vagoes.length === 0 || !status) {
       return res.status(400).json({ erro: 'Dados inválidos.' });
     }
@@ -95,17 +95,30 @@ module.exports = function(app, db, verificarAcesso) {
     try {
       let camposQuery = 'status = $1, atualizado_em = NOW()';
       let params = [status];
+      let paramIdx = 2;
 
-      if (status === 'posicionado') camposQuery += ', pos_dt = COALESCE(pos_dt, NOW())';
-      else if (status === 'liberado') camposQuery += ', fim_dt = COALESCE(fim_dt, NOW())';
+      if (posDt) {
+        camposQuery += `, pos_dt = $${paramIdx++}`;
+        params.push(posDt);
+      } else if (status === 'posicionado') {
+        camposQuery += ', pos_dt = COALESCE(pos_dt, NOW())';
+      }
 
-      const query = `UPDATE vagoes SET ${camposQuery} WHERE vagao_id = ANY($2)`;
-      await db.query(query, [status, vagoes]);
+      if (fimDt) {
+        camposQuery += `, fim_dt = $${paramIdx++}`;
+        params.push(fimDt);
+      } else if (status === 'liberado') {
+        camposQuery += ', fim_dt = COALESCE(fim_dt, NOW())';
+      }
+
+      params.push(vagoes);
+      const query = `UPDATE vagoes SET ${camposQuery} WHERE vagao_id = ANY($${paramIdx})`;
+      await db.query(query, params);
 
       for (const vid of vagoes) {
         await db.query(
-          'INSERT INTO vagoes_log (vagao_id, status_novo, usuario) VALUES ($1, $2, $3)',
-          [vid, status, req.headers['usuario'] || 'Sistema (Lote)']
+          'INSERT INTO vagoes_log (vagao_id, status_novo, usuario, motivo) VALUES ($1, $2, $3, $4)',
+          [vid, status, req.headers['usuario'] || 'Sistema (Lote)', motivo || null]
         );
       }
       res.json({ sucesso: true });

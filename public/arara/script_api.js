@@ -573,17 +573,23 @@ async function salvarStatusVagao() {
 
   const vagao = res.vagao;
   if (!vagao.id) return;
-  const vagaoIdLimpo = vagao.id.replace(/\s+/g, '');
 
   const btn = document.getElementById('modal-salvar');
   btn.disabled = true; btn.textContent = 'Salvando…';
 
-  const ok = await api('PATCH', `/${vagaoIdLimpo}/status`, {
+  const ok = await api('POST', '/atualizar-lote', {
+    vagoes: [vagao.id.replace(/\s+/g, '')],
     status: statusSelecionado,
     posDt:  document.getElementById('modal-dt-pos').value || null,
     fimDt:  document.getElementById('modal-dt-fim').value || null,
     motivo: motivoEstadiaPendente || null
   });
+
+  btn.disabled = false; btn.textContent = 'Salvar Status';
+  motivoEstadiaPendente = null;
+
+  if (ok) { fecharModal(); await carregarTudo(); }
+}
 
   btn.disabled = false; btn.textContent = 'Salvar Status';
   motivoEstadiaPendente = null;
