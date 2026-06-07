@@ -235,10 +235,13 @@
         <div class="card-header">📋 Vagões para Liberação</div>
         <div class="card-body">
           <p class="info-text">Vagões com status <strong>Liberado</strong> aguardando devolução à MRS. Selecione para gerar formulário ou confirmar devolução.</p>
+          <div class="lib-acoes" style="margin-bottom:14px; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" id="btn-selecionar-todos-liberacao">Selecionar Todos</button>
+          </div>
           <div id="lista-liberacao" class="lista-liberacao">
             <div class="vazio-msg">Nenhum vagão liberado aguardando devolução.</div>
           </div>
-          <div class="lib-acoes">
+          <div class="lib-acoes" style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
             <button class="btn btn-success" id="btn-confirmar-devolucao" style="flex:1;">
               ✅ Confirmar Devolução MRS
             </button>

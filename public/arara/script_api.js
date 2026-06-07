@@ -677,6 +677,15 @@ document.addEventListener('keydown', e => {
 function configurarLiberacao() {
   document.getElementById('btn-gerar-form').addEventListener('click', gerarFormularioImpressao);
   document.getElementById('btn-confirmar-devolucao').addEventListener('click', confirmarDevolucaoMRS);
+  const btnSelecionarTodos = document.getElementById('btn-selecionar-todos-liberacao');
+  if (btnSelecionarTodos) btnSelecionarTodos.addEventListener('click', selecionarTodosLiberacao);
+}
+
+function selecionarTodosLiberacao() {
+  const checkboxes = Array.from(document.querySelectorAll('.check-liberacao'));
+  if (checkboxes.length === 0) return;
+  const allChecked = checkboxes.every(cb => cb.checked);
+  checkboxes.forEach(cb => cb.checked = !allChecked);
 }
 
 function renderLiberacao() {
