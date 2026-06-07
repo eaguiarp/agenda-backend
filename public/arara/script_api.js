@@ -759,15 +759,24 @@ function renderTV() {
   const posCount = ativos.filter(v => v.status === 'posicionado').length;
   const naoPosCount = ativos.filter(v => v.status === 'nao_posicionado').length;
 
-  document.getElementById('tv-tpv')?.textContent        = maxTpv > 0 ? formatarMs(maxTpv) : '—';
-  document.getElementById('tv-total')?.textContent      = posCount;
-  document.getElementById('tv-total-geral')?.textContent = ativos.length;
-  document.getElementById('tv-nao-pos')?.textContent    = naoPosCount;
-  document.getElementById('tv-estadia')?.textContent     = estourados;
-  document.getElementById('tv-risco')?.textContent      = risco;
+  const elTpv        = document.getElementById('tv-tpv');
+  const elTotal      = document.getElementById('tv-total');
+  const elTotalGeral = document.getElementById('tv-total-geral');
+  const elNaoPos     = document.getElementById('tv-nao-pos');
+  const elEstadia    = document.getElementById('tv-estadia');
+  const elRisco      = document.getElementById('tv-risco');
+  const elFarolEst   = document.getElementById('tv-farol-estadia');
+  const elFarolRis   = document.getElementById('tv-farol-risco');
 
-  document.getElementById('tv-farol-estadia')?.classList.toggle('alerta-estadia', estourados > 0);
-  document.getElementById('tv-farol-risco')?.classList.toggle('alerta-risco', risco > 0);
+  if (elTpv)        elTpv.textContent        = maxTpv > 0 ? formatarMs(maxTpv) : '—';
+  if (elTotal)      elTotal.textContent      = posCount;
+  if (elTotalGeral) elTotalGeral.textContent = ativos.length;
+  if (elNaoPos)     elNaoPos.textContent    = naoPosCount;
+  if (elEstadia)    elEstadia.textContent     = estourados;
+  if (elRisco)      elRisco.textContent      = risco;
+
+  if (elFarolEst) elFarolEst.classList.toggle('alerta-estadia', estourados > 0);
+  if (elFarolRis) elFarolRis.classList.toggle('alerta-risco', risco > 0);
 
   const container = document.getElementById('tv-painel');
   if (!container) return;
