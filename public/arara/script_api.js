@@ -203,6 +203,7 @@ async function inicializarApp() {
   configurarModalLote();
   configurarLiberacao();
   configurarGestao();
+  configurarModalEditarUsuario();
 
   document.getElementById('alerta-modal-fechar').addEventListener('click', fecharModalAlerta);
 
@@ -809,10 +810,11 @@ function renderTV() {
 }
 
 document.addEventListener('click', e => {
-  if (e.target === document.getElementById('alerta-modal')) fecharModalAlerta();
-  if (e.target === document.getElementById('vagao-modal'))  fecharModal();
-  if (e.target === document.getElementById('tv-fechar'))   fecharModoTV();
-  if (e.target === document.getElementById('tv-overlay'))   fecharModoTV();
+  if (e.target === document.getElementById('alerta-modal'))          fecharModalAlerta();
+  if (e.target === document.getElementById('vagao-modal'))           fecharModal();
+  if (e.target === document.getElementById('tv-fechar'))             fecharModoTV();
+  if (e.target === document.getElementById('tv-overlay'))            fecharModoTV();
+  if (e.target === document.getElementById('modal-editar-usuario'))  document.getElementById('modal-editar-usuario').style.display = 'none';
 });
 
 document.addEventListener('keydown', e => {
@@ -982,29 +984,105 @@ async function carregarListaUsuarios() {
   const listEl = document.getElementById('user-list');
   if (!listEl) return;
 
-  // Tenta endpoint do Arará, depois do AgendaCD
-  let usuarios = await api('GET', '/usuarios');
-  if (!usuarios) {
-    try {
-      const res = await fetch('/usuarios', { method: 'GET', headers: getBasicAuthHeader() });
-      usuarios = res.ok ? await res.json() : null;
-    } catch (e) { usuarios = null; }
-  }
+  listEl.innerHTML = '<p class="info-text" style="margin:0;opacity:.5;">Carregando…</p>';
+  const usuarios = await api('GET', '/usuarios');
 
   if (!Array.isArray(usuarios) || usuarios.length === 0) {
-    listEl.innerHTML = '<p class="info-text" style="margin:0;">Nenhum usuário cadastrado ou sem permissão para listar.</p>';
+    listEl.innerHTML = '<p class="info-text" style="margin:0;">Nenhum usuário encontrado.</p>';
     return;
   }
 
   const nivelLabel = { operacao: 'Operação', portaria: 'Portaria', relatorio: 'Relatório', admin: 'Administrador' };
+  const euId = ARARA_USUARIO?._id || null; // para marcar conta própria
+
   listEl.innerHTML = usuarios.map(u => `
-    <div class="user-item" style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.07);">
-      <div>
-        <strong>@${u.nome}</strong>
+    <div class="user-row" data-id="${u.id}" style="
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.07); gap:10px;">
+      <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+        <div style="
+          width:32px;height:32px;border-radius:50%;
+          background:var(--accent,#6366f1);
+          display:flex;align-items:center;justify-content:center;
+          font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0;">
+          ${u.nome.charAt(0).toUpperCase()}
+        </div>
+        <div style="min-width:0;">
+          <div style="font-weight:600;font-size:0.9rem;">@${u.nome}</div>
+          <div style="font-size:0.75rem;opacity:.5;">${nivelLabel[u.perfil] || u.perfil}</div>
+        </div>
       </div>
-      <span class="modal-vagao-badge">${nivelLabel[u.perfil] || u.perfil || '—'}</span>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button class="btn btn-outline btn-sm" onclick="abrirEditarUsuario(${u.id}, '${u.nome}', '${u.perfil}')">✏ Editar</button>
+        <button class="btn btn-sm" style="background:rgba(220,38,38,0.15);color:#f87171;border:1px solid rgba(220,38,38,0.3);"
+          onclick="excluirUsuario(${u.id}, '${u.nome}')">✕</button>
+      </div>
     </div>
   `).join('');
+}
+
+function abrirEditarUsuario(id, nome, perfilAtual) {
+  // Popula e exibe o modal de edição
+  document.getElementById('edit-user-id').value      = id;
+  document.getElementById('edit-user-nome').value    = nome;
+  document.getElementById('edit-user-senha').value   = '';
+  document.getElementById('edit-user-perfil').value  = perfilAtual;
+  document.getElementById('edit-user-erro').style.display = 'none';
+  document.getElementById('modal-editar-usuario').style.display = 'flex';
+}
+
+async function excluirUsuario(id, nome) {
+  if (!confirm(`Excluir o usuário "@${nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
+  const ok = await api('DELETE', `/usuarios/${id}`);
+  if (ok) {
+    carregarListaUsuarios();
+  } else {
+    alert('Erro ao excluir usuário.');
+  }
+}
+
+function configurarModalEditarUsuario() {
+  document.getElementById('modal-editar-usuario-fechar')?.addEventListener('click', () => {
+    document.getElementById('modal-editar-usuario').style.display = 'none';
+  });
+
+  document.getElementById('btn-salvar-edicao-user')?.addEventListener('click', async () => {
+    const id     = document.getElementById('edit-user-id').value;
+    const senha  = document.getElementById('edit-user-senha').value;
+    const perfil = document.getElementById('edit-user-perfil').value;
+    const erroEl = document.getElementById('edit-user-erro');
+    const btn    = document.getElementById('btn-salvar-edicao-user');
+
+    if (!senha && !perfil) {
+      erroEl.textContent = 'Informe a nova senha ou perfil.';
+      erroEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true; btn.textContent = 'Salvando…';
+    erroEl.style.display = 'none';
+
+    const body = {};
+    if (senha.trim())  body.senha  = senha.trim();
+    if (perfil)        body.perfil = perfil;
+
+    const res = await fetch(`/api/vagoes/usuarios/${id}`, {
+      method:  'PUT',
+      headers: getHeaders(),
+      body:    JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+
+    btn.disabled = false; btn.textContent = 'Salvar';
+
+    if (res.ok) {
+      document.getElementById('modal-editar-usuario').style.display = 'none';
+      carregarListaUsuarios();
+    } else {
+      erroEl.textContent = data.erro || 'Erro ao salvar.';
+      erroEl.style.display = 'block';
+    }
+  });
 }
 
 // ════════════════════════════════════════

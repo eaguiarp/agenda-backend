@@ -160,6 +160,48 @@ module.exports = function(app, db, verificarAcesso) {
     }
   });
 
+  // ── EDITAR USUÁRIO (admin only) ───────────────────────────
+  app.put('/api/vagoes/usuarios/:id', autenticarAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { senha, perfil } = req.body;
+    const perfisValidos = ['operacao', 'portaria', 'relatorio', 'admin'];
+
+    // Impede que o admin remova seu próprio perfil de admin
+    if (String(req.usuario.id) === String(id) && perfil && perfil !== 'admin') {
+      return res.status(400).json({ erro: 'Você não pode rebaixar sua própria conta.' });
+    }
+
+    const campos = [], valores = [];
+    if (senha && senha.trim())  { campos.push(`senha  = $${campos.length + 1}`); valores.push(senha.trim()); }
+    if (perfil && perfisValidos.includes(perfil)) {
+      campos.push(`perfil = $${campos.length + 1}`); valores.push(perfil);
+    }
+    if (!campos.length) return res.status(400).json({ erro: 'Nada para atualizar.' });
+
+    valores.push(id);
+    try {
+      await db.query(`UPDATE usuarios SET ${campos.join(', ')} WHERE id = $${valores.length}`, valores);
+      res.json({ sucesso: true });
+    } catch (err) {
+      res.status(500).json({ erro: 'Erro ao atualizar usuário.' });
+    }
+  });
+
+  // ── EXCLUIR USUÁRIO (admin only) ──────────────────────────
+  app.delete('/api/vagoes/usuarios/:id', autenticarAdmin, async (req, res) => {
+    const { id } = req.params;
+    // Impede auto-exclusão
+    if (String(req.usuario.id) === String(id)) {
+      return res.status(400).json({ erro: 'Você não pode excluir sua própria conta.' });
+    }
+    try {
+      await db.query('DELETE FROM usuarios WHERE id = $1', [id]);
+      res.json({ sucesso: true });
+    } catch (err) {
+      res.status(500).json({ erro: 'Erro ao excluir usuário.' });
+    }
+  });
+
   // 1. VAGÕES ATIVOS
   app.get(['/ativos', '/api/vagoes/ativos'], autenticar, async (req, res) => {
     try {
