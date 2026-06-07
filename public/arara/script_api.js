@@ -80,7 +80,12 @@ async function init() {
 
   await carregarTudo();
 
-  setInterval(() => { atualizarRelogio(); renderFarol(); }, 1000);
+  setInterval(() => {
+    atualizarRelogio();
+    renderFarol();
+    const tvOverlay = document.getElementById('tv-overlay');
+    if (tvOverlay && tvOverlay.style.display !== 'none') renderTV();
+  }, 1000);
   setInterval(carregarTudo, 30000);
 }
 
@@ -572,9 +577,98 @@ function fecharModalAlerta() {
   document.getElementById('alerta-modal').style.display = 'none';
 }
 
+function abrirModoTV() {
+  renderTV();
+  const overlay = document.getElementById('tv-overlay');
+  if (overlay) overlay.style.display = 'flex';
+}
+
+function fecharModoTV() {
+  const overlay = document.getElementById('tv-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function renderTV() {
+  const agora  = Date.now();
+  const limEst = (config.limite_estadia || 24) * 3600000;
+  const limRis = ((config.limite_estadia || 24) - 4) * 3600000;
+  let ativos = [], estourados = 0, risco = 0, maxTpv = 0;
+
+  composicoesAtivas.forEach(comp => {
+    comp.vagoes.forEach(v => {
+      if (STATUS_VISIVEIS.includes(v.status)) {
+        const tpv = agora - new Date(comp.chegadaDt).getTime();
+        ativos.push({ ...v, chegadaDt: comp.chegadaDt, tpvMs: tpv });
+        if (tpv > maxTpv) maxTpv = tpv;
+        if (tpv >= limEst) estourados++; else if (tpv >= limRis) risco++;
+      }
+    });
+  });
+
+  const relogio = document.getElementById('tv-relogio');
+  if (relogio) relogio.textContent = new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  document.getElementById('tv-tpv').textContent     = maxTpv > 0 ? formatarMs(maxTpv) : '—';
+  document.getElementById('tv-estadia').textContent = estourados;
+  document.getElementById('tv-risco').textContent   = risco;
+  document.getElementById('tv-total').textContent   = ativos.length;
+
+  document.getElementById('tv-farol-estadia')?.classList.toggle('alerta-estadia', estourados > 0);
+  document.getElementById('tv-farol-risco')?.classList.toggle('alerta-risco', risco > 0);
+
+  const container = document.getElementById('tv-painel');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const vagoesFila = [];
+  composicoesAtivas.forEach(comp => {
+    comp.vagoes.filter(v => STATUS_VISIVEIS.includes(v.status)).forEach(v => {
+      vagoesFila.push({ ...v, chegadaDt: comp.chegadaDt });
+    });
+  });
+
+  for (let i = 0; i < 30; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'vagao-slot-fifo';
+    if (i < vagoesFila.length) {
+      const v = vagoesFila[i];
+      const tpv = agora - new Date(v.chegadaDt).getTime();
+      const alertaCls = tpv >= limEst ? 'alerta-estadia' : tpv >= limRis ? 'alerta-risco' : '';
+      const idCurto = v.id.length > 7 ? v.id.slice(-7) : v.id;
+      slot.innerHTML = `
+        <div class="bolinha ${statusToCss(v.status)} ${alertaCls}" style="width:32px;height:32px;" title="${v.id}"></div>
+        <div class="vagao-id" style="font-size:.55rem;">${idCurto}</div>`;
+    } else {
+      slot.innerHTML = `<div class="bolinha slot-vazio" style="width:32px;height:32px;"></div><div class="vagao-id"></div>`;
+    }
+    container.appendChild(slot);
+  }
+
+  let resumosDict = {};
+  composicoesAtivas.forEach(comp => {
+    const n = comp.vagoes.filter(v => STATUS_VISIVEIS.includes(v.status)).length;
+    if (n > 0) {
+      const k = formatarDataResumo(comp.chegadaDt);
+      resumosDict[k] = (resumosDict[k] || 0) + n;
+    }
+  });
+
+  const resumoEl = document.getElementById('tv-resumo');
+  if (resumoEl) {
+    resumoEl.textContent = Object.keys(resumosDict).length
+      ? 'Pátio: ' + Object.keys(resumosDict).map(k => `${k} — ${resumosDict[k]} FLTs`).join(' | ')
+      : 'Pátio limpo';
+  }
+}
+
 document.addEventListener('click', e => {
   if (e.target === document.getElementById('alerta-modal')) fecharModalAlerta();
   if (e.target === document.getElementById('vagao-modal'))  fecharModal();
+  if (e.target === document.getElementById('tv-fechar'))   fecharModoTV();
+  if (e.target === document.getElementById('tv-overlay'))   fecharModoTV();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') fecharModoTV();
 });
 
 // ════════════════════════════════════════
@@ -650,6 +744,9 @@ function configurarGestao() {
     const ok = await api('POST', '/config', { limite_estadia: limite });
     if (ok) { config.limite_estadia = limite; alert('Configuração salva!'); renderFarol(); }
   });
+
+  const btnAbrirTv = document.getElementById('btn-abrir-tv');
+  if (btnAbrirTv) btnAbrirTv.addEventListener('click', abrirModoTV);
 
   document.getElementById('btn-show-add-user')?.addEventListener('click', () => {
     const p = document.getElementById('add-user-panel');
