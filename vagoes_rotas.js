@@ -1,44 +1,38 @@
 // ============================================================
 // vagoes_rotas.js — Módulo do Servidor (CD Arará)
-// Blindado contra prefixos duplos e erros de rotas (404)
 // ============================================================
 
 module.exports = function(app, db, verificarAcesso) {
 
-  // Middleware de segurança provisório (Liberado para testes locais e produção)
   async function checarAutenticacao(req, res, next) {
-    // Para fins de desenvolvimento e estabilidade, deixa passar direto.
-    // Assim que a interface estiver gravando, você pode reativar a validação do AgendaCD.
-    return next();
+    return next(); // Reativar validação após estabilizar a interface
   }
 
-  // 1. ROTA: BUSCAR VAGÕES ATIVOS
+  // 1. VAGÕES ATIVOS
   app.get(['/ativos', '/api/vagoes/ativos'], checarAutenticacao, async (req, res) => {
     try {
-      const query = `
-        SELECT v.*, c.chegada_dt 
+      const resultado = await db.query(`
+        SELECT v.*, c.chegada_dt
         FROM vagoes v
         JOIN vagoes_composicoes c ON v.composicao_id = c.id
-        WHERE v.status != 'liberado'
+        WHERE v.status != 'devolvido'
         ORDER BY c.chegada_dt ASC, v.id ASC
-      `;
-      const resultado = await db.query(query);
-      res.json(resultado.rows || []); 
+      `);
+      res.json(resultado.rows || []);
     } catch (err) {
       console.error('Erro ao buscar vagões ativos:', err);
       res.status(500).json([]);
     }
   });
 
-  // 2. ROTA: HISTÓRICO DE COMPOSIÇÕES (Resolve o erro 404 de /composicoes)
+  // 2. COMPOSIÇÕES
   app.get(['/composicoes', '/api/vagoes/composicoes'], checarAutenticacao, async (req, res) => {
     try {
-      const query = `
-        SELECT id, chegada_dt, criado_em 
-        FROM vagoes_composicoes 
+      const resultado = await db.query(`
+        SELECT id, chegada_dt, criado_em
+        FROM vagoes_composicoes
         ORDER BY chegada_dt DESC
-      `;
-      const resultado = await db.query(query);
+      `);
       res.json(resultado.rows || []);
     } catch (err) {
       console.error('Erro ao buscar composições:', err);
@@ -46,7 +40,7 @@ module.exports = function(app, db, verificarAcesso) {
     }
   });
 
-  // 3. ROTA: SALVAR NOVA COMPOSIÇÃO (Trata o POST de /composicoes)
+  // 3. NOVA COMPOSIÇÃO
   app.post(['/composicoes', '/api/vagoes/composicoes', '/api/vagoes/nova-composicao'], checarAutenticacao, async (req, res) => {
     const { chegadaDt, vagoes } = req.body;
     if (!chegadaDt || !Array.isArray(vagoes) || vagoes.length === 0) {
@@ -63,7 +57,7 @@ module.exports = function(app, db, verificarAcesso) {
       const composicaoId = compRes.rows[0].id;
 
       for (const vagaoId of vagoes) {
-        const idLimpo = vagaoId.trim();
+        const idLimpo = vagaoId.replace(/\s+/g, '').toUpperCase();
         if (!idLimpo) continue;
 
         await db.query(
@@ -85,7 +79,7 @@ module.exports = function(app, db, verificarAcesso) {
     }
   });
 
-  // 4. ROTA: ATUALIZAÇÃO EM LOTE (Ação em Massa)
+  // 4. ATUALIZAR STATUS (individual ou lote — mesma rota)
   app.post(['/atualizar-lote', '/api/vagoes/atualizar-lote'], checarAutenticacao, async (req, res) => {
     const { vagoes, status, posDt, fimDt, motivo } = req.body;
     if (!Array.isArray(vagoes) || vagoes.length === 0 || !status) {
@@ -93,70 +87,101 @@ module.exports = function(app, db, verificarAcesso) {
     }
 
     try {
+      // Monta query dinâmica para campos opcionais
       let camposQuery = 'status = $1, atualizado_em = NOW()';
       let params = [status];
-      let paramIdx = 2;
+      let idx = 2;
 
       if (posDt) {
-        camposQuery += `, pos_dt = $${paramIdx++}`;
+        camposQuery += `, pos_dt = $${idx++}`;
         params.push(posDt);
       } else if (status === 'posicionado') {
         camposQuery += ', pos_dt = COALESCE(pos_dt, NOW())';
       }
 
       if (fimDt) {
-        camposQuery += `, fim_dt = $${paramIdx++}`;
+        camposQuery += `, fim_dt = $${idx++}`;
         params.push(fimDt);
-      } else if (status === 'liberado') {
+      } else if (['liberado', 'vazio'].includes(status)) {
         camposQuery += ', fim_dt = COALESCE(fim_dt, NOW())';
       }
 
       params.push(vagoes);
-      const query = `UPDATE vagoes SET ${camposQuery} WHERE vagao_id = ANY($${paramIdx})`;
-      await db.query(query, params);
+      await db.query(
+        `UPDATE vagoes SET ${camposQuery} WHERE vagao_id = ANY($${idx})`,
+        params
+      );
 
+      // Log de cada vagão
       for (const vid of vagoes) {
         await db.query(
           'INSERT INTO vagoes_log (vagao_id, status_novo, usuario, motivo) VALUES ($1, $2, $3, $4)',
-          [vid, status, req.headers['usuario'] || 'Sistema (Lote)', motivo || null]
+          [vid, status, req.headers['usuario'] || 'Sistema', motivo || null]
         );
       }
+
       res.json({ sucesso: true });
     } catch (err) {
-      console.error(err);
-      res.status(500).json({ erro: 'Erro no lote.' });
+      console.error('Erro ao atualizar lote:', err);
+      res.status(500).json({ erro: 'Erro interno.' });
     }
   });
 
-  // 5. ROTA: BUSCAR LOGS (Resolve o 404 do /log)
-  app.get(['/log', '/api/vagoes/log'], checarAutenticacao, async (req, res) => {
-    const limite = req.query.limite || 100;
+  // 5. DEVOLUÇÃO MRS (remove vagões do pátio)
+  app.post(['/devolucao', '/api/vagoes/devolucao'], checarAutenticacao, async (req, res) => {
+    const { vagaoIds } = req.body;
+    if (!Array.isArray(vagaoIds) || vagaoIds.length === 0) {
+      return res.status(400).json({ erro: 'Nenhum vagão informado.' });
+    }
+
     try {
-      const query = `
-        SELECT id, vagao_id, status_anterior, status_novo, motivo, usuario, criado_em 
-        FROM vagoes_log 
+      await db.query(
+        "UPDATE vagoes SET status = 'devolvido', atualizado_em = NOW() WHERE vagao_id = ANY($1)",
+        [vagaoIds]
+      );
+
+      for (const vid of vagaoIds) {
+        await db.query(
+          "INSERT INTO vagoes_log (vagao_id, status_novo, usuario, motivo) VALUES ($1, 'devolvido', $2, 'Devolução MRS')",
+          [vid, req.headers['usuario'] || 'Sistema']
+        );
+      }
+
+      res.json({ sucesso: true });
+    } catch (err) {
+      console.error('Erro ao registrar devolução:', err);
+      res.status(500).json({ erro: 'Erro interno.' });
+    }
+  });
+
+  // 6. LOGS
+  app.get(['/log', '/api/vagoes/log'], checarAutenticacao, async (req, res) => {
+    const limite = parseInt(req.query.limite) || 100;
+    try {
+      const resultado = await db.query(`
+        SELECT id, vagao_id, status_anterior, status_novo, motivo, usuario, criado_em
+        FROM vagoes_log
         ORDER BY criado_em DESC LIMIT $1
-      `;
-      const resultado = await db.query(query, [parseInt(limite)]);
+      `, [limite]);
       res.json(resultado.rows || []);
     } catch (err) {
       res.status(500).json([]);
     }
   });
 
-  // 6. ROTA: CONFIGURAÇÕES (Buscar)
+  // 7. CONFIGURAÇÕES (buscar)
   app.get(['/config', '/api/vagoes/config'], checarAutenticacao, async (req, res) => {
     try {
       const resultado = await db.query('SELECT chave, valor FROM vagoes_config');
-      const cfg = { limite_estadia: "24" };
+      const cfg = { limite_estadia: '24' };
       resultado.rows.forEach(r => cfg[r.chave] = r.valor);
       res.json(cfg);
     } catch (err) {
-      res.json({ limite_estadia: "24" });
+      res.json({ limite_estadia: '24' });
     }
   });
 
-  // 7. ROTA: CONFIGURAÇÕES (Salvar)
+  // 8. CONFIGURAÇÕES (salvar)
   app.post(['/config', '/api/vagoes/config'], checarAutenticacao, async (req, res) => {
     const { limite_estadia } = req.body;
     try {
@@ -169,4 +194,5 @@ module.exports = function(app, db, verificarAcesso) {
       res.status(500).json({ erro: 'Erro ao salvar.' });
     }
   });
+
 };
