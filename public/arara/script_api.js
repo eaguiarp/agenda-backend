@@ -870,6 +870,7 @@ async function carregarListaUsuarios() {
       <span class="modal-vagao-badge">${nivelLabel[u.perfil] || u.perfil || '—'}</span>
     </div>
   `).join('');
+}
 
 // ════════════════════════════════════════
 //  HELPERS
