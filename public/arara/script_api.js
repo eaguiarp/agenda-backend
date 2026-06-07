@@ -756,10 +756,15 @@ function renderTV() {
 
   const relogio = document.getElementById('tv-relogio');
   if (relogio) relogio.textContent = new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-  document.getElementById('tv-tpv').textContent     = maxTpv > 0 ? formatarMs(maxTpv) : '—';
-  document.getElementById('tv-estadia').textContent = estourados;
-  document.getElementById('tv-risco').textContent   = risco;
-  document.getElementById('tv-total').textContent   = ativos.length;
+  const posCount = ativos.filter(v => v.status === 'posicionado').length;
+  const naoPosCount = ativos.filter(v => v.status === 'nao_posicionado').length;
+
+  document.getElementById('tv-tpv')?.textContent        = maxTpv > 0 ? formatarMs(maxTpv) : '—';
+  document.getElementById('tv-total')?.textContent      = posCount;
+  document.getElementById('tv-total-geral')?.textContent = ativos.length;
+  document.getElementById('tv-nao-pos')?.textContent    = naoPosCount;
+  document.getElementById('tv-estadia')?.textContent     = estourados;
+  document.getElementById('tv-risco')?.textContent      = risco;
 
   document.getElementById('tv-farol-estadia')?.classList.toggle('alerta-estadia', estourados > 0);
   document.getElementById('tv-farol-risco')?.classList.toggle('alerta-risco', risco > 0);
