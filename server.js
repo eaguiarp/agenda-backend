@@ -188,7 +188,53 @@ app.get("/criar-banco", async (req, res) => {
       } catch (e) {}
     }
 
-    res.send("<h1>✅ Sucesso! Tabelas verificadas e atualizadas.</h1>");
+    // ── TABELAS DO MÓDULO DE VAGÕES (CD Arará) ──
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS vagoes_composicoes (
+        id         SERIAL PRIMARY KEY,
+        chegada_dt TIMESTAMP NOT NULL,
+        criado_em  TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS vagoes (
+        id            SERIAL PRIMARY KEY,
+        composicao_id INTEGER REFERENCES vagoes_composicoes(id),
+        vagao_id      VARCHAR(20) NOT NULL,
+        status        VARCHAR(30) DEFAULT 'nao_posicionado',
+        pos_dt        TIMESTAMP,
+        fim_dt        TIMESTAMP,
+        atualizado_em TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS vagoes_log (
+        id              SERIAL PRIMARY KEY,
+        vagao_id        VARCHAR(20),
+        status_anterior VARCHAR(30),
+        status_novo     VARCHAR(30),
+        motivo          TEXT,
+        usuario         VARCHAR(100),
+        criado_em       TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS vagoes_config (
+        chave VARCHAR(50) PRIMARY KEY,
+        valor TEXT
+      )
+    `);
+
+    await pool.query(`
+      INSERT INTO vagoes_config (chave, valor)
+      VALUES ('limite_estadia', '24')
+      ON CONFLICT (chave) DO NOTHING
+    `);
+
+    res.send("<h1>✅ Sucesso! Tabelas verificadas e atualizadas (incluindo módulo de vagões).</h1>");
   } catch (error) {
     res.status(500).send("Erro: " + error.message);
   }
