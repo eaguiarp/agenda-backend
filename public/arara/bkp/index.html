@@ -5,6 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CD Arará | Controle de Vagões</title>
   <link rel="stylesheet" href="./style.css" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect fill='%23c41e3a' width='64' height='64'/><g fill='%23fff'><rect x='8' y='16' width='48' height='24' rx='3'/><circle cx='16' cy='44' r='4'/><circle cx='48' cy='44' r='4'/><rect x='24' y='20' width='16' height='8' fill='%23c41e3a'/></g></svg>">
+  <style>
+    /* ── Seleção múltipla ── */
+    .vagao-slot-fifo { position: relative; }
+    .slot-selecionado { outline: 2px solid var(--accent, #6366f1); border-radius: 8px; background: rgba(99,102,241,0.13); }
+    .bolinha-selecionada { box-shadow: 0 0 0 3px var(--accent, #6366f1) !important; }
+    .sel-check {
+      position: absolute; top: -4px; right: -4px;
+      background: var(--accent, #6366f1); color: #fff;
+      border-radius: 50%; width: 16px; height: 16px;
+      font-size: 9px; display: flex; align-items: center; justify-content: center;
+      font-weight: 800; line-height:1;
+    }
+    .btn-ativo { background: var(--accent, #6366f1) !important; color: #fff !important; border-color: var(--accent, #6366f1) !important; }
+    .btn-sm { padding: 4px 10px !important; font-size: 0.78rem !important; }
+  </style>
 </head>
 <body>
 
@@ -13,7 +29,8 @@
       <h1>CD Arará</h1>
       <p>Controle de Estadia de Vagões — Composições Ativas</p>
     </div>
-    <div class="header-right">
+    <div class="header-right" style="display:flex;align-items:center;gap:10px;">
+      <button class="btn-tv-header" onclick="abrirModoTV()" title="Modo TV (T)">📺</button>
       <span id="relogio"></span>
     </div>
   </div>
@@ -71,12 +88,18 @@
       <div class="card">
         <div class="card-header">
           <span>🚃 Pátio de Arará — FIFO</span>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
             <span class="leg-item"><span class="bolinha nao_posicionado"></span> Não Posic.</span>
             <span class="leg-item"><span class="bolinha posicionado"></span> Posicionado</span>
             <span class="leg-item"><span class="bolinha vazio"></span> Vazio</span>
             <span class="leg-item"><span class="bolinha liberado_aguardando"></span> Liberado</span>
+            <button class="btn btn-outline btn-sm" id="btn-selecao-multipla">☑ Selecionar Vários</button>
           </div>
+        </div>
+        <div id="barra-lote" style="display:none; align-items:center; gap:10px; padding:10px 16px; background:rgba(99,102,241,0.12); border-bottom:1px solid rgba(99,102,241,0.25); flex-wrap:wrap;">
+          <span id="lote-contador" style="font-size:0.85rem; color:var(--accent); font-weight:600; flex:1;"></span>
+          <button class="btn btn-outline btn-sm" id="btn-selecionar-todos">Selecionar Todos</button>
+          <button class="btn btn-primary btn-sm" id="btn-alterar-lote" disabled>⚡ Alterar Status</button>
         </div>
         <div class="card-body">
           <div class="patio-resumo-wrapper">
@@ -106,6 +129,53 @@
           <button class="btn btn-primary btn-full" id="btn-nova-comp">Registrar Composição</button>
         </div>
       </div>
+
+  <!-- ══════════════════════════════════════
+       MODO TV (fullscreen overlay)
+  ══════════════════════════════════════ -->
+  <div id="tv-overlay" style="display:none;">
+    <div class="tv-header">
+      <div class="tv-titulo">
+        <span class="tv-logo">CD ARARÁ</span>
+        <span class="tv-sub">Controle de Estadia de Vagões</span>
+      </div>
+      <div id="tv-relogio" class="tv-relogio"></div>
+      <button id="tv-fechar" class="tv-fechar" title="Fechar (Esc)">✕</button>
+    </div>
+
+    <div class="tv-farol-row">
+      <div class="tv-farol-item" id="tv-farol-tpv">
+        <div class="tv-farol-label">TPV Máximo</div>
+        <div class="tv-farol-valor" id="tv-tpv">—</div>
+      </div>
+      <div class="tv-farol-item" id="tv-farol-total">
+        <div class="tv-farol-label">Vagões no Pátio</div>
+        <div class="tv-farol-valor" id="tv-total">0</div>
+      </div>
+      <div class="tv-farol-item" id="tv-farol-risco">
+        <div class="tv-farol-label">⚠ Em Risco</div>
+        <div class="tv-farol-valor" id="tv-risco">0</div>
+      </div>
+      <div class="tv-farol-item" id="tv-farol-estadia">
+        <div class="tv-farol-label">⚠ Em Estadia</div>
+        <div class="tv-farol-valor" id="tv-estadia">0</div>
+      </div>
+    </div>
+
+    <div class="tv-patio-wrap">
+      <div class="tv-patio-resumo" id="tv-resumo"></div>
+      <div id="tv-painel" class="painel-vagoes-fifo tv-painel-grid"></div>
+    </div>
+
+    <div class="tv-legenda">
+      <span class="leg-item"><span class="bolinha nao_posicionado" style="width:16px;height:16px;"></span> Não Posicionado</span>
+      <span class="leg-item"><span class="bolinha posicionado" style="width:16px;height:16px;"></span> Posicionado</span>
+      <span class="leg-item"><span class="bolinha vazio" style="width:16px;height:16px;"></span> Vazio</span>
+      <span class="leg-item"><span class="bolinha liberado_aguardando" style="width:16px;height:16px;"></span> Liberado</span>
+      <span class="leg-item"><span class="bolinha alerta-estadia" style="width:16px;height:16px;background:radial-gradient(circle at 35% 35%,#fb923c,#ea580c);"></span> Estadia</span>
+      <span class="leg-item"><span class="bolinha alerta-risco" style="width:16px;height:16px;background:radial-gradient(circle at 35% 35%,#fcd34d,#ca8a04);"></span> Risco</span>
+    </div>
+  </div>
 
       <!-- MODAL VAGÃO -->
       <div id="vagao-modal" class="modal-overlay" style="display:none;">
@@ -166,10 +236,13 @@
         <div class="card-header">📋 Vagões para Liberação</div>
         <div class="card-body">
           <p class="info-text">Vagões com status <strong>Liberado</strong> aguardando devolução à MRS. Selecione para gerar formulário ou confirmar devolução.</p>
+          <div class="lib-acoes" style="margin-bottom:14px; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" id="btn-selecionar-todos-liberacao">Selecionar Todos</button>
+          </div>
           <div id="lista-liberacao" class="lista-liberacao">
             <div class="vazio-msg">Nenhum vagão liberado aguardando devolução.</div>
           </div>
-          <div class="lib-acoes">
+          <div class="lib-acoes" style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
             <button class="btn btn-success" id="btn-confirmar-devolucao" style="flex:1;">
               ✅ Confirmar Devolução MRS
             </button>
@@ -331,6 +404,51 @@
     </div>
   </div>
 
-  <script src="./script.js"></script>
+  <!-- MODAL STATUS EM LOTE -->
+  <div id="modal-lote-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div>
+          <div id="modal-lote-titulo">Alterar Status em Lote</div>
+          <div class="modal-vagao-badge">Aplica o mesmo status a todos os selecionados</div>
+        </div>
+        <button class="modal-close" id="modal-lote-fechar">✕</button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <div class="input-group" style="margin-bottom:8px;"><label>Novo Status</label></div>
+          <div class="status-options">
+            <div class="status-opt-lote status-opt" data-val="nao_posicionado">
+              <div class="opt-dot nao_posicionado"></div>
+              Não Posicionado
+            </div>
+            <div class="status-opt-lote status-opt" data-val="posicionado">
+              <div class="opt-dot posicionado"></div>
+              Posicionado
+            </div>
+            <div class="status-opt-lote status-opt" data-val="vazio">
+              <div class="opt-dot vazio"></div>
+              Vazio
+            </div>
+            <div class="status-opt-lote status-opt" data-val="liberado">
+              <div class="opt-dot liberado_aguardando"></div>
+              Liberado
+            </div>
+          </div>
+        </div>
+        <div class="input-group" id="grp-lote-posicionamento" style="display:none;">
+          <label>Data/Hora Posicionamento</label>
+          <input type="datetime-local" id="modal-lote-dt-pos">
+        </div>
+        <div class="input-group" id="grp-lote-fim" style="display:none;">
+          <label>Data/Hora Liberação</label>
+          <input type="datetime-local" id="modal-lote-dt-fim">
+        </div>
+        <button class="btn btn-primary btn-full" id="modal-lote-salvar">Aplicar a Todos</button>
+      </div>
+    </div>
+  </div>
+
+ <script src="./script_api.js"></script>
 </body>
 </html>

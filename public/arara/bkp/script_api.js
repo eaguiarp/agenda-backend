@@ -14,15 +14,6 @@ function getHeaders() {
   };
 }
 
-// Header Basic Auth para rotas do AgendaCD (express-basic-auth)
-function getBasicAuthHeader() {
-  const token = btoa(`${AUTH.usuario}:${AUTH.senha}`);
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': `Basic ${token}`
-  };
-}
-
 async function api(method, path, body) {
   try {
     const url = '/api/vagoes' + (path.startsWith('/') ? path : '/' + path);
@@ -586,31 +577,15 @@ function fecharModalAlerta() {
   document.getElementById('alerta-modal').style.display = 'none';
 }
 
-function toggleModoTV() {
+function abrirModoTV() {
+  renderTV();
   const overlay = document.getElementById('tv-overlay');
-  const btn     = document.getElementById('btn-tv-toggle');
-  if (!overlay) return;
-  const aberto = overlay.style.display !== 'none';
-  if (aberto) {
-    overlay.style.display = 'none';
-    if (btn) btn.classList.remove('btn-tv-ativo');
-    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-  } else {
-    renderTV();
-    overlay.style.display = 'flex';
-    if (btn) btn.classList.add('btn-tv-ativo');
-    overlay.requestFullscreen?.().catch(() => {});
-  }
+  if (overlay) overlay.style.display = 'flex';
 }
-
-function abrirModoTV() { toggleModoTV(); }
 
 function fecharModoTV() {
   const overlay = document.getElementById('tv-overlay');
-  const btn     = document.getElementById('btn-tv-toggle');
   if (overlay) overlay.style.display = 'none';
-  if (btn) btn.classList.remove('btn-tv-ativo');
-  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
 }
 
 function renderTV() {
@@ -694,9 +669,6 @@ document.addEventListener('click', e => {
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') fecharModoTV();
-  if (e.key === 't' || e.key === 'T') {
-    if (!e.target.matches('input, textarea, select')) toggleModoTV();
-  }
 });
 
 // ════════════════════════════════════════
@@ -790,86 +762,14 @@ function configurarGestao() {
     p.style.display = p.style.display === 'none' ? 'block' : 'none';
   });
 
-  // Carrega lista de usuários quando a aba Gestão é aberta
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    if (btn.dataset.tab === 'gestao') {
-      btn.addEventListener('click', carregarListaUsuarios);
-    }
-  });
-
   document.getElementById('btn-cancel-add-user')?.addEventListener('click', () => {
     document.getElementById('add-user-panel').style.display = 'none';
   });
 
-  document.getElementById('btn-add-user')?.addEventListener('click', async () => {
-    const login = document.getElementById('user-login').value.trim();
-    const senha = document.getElementById('user-senha').value;
-    const nivel = document.getElementById('user-nivel').value;
-
-    if (!login || !senha) {
-      alert('Preencha login e senha.');
-      return;
-    }
-
-    const btn = document.getElementById('btn-add-user');
-    btn.disabled = true; btn.textContent = 'Salvando…';
-
-    // Tenta endpoint próprio do Arará primeiro; cai no endpoint do AgendaCD se não existir
-    let ok = await api('POST', '/usuarios', { nome: login, senha, nivel });
-
-    if (!ok) {
-      // Fallback: rota /usuarios do AgendaCD (Basic Auth)
-      try {
-        const res = await fetch('/usuarios', {
-          method: 'POST',
-          headers: getBasicAuthHeader(),
-          body: JSON.stringify({ nome: login, senha, perfil: nivel === 'admin' ? 'admin' : nivel === 'view' ? 'operacao' : nivel })
-        });
-        ok = res.ok ? await res.json() : null;
-      } catch (e) { ok = null; }
-    }
-
-    btn.disabled = false; btn.textContent = 'Adicionar Usuário';
-
-    if (ok) {
-      alert(`Usuário "${login}" cadastrado com sucesso!`);
-      document.getElementById('user-login').value = '';
-      document.getElementById('user-senha').value = '';
-      document.getElementById('add-user-panel').style.display = 'none';
-      carregarListaUsuarios();
-    } else {
-      alert('Erro ao cadastrar usuário. Verifique se você tem permissão de administrador.');
-    }
+  document.getElementById('btn-add-user')?.addEventListener('click', () => {
+    alert('O cadastro de usuários é gerenciado pelo sistema principal (AgendaCD).\nOs mesmos usuários já têm acesso ao módulo de vagões.');
   });
 }
-
-async function carregarListaUsuarios() {
-  const listEl = document.getElementById('user-list');
-  if (!listEl) return;
-
-  // Tenta endpoint do Arará, depois do AgendaCD
-  let usuarios = await api('GET', '/usuarios');
-  if (!usuarios) {
-    try {
-      const res = await fetch('/usuarios', { method: 'GET', headers: getBasicAuthHeader() });
-      usuarios = res.ok ? await res.json() : null;
-    } catch (e) { usuarios = null; }
-  }
-
-  if (!Array.isArray(usuarios) || usuarios.length === 0) {
-    listEl.innerHTML = '<p class="info-text" style="margin:0;">Nenhum usuário cadastrado ou sem permissão para listar.</p>';
-    return;
-  }
-
-  const nivelLabel = { operacao: 'Operação', portaria: 'Portaria', relatorio: 'Relatório', admin: 'Administrador' };
-  listEl.innerHTML = usuarios.map(u => `
-    <div class="user-item" style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.07);">
-      <div>
-        <strong>@${u.nome}</strong>
-      </div>
-      <span class="modal-vagao-badge">${nivelLabel[u.perfil] || u.perfil || '—'}</span>
-    </div>
-  `).join('');
 
 // ════════════════════════════════════════
 //  HELPERS
