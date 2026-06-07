@@ -763,15 +763,22 @@ function renderTV() {
   const elTotal      = document.getElementById('tv-total');
   const elTotalGeral = document.getElementById('tv-total-geral');
   const elNaoPos     = document.getElementById('tv-nao-pos');
+  const elVazio      = document.getElementById('tv-vazio');
+  const elLiberado   = document.getElementById('tv-liberado');
   const elEstadia    = document.getElementById('tv-estadia');
   const elRisco      = document.getElementById('tv-risco');
   const elFarolEst   = document.getElementById('tv-farol-estadia');
   const elFarolRis   = document.getElementById('tv-farol-risco');
 
+  const vazioCount   = ativos.filter(v => v.status === 'vazio').length;
+  const liberadoCount = ativos.filter(v => v.status === 'liberado').length;
+
   if (elTpv)        elTpv.textContent        = maxTpv > 0 ? formatarMs(maxTpv) : '—';
   if (elTotal)      elTotal.textContent      = posCount;
   if (elTotalGeral) elTotalGeral.textContent = ativos.length;
   if (elNaoPos)     elNaoPos.textContent    = naoPosCount;
+  if (elVazio)      elVazio.textContent     = vazioCount;
+  if (elLiberado)   elLiberado.textContent  = liberadoCount;
   if (elEstadia)    elEstadia.textContent     = estourados;
   if (elRisco)      elRisco.textContent      = risco;
 
