@@ -1,26 +1,24 @@
 // ============================================================
 // script_api.js — CD Arará (versão backend PostgreSQL)
-// Lógica idêntica ao script.js original, porém persiste via API
+// Auth: JWT (8h) + tela de login própria
 // ============================================================
 
 // ── AUTH ──
-let AUTH = { usuario: '', senha: '' };
+let ARARA_TOKEN   = null;  // JWT
+let ARARA_USUARIO = null;  // { nome, perfil }
 
 function getHeaders() {
   return {
     'Content-Type': 'application/json',
-    'usuario': AUTH.usuario,
-    'senha':   AUTH.senha
+    ...(ARARA_TOKEN ? { 'Authorization': `Bearer ${ARARA_TOKEN}` } : {})
   };
 }
 
 // Header Basic Auth para rotas do AgendaCD (express-basic-auth)
 function getBasicAuthHeader() {
-  const token = btoa(`${AUTH.usuario}:${AUTH.senha}`);
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': `Basic ${token}`
-  };
+  const stored = JSON.parse(localStorage.getItem('arara_auth') || '{}');
+  const token  = btoa(`${stored.usuario || ''}:${stored.senha || ''}`);
+  return { 'Content-Type': 'application/json', 'Authorization': `Basic ${token}` };
 }
 
 async function api(method, path, body) {
@@ -31,7 +29,10 @@ async function api(method, path, body) {
       headers: getHeaders(),
       body: body ? JSON.stringify(body) : undefined
     });
-    if (res.status === 401 || res.status === 403) { pedirLogin(); return null; }
+    if (res.status === 401 || res.status === 403) {
+      mostrarLoginOverlay();
+      return null;
+    }
     if (!res.ok) {
       const e = await res.json().catch(() => ({}));
       throw new Error(e.erro || `HTTP ${res.status}`);
@@ -43,15 +44,126 @@ async function api(method, path, body) {
   }
 }
 
-function pedirLogin() {
-  const u = prompt('Usuário:');
-  const s = prompt('Senha:');
-  if (u && s) {
-    AUTH = { usuario: u, senha: s };
-    localStorage.setItem('arara_user', u);
-    localStorage.setItem('arara_pass', s);
-    init();
+// ── TELA DE LOGIN ──────────────────────────────────────────
+function mostrarLoginOverlay() {
+  const overlay = document.getElementById('login-overlay');
+  if (overlay) overlay.style.display = 'flex';
+}
+
+function esconderLoginOverlay() {
+  const overlay = document.getElementById('login-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function configurarLogin() {
+  const btnLogin  = document.getElementById('btn-login');
+  const inputUser = document.getElementById('login-usuario');
+  const inputSen  = document.getElementById('login-senha');
+
+  async function tentarLogin() {
+    const usuario = inputUser.value.trim();
+    const senha   = inputSen.value;
+    const errEl   = document.getElementById('login-erro');
+    const blkEl   = document.getElementById('login-bloqueado');
+
+    errEl.style.display = 'none';
+    blkEl.style.display = 'none';
+    btnLogin.disabled   = true;
+    btnLogin.textContent = 'Entrando…';
+
+    try {
+      const res  = await fetch('/api/vagoes/login', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ usuario, senha })
+      });
+      const data = await res.json();
+
+      if (res.status === 429) {
+        blkEl.textContent  = data.erro;
+        blkEl.style.display = 'block';
+        btnLogin.disabled   = false;
+        btnLogin.textContent = 'Entrar';
+        // Reabilita o botão após o bloqueio acabar
+        if (data.restam) setTimeout(() => { blkEl.style.display = 'none'; }, data.restam * 60 * 1000);
+        return;
+      }
+
+      if (!res.ok) {
+        errEl.textContent  = data.erro || 'Usuário ou senha incorretos.';
+        errEl.style.display = 'block';
+        btnLogin.disabled   = false;
+        btnLogin.textContent = 'Entrar';
+        inputSen.value = '';
+        inputSen.focus();
+        return;
+      }
+
+      // Sucesso
+      ARARA_TOKEN   = data.token;
+      ARARA_USUARIO = { nome: data.nome, perfil: data.perfil };
+      localStorage.setItem('arara_auth', JSON.stringify({ usuario, senha }));
+      localStorage.setItem('arara_token', data.token);
+
+      esconderLoginOverlay();
+      await inicializarApp();
+
+    } catch (e) {
+      errEl.textContent  = 'Erro de conexão. Tente novamente.';
+      errEl.style.display = 'block';
+      btnLogin.disabled   = false;
+      btnLogin.textContent = 'Entrar';
+    }
   }
+
+  btnLogin.addEventListener('click', tentarLogin);
+  inputSen.addEventListener('keydown', e => { if (e.key === 'Enter') tentarLogin(); });
+  inputUser.addEventListener('keydown', e => { if (e.key === 'Enter') inputSen.focus(); });
+}
+
+function atualizarBadgeUsuario() {
+  if (!ARARA_USUARIO) return;
+  const badge  = document.getElementById('user-badge');
+  const nome   = document.getElementById('user-nome-header');
+  const avatar = document.getElementById('user-avatar');
+  if (badge)  badge.style.display  = 'flex';
+  if (nome)   nome.textContent     = ARARA_USUARIO.nome;
+  if (avatar) avatar.textContent   = ARARA_USUARIO.nome.charAt(0).toUpperCase();
+
+  // Gestão: mostrar/bloquear conforme perfil
+  const semAcesso  = document.getElementById('gestao-sem-acesso');
+  const conteudo   = document.getElementById('gestao-conteudo');
+  const isAdmin    = ARARA_USUARIO.perfil === 'admin';
+  if (semAcesso) semAcesso.style.display = isAdmin ? 'none'  : 'block';
+  if (conteudo)  conteudo.style.display  = isAdmin ? 'block' : 'none';
+}
+
+function fazerLogout() {
+  if (!confirm(`Sair da sessão de "${ARARA_USUARIO?.nome}"?`)) return;
+  ARARA_TOKEN   = null;
+  ARARA_USUARIO = null;
+  localStorage.removeItem('arara_token');
+  localStorage.removeItem('arara_auth');
+  const badge = document.getElementById('user-badge');
+  if (badge) badge.style.display = 'none';
+  mostrarLoginOverlay();
+  document.getElementById('login-usuario').value = '';
+  document.getElementById('login-senha').value   = '';
+}
+
+async function tentarRestaurarSessao() {
+  const token = localStorage.getItem('arara_token');
+  if (!token) return false;
+  try {
+    const res = await fetch('/api/vagoes/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) return false;
+    const data    = await res.json();
+    ARARA_TOKEN   = token;
+    ARARA_USUARIO = { nome: data.nome, perfil: data.perfil };
+    return true;
+  } catch { return false; }
 }
 
 // ── ESTADO ──
@@ -69,10 +181,21 @@ const STATUS_VISIVEIS = ['nao_posicionado', 'posicionado', 'vazio', 'liberado'];
 //  INIT
 // ════════════════════════════════════════
 async function init() {
-  const u = localStorage.getItem('arara_user');
-  const s = localStorage.getItem('arara_pass');
-  if (u && s) AUTH = { usuario: u, senha: s };
+  configurarLogin();
 
+  // Tenta restaurar sessão do token salvo
+  const sessaoOk = await tentarRestaurarSessao();
+  if (sessaoOk) {
+    esconderLoginOverlay();
+    await inicializarApp();
+  } else {
+    mostrarLoginOverlay();
+    // A função tentarLogin() em configurarLogin() chamará inicializarApp() após sucesso
+  }
+}
+
+async function inicializarApp() {
+  atualizarBadgeUsuario();
   configurarAbas();
   configurarModal();
   configurarFormComposicao();
@@ -816,6 +939,18 @@ function configurarGestao() {
 
     // Tenta endpoint próprio do Arará primeiro; cai no endpoint do AgendaCD se não existir
     let ok = await api('POST', '/usuarios', { nome: login, senha, nivel });
+
+    if (!ok) {
+      // Fallback: rota /usuarios do AgendaCD (Basic Auth)
+      try {
+        const res = await fetch('/usuarios', {
+          method: 'POST',
+          headers: getBasicAuthHeader(),
+          body: JSON.stringify({ nome: login, senha, perfil: nivel === 'admin' ? 'admin' : nivel === 'view' ? 'operacao' : nivel })
+        });
+        ok = res.ok ? await res.json() : null;
+      } catch (e) { ok = null; }
+    }
 
     if (!ok) {
       // Fallback: rota /usuarios do AgendaCD (Basic Auth)

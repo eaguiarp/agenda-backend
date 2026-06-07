@@ -20,6 +20,27 @@
     }
     .btn-ativo { background: var(--accent, #6366f1) !important; color: #fff !important; border-color: var(--accent, #6366f1) !important; }
     .btn-sm { padding: 4px 10px !important; font-size: 0.78rem !important; }
+    .btn-tv-ativo { background: var(--accent, #6366f1) !important; color: #fff !important; outline: 2px solid rgba(255,255,255,0.6) !important; }
+
+    /* ── Impressão ── */
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body > *:not(#formulario-impressao) { display: none !important; }
+      #formulario-impressao {
+        display: block !important;
+        position: static !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .form-impresso {
+        page-break-after: always;
+        margin: 15mm 15mm 15mm 15mm !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .form-impresso:last-child { page-break-after: avoid; }
+    }
   </style>
 </head>
 <body>
@@ -30,7 +51,7 @@
       <p>Controle de Estadia de Vagões — Composições Ativas</p>
     </div>
     <div class="header-right" style="display:flex;align-items:center;gap:10px;">
-      <button class="btn-tv-header" onclick="abrirModoTV()" title="Modo TV (T)">📺</button>
+      <button class="btn-tv-header" id="btn-tv-toggle" onclick="toggleModoTV()" title="Modo TV (T)">📺</button>
       <span id="relogio"></span>
     </div>
   </div>
@@ -301,11 +322,7 @@
             <h4>Novo Usuário</h4>
             <div class="form-grid-2">
               <div class="input-group">
-                <label>Nome Completo</label>
-                <input type="text" id="user-nome" placeholder="Ex: João Silva">
-              </div>
-              <div class="input-group">
-                <label>Login</label>
+                <label>Login <span style="font-weight:400;color:var(--text-muted,#888);font-size:0.8rem;">(usado para entrar no sistema)</span></label>
                 <input type="text" id="user-login" placeholder="Ex: joao.silva">
               </div>
               <div class="input-group">
@@ -313,10 +330,11 @@
                 <input type="password" id="user-senha" placeholder="••••••••">
               </div>
               <div class="input-group">
-                <label>Nível de Acesso</label>
+                <label>Perfil de Acesso</label>
                 <select id="user-nivel">
-                  <option value="view">Visualizador — só leitura</option>
-                  <option value="op" selected>Operador — lançamentos</option>
+                  <option value="operacao">Operação — lançamentos</option>
+                  <option value="portaria">Portaria — acesso à portaria</option>
+                  <option value="relatorio">Relatório — visualização</option>
                   <option value="admin">Administrador — acesso total</option>
                 </select>
               </div>
