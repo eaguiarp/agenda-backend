@@ -270,7 +270,7 @@ module.exports = function(app, db, verificarAcesso) {
 
   // 4. ATUALIZAR STATUS
   app.post(['/atualizar-lote', '/api/vagoes/atualizar-lote'], autenticar, async (req, res) => {
-    const { vagoes, status, posDt, fimDt, motivo } = req.body;
+    const { vagoes, status, posDt, fimDt, motivo, nf } = req.body;
     if (!Array.isArray(vagoes) || vagoes.length === 0 || !status) {
       return res.status(400).json({ erro: 'Dados inválidos.' });
     }
@@ -284,6 +284,8 @@ module.exports = function(app, db, verificarAcesso) {
 
       if (fimDt) { camposQuery += `, fim_dt = $${idx++}`; params.push(fimDt); }
       else if (['liberado', 'vazio'].includes(status)) { camposQuery += ', fim_dt = COALESCE(fim_dt, NOW())'; }
+
+      if (nf !== undefined && nf !== null) { camposQuery += `, nf = $${idx++}`; params.push(nf); }
 
       params.push(vagoes);
       await db.query(`UPDATE vagoes SET ${camposQuery} WHERE vagao_id = ANY($${idx})`, params);

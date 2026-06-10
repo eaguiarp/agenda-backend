@@ -194,8 +194,15 @@ async function init() {
   }
 }
 
+let _appInicializado = false;
+
 async function inicializarApp() {
   atualizarBadgeUsuario();
+  if (_appInicializado) {
+    await carregarTudo();
+    return;
+  }
+  _appInicializado = true;
   configurarAbas();
   configurarModal();
   configurarFormComposicao();
@@ -243,6 +250,7 @@ async function carregarTudo() {
           .filter(v => v.composicao_id === comp.id)
           .map(v => ({
             id:    v.vagao_id,
+            nf:    v.nf || null,
             status: v.status,
             posDt: v.pos_dt ? String(v.pos_dt).slice(0, 16) : null,
             fimDt: v.fim_dt ? String(v.fim_dt).slice(0, 16) : null,
@@ -497,8 +505,10 @@ function configurarModalLote() {
 }
 
 function atualizarCamposModalLote(status) {
+  // pos_dt: apenas para posicionado (opcional — deixa em branco = NOW() no backend)
   document.getElementById('grp-lote-posicionamento').style.display =
-    ['posicionado', 'vazio', 'liberado'].includes(status) ? 'block' : 'none';
+    status === 'posicionado' ? 'block' : 'none';
+  // fim_dt: apenas para vazio e liberado (opcional — deixa em branco = NOW() no backend)
   document.getElementById('grp-lote-fim').style.display =
     ['vazio', 'liberado'].includes(status) ? 'block' : 'none';
 }
@@ -565,7 +575,7 @@ function configurarModal() {
 
 function atualizarCamposModal(status) {
   document.getElementById('grp-posicionamento').style.display =
-    ['posicionado', 'vazio', 'liberado'].includes(status) ? 'block' : 'none';
+    status === 'posicionado' ? 'block' : 'none';
   document.getElementById('grp-fim').style.display =
     ['vazio', 'liberado'].includes(status) ? 'block' : 'none';
 }
@@ -591,6 +601,7 @@ function abrirModal(id) {
 
   document.getElementById('modal-dt-pos').value = vagaoEncontrado.posDt || '';
   document.getElementById('modal-dt-fim').value = vagaoEncontrado.fimDt || '';
+  document.getElementById('modal-nf').value     = vagaoEncontrado.nf    || '';
   atualizarCamposModal(statusSelecionado);
   document.getElementById('vagao-modal').style.display = 'flex';
 }
@@ -601,6 +612,7 @@ async function salvarStatusIndividual() {
   const posDt = document.getElementById('modal-dt-pos').value || null;
   const fimDt = document.getElementById('modal-dt-fim').value ||
     (['liberado', 'vazio'].includes(statusSelecionado) ? new Date().toISOString().slice(0, 16) : null);
+  const nf    = document.getElementById('modal-nf').value.trim() || null;
 
   const btn = document.getElementById('modal-salvar');
   btn.disabled = true; btn.textContent = 'Salvando…';
@@ -609,7 +621,8 @@ async function salvarStatusIndividual() {
     vagoes: [vagaoSelecionado],
     status: statusSelecionado,
     posDt,
-    fimDt
+    fimDt,
+    nf
   });
 
   btn.disabled = false; btn.textContent = 'Salvar Status';
@@ -902,6 +915,8 @@ function gerarFormularioImpressao() {
   if (dataLib) { const [a, m, d] = dataLib.split('-'); dataLib = `${d}/${m}/${a}`; }
   else dataLib = '___/___/______';
 
+  const vagaoRetorno = (document.getElementById('lib-vagao-retorno')?.value || '').trim().toUpperCase();
+
   const checkboxes = document.querySelectorAll('.check-liberacao:checked');
   if (checkboxes.length === 0) { alert('Selecione os vagões liberados para gerar o formulário.'); return; }
 
@@ -909,10 +924,15 @@ function gerarFormularioImpressao() {
   checkboxes.forEach((cb, i) => { listaHtml += `<div><strong>${i + 1}:</strong> ${cb.value}</div>`; });
   listaHtml += '</div>';
 
+  const retornoHtml = vagaoRetorno
+    ? `<div style="margin-top:8px;"><strong>Vagão retornando com paletes:</strong> ${vagaoRetorno}</div>`
+    : '';
+
   ['csn', 'mrs'].forEach(via => {
     document.getElementById(`imp-plts-${via}`).innerText  = plts;
     document.getElementById(`imp-data-${via}`).innerText  = dataLib;
     document.getElementById(`imp-lista-${via}`).innerHTML = listaHtml;
+    document.getElementById(`imp-retorno-${via}`).innerHTML = retornoHtml;
   });
 
   window.print();
@@ -1128,6 +1148,50 @@ function formatarMs(ms) {
   const h = Math.floor(ms / 3600000);
   const m = Math.floor((ms % 3600000) / 60000);
   return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
+}
+
+// ════════════════════════════════════════
+//  EXPORTAÇÃO CSV
+// ════════════════════════════════════════
+function exportarRelatorio() {
+  const filtroStatus = document.getElementById('exp-filtro-status')?.value || '';
+  const filtroData   = document.getElementById('exp-filtro-data')?.value   || '';
+  const filtroNF     = document.getElementById('exp-filtro-nf')?.value.trim() || '';
+
+  let linhas = [['Vagão', 'NF', 'Status', 'Chegada', 'Posicionamento', 'Liberação', 'TPV (h)']];
+
+  composicoesAtivas.forEach(comp => {
+    comp.vagoes.forEach(v => {
+      if (filtroStatus && v.status !== filtroStatus) return;
+      if (filtroNF && !(v.nf || '').includes(filtroNF)) return;
+      if (filtroData) {
+        const chegada = comp.chegadaDt.slice(0, 10);
+        if (chegada !== filtroData) return;
+      }
+
+      const chegadaFmt = comp.chegadaDt
+        ? new Date(comp.chegadaDt).toLocaleString('pt-BR') : '';
+      const posFmt = v.posDt
+        ? new Date(v.posDt).toLocaleString('pt-BR') : '';
+      const fimFmt = v.fimDt
+        ? new Date(v.fimDt).toLocaleString('pt-BR') : '';
+      const tpvH = comp.chegadaDt
+        ? ((Date.now() - new Date(comp.chegadaDt).getTime()) / 3600000).toFixed(1) : '';
+
+      linhas.push([v.id, v.nf || '', statusLabel(v.status), chegadaFmt, posFmt, fimFmt, tpvH]);
+    });
+  });
+
+  if (linhas.length === 1) { alert('Nenhum registro encontrado com esses filtros.'); return; }
+
+  const csv = linhas.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `relatorio_vagoes_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 window.onload = init;

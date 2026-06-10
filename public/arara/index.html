@@ -319,6 +319,10 @@
               <label>Data/Hora Liberação</label>
               <input type="datetime-local" id="modal-dt-fim">
             </div>
+            <div class="input-group">
+              <label>Nota Fiscal (NF) <span style="font-weight:400;opacity:.5;">(opcional)</span></label>
+              <input type="text" id="modal-nf" placeholder="Ex: 123456">
+            </div>
 
             <button class="btn btn-primary btn-full" id="modal-salvar">Salvar Status</button>
           </div>
@@ -366,7 +370,38 @@
               <label>Data de Liberação</label>
               <input type="date" id="lib-data">
             </div>
+            <div class="input-group">
+              <label>Vagão Retornando com Paletes <span style="font-weight:400;opacity:.5;">(opcional)</span></label>
+              <input type="text" id="lib-vagao-retorno" placeholder="Ex: FLT7580461" style="text-transform:uppercase;">
+            </div>
           </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">📊 Exportar Relatório</div>
+        <div class="card-body">
+          <div class="form-grid-2" style="margin-bottom:12px;">
+            <div class="input-group">
+              <label>Filtrar por Status</label>
+              <select id="exp-filtro-status">
+                <option value="">Todos</option>
+                <option value="nao_posicionado">Não Posicionado</option>
+                <option value="posicionado">Posicionado</option>
+                <option value="vazio">Vazio</option>
+                <option value="liberado">Liberado</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label>Filtrar por Data de Chegada</label>
+              <input type="date" id="exp-filtro-data">
+            </div>
+            <div class="input-group">
+              <label>Filtrar por NF</label>
+              <input type="text" id="exp-filtro-nf" placeholder="Número da NF">
+            </div>
+          </div>
+          <button class="btn btn-outline" onclick="exportarRelatorio()">⬇ Exportar CSV</button>
         </div>
       </div>
     </div>
@@ -478,6 +513,7 @@
         <div><strong>Rio de Janeiro,</strong> <span id="imp-data-csn"></span></div>
       </div>
       <div id="imp-lista-csn" class="form-lista-vagoes" style="margin-bottom: 20px;"></div>
+      <div id="imp-retorno-csn" style="margin-bottom:10px;font-size:10pt;"></div>
       <div class="form-horarios">
         <table>
           <tr><th>MRS – ESTAÇÃO</th><th>HORA INÍCIO</th><th>HORA FIM</th></tr>
@@ -498,6 +534,7 @@
         <div><strong>Rio de Janeiro,</strong> <span id="imp-data-mrs"></span></div>
       </div>
       <div id="imp-lista-mrs" class="form-lista-vagoes" style="margin-bottom: 20px;"></div>
+      <div id="imp-retorno-mrs" style="margin-bottom:10px;font-size:10pt;"></div>
       <div class="form-horarios">
         <table>
           <tr><th>MRS – ESTAÇÃO</th><th>HORA INÍCIO</th><th>HORA FIM</th></tr>

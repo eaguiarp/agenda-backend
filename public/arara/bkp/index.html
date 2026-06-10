@@ -22,6 +22,47 @@
     .btn-sm { padding: 4px 10px !important; font-size: 0.78rem !important; }
     .btn-tv-ativo { background: var(--accent, #6366f1) !important; color: #fff !important; outline: 2px solid rgba(255,255,255,0.6) !important; }
 
+    /* ── Login Modal ── */
+    #login-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(10,10,18,0.92);
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(6px);
+    }
+    #login-box {
+      background: var(--card-bg, #1a1a2e); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px; padding: 36px 32px; width: 100%; max-width: 360px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+    }
+    #login-box h2 { margin: 0 0 4px; font-size: 1.3rem; }
+    #login-box p  { margin: 0 0 24px; font-size: 0.82rem; opacity: .5; }
+    #login-erro {
+      display: none; background: rgba(220,38,38,0.15); border: 1px solid rgba(220,38,38,0.35);
+      border-radius: 6px; padding: 8px 12px; font-size: 0.82rem; color: #f87171;
+      margin-bottom: 14px; text-align: center;
+    }
+    #login-bloqueado {
+      display: none; background: rgba(234,179,8,0.12); border: 1px solid rgba(234,179,8,0.3);
+      border-radius: 6px; padding: 8px 12px; font-size: 0.82rem; color: #fde047;
+      margin-bottom: 14px; text-align: center;
+    }
+    .user-badge {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.78rem; opacity: .75;
+      background: rgba(255,255,255,0.07); border-radius: 20px;
+      padding: 4px 10px 4px 6px; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.1); transition: opacity .2s;
+    }
+    .user-badge:hover { opacity: 1; }
+    .user-avatar {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--accent, #6366f1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 700; color: #fff;
+    }
+    .tab-admin-lock::after { content: ' \1F512'; font-size: 0.7rem; opacity: .5; }
+    #tab-gestao-bloqueado { display: none; padding: 40px 20px; text-align: center; opacity: .5; }
+
     /* ── Impressão ── */
     @media print {
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -45,6 +86,25 @@
 </head>
 <body>
 
+  <!-- ══ MODAL LOGIN ══ -->
+  <div id="login-overlay">
+    <div id="login-box">
+      <h2>🚃 CD Arará</h2>
+      <p>Controle de Estadia de Vagões</p>
+      <div id="login-bloqueado"></div>
+      <div id="login-erro"></div>
+      <div class="input-group" style="margin-bottom:12px;">
+        <label>Usuário</label>
+        <input type="text" id="login-usuario" autocomplete="username" placeholder="seu.login">
+      </div>
+      <div class="input-group" style="margin-bottom:20px;">
+        <label>Senha</label>
+        <input type="password" id="login-senha" autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary btn-full" id="btn-login">Entrar</button>
+    </div>
+  </div>
+
   <div class="header">
     <div class="header-left">
       <h1>CD Arará</h1>
@@ -52,6 +112,10 @@
     </div>
     <div class="header-right" style="display:flex;align-items:center;gap:10px;">
       <button class="btn-tv-header" id="btn-tv-toggle" onclick="toggleModoTV()" title="Modo TV (T)">📺</button>
+      <div class="user-badge" id="user-badge" onclick="fazerLogout()" title="Clique para sair" style="display:none;">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <span id="user-nome-header"></span>
+      </div>
       <span id="relogio"></span>
     </div>
   </div>
@@ -59,7 +123,7 @@
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="painel">⬤ Painel</button>
     <button class="tab-btn" data-tab="liberacao">📋 Liberação</button>
-    <button class="tab-btn" data-tab="gestao">📊 Gestão</button>
+    <button class="tab-btn" data-tab="gestao" id="tab-btn-gestao">📊 Gestão</button>
   </div>
 
   <!-- ══════════════════════════════════════
@@ -170,8 +234,24 @@
         <div class="tv-farol-valor" id="tv-tpv">—</div>
       </div>
       <div class="tv-farol-item" id="tv-farol-total">
-        <div class="tv-farol-label">Vagões no Pátio</div>
+        <div class="tv-farol-label">Posicionados</div>
         <div class="tv-farol-valor" id="tv-total">0</div>
+      </div>
+      <div class="tv-farol-item" id="tv-farol-total-geral">
+        <div class="tv-farol-label">Vagões total</div>
+        <div class="tv-farol-valor" id="tv-total-geral">0</div>
+      </div>
+      <div class="tv-farol-item" id="tv-farol-nao-pos">
+        <div class="tv-farol-label">Vagões não posicionados</div>
+        <div class="tv-farol-valor" id="tv-nao-pos">0</div>
+      </div>
+      <div class="tv-farol-item" id="tv-farol-vazio">
+        <div class="tv-farol-label">Vagões Vazios</div>
+        <div class="tv-farol-valor" id="tv-vazio">0</div>
+      </div>
+      <div class="tv-farol-item" id="tv-farol-liberado">
+        <div class="tv-farol-label">Vagões Liberados</div>
+        <div class="tv-farol-valor" id="tv-liberado">0</div>
       </div>
       <div class="tv-farol-item" id="tv-farol-risco">
         <div class="tv-farol-label">⚠ Em Risco</div>
@@ -298,7 +378,15 @@
   <div id="tab-gestao" class="tab-content">
     <div class="container">
 
-      <div class="card">
+      <!-- Bloco visível apenas para não-admin -->
+      <div id="gestao-sem-acesso" style="display:none; text-align:center; padding:60px 20px; opacity:.55;">
+        <div style="font-size:2.5rem;">🔒</div>
+        <div style="margin-top:12px; font-size:1rem; font-weight:600;">Acesso restrito</div>
+        <div style="font-size:0.85rem; margin-top:6px;">Esta área é exclusiva para administradores.</div>
+      </div>
+
+      <!-- Conteúdo real — visível apenas para admin -->
+      <div id="gestao-conteudo">
         <div class="card-header">⚙ Configurações Operacionais</div>
         <div class="card-body">
           <div class="input-group" style="max-width:280px;">
@@ -358,6 +446,7 @@
         </div>
       </div>
 
+      </div><!-- /gestao-conteudo -->
     </div>
   </div>
 
@@ -463,6 +552,41 @@
           <input type="datetime-local" id="modal-lote-dt-fim">
         </div>
         <button class="btn btn-primary btn-full" id="modal-lote-salvar">Aplicar a Todos</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDITAR USUÁRIO -->
+  <div id="modal-editar-usuario" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:380px;">
+      <div class="modal-header">
+        <div>
+          <div>✏ Editar Usuário</div>
+          <div class="modal-vagao-badge" id="edit-user-nome">—</div>
+        </div>
+        <button class="modal-close" id="modal-editar-usuario-fechar">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-user-id">
+        <div id="edit-user-erro" style="
+          display:none; background:rgba(220,38,38,0.15);
+          border:1px solid rgba(220,38,38,0.3); border-radius:6px;
+          padding:8px 12px; font-size:0.82rem; color:#f87171; margin-bottom:12px;">
+        </div>
+        <div class="input-group" style="margin-bottom:12px;">
+          <label>Nova Senha <span style="font-weight:400;opacity:.5;">(deixe em branco para não alterar)</span></label>
+          <input type="password" id="edit-user-senha" placeholder="••••••••">
+        </div>
+        <div class="input-group" style="margin-bottom:20px;">
+          <label>Perfil de Acesso</label>
+          <select id="edit-user-perfil">
+            <option value="operacao">Operação — lançamentos</option>
+            <option value="portaria">Portaria — acesso à portaria</option>
+            <option value="relatorio">Relatório — visualização</option>
+            <option value="admin">Administrador — acesso total</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-full" id="btn-salvar-edicao-user">Salvar</button>
       </div>
     </div>
   </div>

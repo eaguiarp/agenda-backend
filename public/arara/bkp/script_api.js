@@ -1,26 +1,24 @@
 // ============================================================
 // script_api.js — CD Arará (versão backend PostgreSQL)
-// Lógica idêntica ao script.js original, porém persiste via API
+// Auth: JWT (8h) + tela de login própria
 // ============================================================
 
 // ── AUTH ──
-let AUTH = { usuario: '', senha: '' };
+let ARARA_TOKEN   = null;  // JWT
+let ARARA_USUARIO = null;  // { nome, perfil }
 
 function getHeaders() {
   return {
     'Content-Type': 'application/json',
-    'usuario': AUTH.usuario,
-    'senha':   AUTH.senha
+    ...(ARARA_TOKEN ? { 'Authorization': `Bearer ${ARARA_TOKEN}` } : {})
   };
 }
 
 // Header Basic Auth para rotas do AgendaCD (express-basic-auth)
 function getBasicAuthHeader() {
-  const token = btoa(`${AUTH.usuario}:${AUTH.senha}`);
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': `Basic ${token}`
-  };
+  const stored = JSON.parse(localStorage.getItem('arara_auth') || '{}');
+  const token  = btoa(`${stored.usuario || ''}:${stored.senha || ''}`);
+  return { 'Content-Type': 'application/json', 'Authorization': `Basic ${token}` };
 }
 
 async function api(method, path, body) {
@@ -31,7 +29,10 @@ async function api(method, path, body) {
       headers: getHeaders(),
       body: body ? JSON.stringify(body) : undefined
     });
-    if (res.status === 401 || res.status === 403) { pedirLogin(); return null; }
+    if (res.status === 401 || res.status === 403) {
+      mostrarLoginOverlay();
+      return null;
+    }
     if (!res.ok) {
       const e = await res.json().catch(() => ({}));
       throw new Error(e.erro || `HTTP ${res.status}`);
@@ -43,15 +44,126 @@ async function api(method, path, body) {
   }
 }
 
-function pedirLogin() {
-  const u = prompt('Usuário:');
-  const s = prompt('Senha:');
-  if (u && s) {
-    AUTH = { usuario: u, senha: s };
-    localStorage.setItem('arara_user', u);
-    localStorage.setItem('arara_pass', s);
-    init();
+// ── TELA DE LOGIN ──────────────────────────────────────────
+function mostrarLoginOverlay() {
+  const overlay = document.getElementById('login-overlay');
+  if (overlay) overlay.style.display = 'flex';
+}
+
+function esconderLoginOverlay() {
+  const overlay = document.getElementById('login-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function configurarLogin() {
+  const btnLogin  = document.getElementById('btn-login');
+  const inputUser = document.getElementById('login-usuario');
+  const inputSen  = document.getElementById('login-senha');
+
+  async function tentarLogin() {
+    const usuario = inputUser.value.trim();
+    const senha   = inputSen.value;
+    const errEl   = document.getElementById('login-erro');
+    const blkEl   = document.getElementById('login-bloqueado');
+
+    errEl.style.display = 'none';
+    blkEl.style.display = 'none';
+    btnLogin.disabled   = true;
+    btnLogin.textContent = 'Entrando…';
+
+    try {
+      const res  = await fetch('/api/vagoes/login', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ usuario, senha })
+      });
+      const data = await res.json();
+
+      if (res.status === 429) {
+        blkEl.textContent  = data.erro;
+        blkEl.style.display = 'block';
+        btnLogin.disabled   = false;
+        btnLogin.textContent = 'Entrar';
+        // Reabilita o botão após o bloqueio acabar
+        if (data.restam) setTimeout(() => { blkEl.style.display = 'none'; }, data.restam * 60 * 1000);
+        return;
+      }
+
+      if (!res.ok) {
+        errEl.textContent  = data.erro || 'Usuário ou senha incorretos.';
+        errEl.style.display = 'block';
+        btnLogin.disabled   = false;
+        btnLogin.textContent = 'Entrar';
+        inputSen.value = '';
+        inputSen.focus();
+        return;
+      }
+
+      // Sucesso
+      ARARA_TOKEN   = data.token;
+      ARARA_USUARIO = { nome: data.nome, perfil: data.perfil };
+      localStorage.setItem('arara_auth', JSON.stringify({ usuario, senha }));
+      localStorage.setItem('arara_token', data.token);
+
+      esconderLoginOverlay();
+      await inicializarApp();
+
+    } catch (e) {
+      errEl.textContent  = 'Erro de conexão. Tente novamente.';
+      errEl.style.display = 'block';
+      btnLogin.disabled   = false;
+      btnLogin.textContent = 'Entrar';
+    }
   }
+
+  btnLogin.addEventListener('click', tentarLogin);
+  inputSen.addEventListener('keydown', e => { if (e.key === 'Enter') tentarLogin(); });
+  inputUser.addEventListener('keydown', e => { if (e.key === 'Enter') inputSen.focus(); });
+}
+
+function atualizarBadgeUsuario() {
+  if (!ARARA_USUARIO) return;
+  const badge  = document.getElementById('user-badge');
+  const nome   = document.getElementById('user-nome-header');
+  const avatar = document.getElementById('user-avatar');
+  if (badge)  badge.style.display  = 'flex';
+  if (nome)   nome.textContent     = ARARA_USUARIO.nome;
+  if (avatar) avatar.textContent   = ARARA_USUARIO.nome.charAt(0).toUpperCase();
+
+  // Gestão: mostrar/bloquear conforme perfil
+  const semAcesso  = document.getElementById('gestao-sem-acesso');
+  const conteudo   = document.getElementById('gestao-conteudo');
+  const isAdmin    = ARARA_USUARIO.perfil === 'admin';
+  if (semAcesso) semAcesso.style.display = isAdmin ? 'none'  : 'block';
+  if (conteudo)  conteudo.style.display  = isAdmin ? 'block' : 'none';
+}
+
+function fazerLogout() {
+  if (!confirm(`Sair da sessão de "${ARARA_USUARIO?.nome}"?`)) return;
+  ARARA_TOKEN   = null;
+  ARARA_USUARIO = null;
+  localStorage.removeItem('arara_token');
+  localStorage.removeItem('arara_auth');
+  const badge = document.getElementById('user-badge');
+  if (badge) badge.style.display = 'none';
+  mostrarLoginOverlay();
+  document.getElementById('login-usuario').value = '';
+  document.getElementById('login-senha').value   = '';
+}
+
+async function tentarRestaurarSessao() {
+  const token = localStorage.getItem('arara_token');
+  if (!token) return false;
+  try {
+    const res = await fetch('/api/vagoes/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) return false;
+    const data    = await res.json();
+    ARARA_TOKEN   = token;
+    ARARA_USUARIO = { nome: data.nome, perfil: data.perfil };
+    return true;
+  } catch { return false; }
 }
 
 // ── ESTADO ──
@@ -69,10 +181,21 @@ const STATUS_VISIVEIS = ['nao_posicionado', 'posicionado', 'vazio', 'liberado'];
 //  INIT
 // ════════════════════════════════════════
 async function init() {
-  const u = localStorage.getItem('arara_user');
-  const s = localStorage.getItem('arara_pass');
-  if (u && s) AUTH = { usuario: u, senha: s };
+  configurarLogin();
 
+  // Tenta restaurar sessão do token salvo
+  const sessaoOk = await tentarRestaurarSessao();
+  if (sessaoOk) {
+    esconderLoginOverlay();
+    await inicializarApp();
+  } else {
+    mostrarLoginOverlay();
+    // A função tentarLogin() em configurarLogin() chamará inicializarApp() após sucesso
+  }
+}
+
+async function inicializarApp() {
+  atualizarBadgeUsuario();
   configurarAbas();
   configurarModal();
   configurarFormComposicao();
@@ -80,6 +203,7 @@ async function init() {
   configurarModalLote();
   configurarLiberacao();
   configurarGestao();
+  configurarModalEditarUsuario();
 
   document.getElementById('alerta-modal-fechar').addEventListener('click', fecharModalAlerta);
 
@@ -632,13 +756,34 @@ function renderTV() {
 
   const relogio = document.getElementById('tv-relogio');
   if (relogio) relogio.textContent = new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-  document.getElementById('tv-tpv').textContent     = maxTpv > 0 ? formatarMs(maxTpv) : '—';
-  document.getElementById('tv-estadia').textContent = estourados;
-  document.getElementById('tv-risco').textContent   = risco;
-  document.getElementById('tv-total').textContent   = ativos.length;
+  const posCount = ativos.filter(v => v.status === 'posicionado').length;
+  const naoPosCount = ativos.filter(v => v.status === 'nao_posicionado').length;
 
-  document.getElementById('tv-farol-estadia')?.classList.toggle('alerta-estadia', estourados > 0);
-  document.getElementById('tv-farol-risco')?.classList.toggle('alerta-risco', risco > 0);
+  const elTpv        = document.getElementById('tv-tpv');
+  const elTotal      = document.getElementById('tv-total');
+  const elTotalGeral = document.getElementById('tv-total-geral');
+  const elNaoPos     = document.getElementById('tv-nao-pos');
+  const elVazio      = document.getElementById('tv-vazio');
+  const elLiberado   = document.getElementById('tv-liberado');
+  const elEstadia    = document.getElementById('tv-estadia');
+  const elRisco      = document.getElementById('tv-risco');
+  const elFarolEst   = document.getElementById('tv-farol-estadia');
+  const elFarolRis   = document.getElementById('tv-farol-risco');
+
+  const vazioCount   = ativos.filter(v => v.status === 'vazio').length;
+  const liberadoCount = ativos.filter(v => v.status === 'liberado').length;
+
+  if (elTpv)        elTpv.textContent        = maxTpv > 0 ? formatarMs(maxTpv) : '—';
+  if (elTotal)      elTotal.textContent      = posCount;
+  if (elTotalGeral) elTotalGeral.textContent = ativos.length;
+  if (elNaoPos)     elNaoPos.textContent    = naoPosCount;
+  if (elVazio)      elVazio.textContent     = vazioCount;
+  if (elLiberado)   elLiberado.textContent  = liberadoCount;
+  if (elEstadia)    elEstadia.textContent     = estourados;
+  if (elRisco)      elRisco.textContent      = risco;
+
+  if (elFarolEst) elFarolEst.classList.toggle('alerta-estadia', estourados > 0);
+  if (elFarolRis) elFarolRis.classList.toggle('alerta-risco', risco > 0);
 
   const container = document.getElementById('tv-painel');
   if (!container) return;
@@ -686,10 +831,11 @@ function renderTV() {
 }
 
 document.addEventListener('click', e => {
-  if (e.target === document.getElementById('alerta-modal')) fecharModalAlerta();
-  if (e.target === document.getElementById('vagao-modal'))  fecharModal();
-  if (e.target === document.getElementById('tv-fechar'))   fecharModoTV();
-  if (e.target === document.getElementById('tv-overlay'))   fecharModoTV();
+  if (e.target === document.getElementById('alerta-modal'))          fecharModalAlerta();
+  if (e.target === document.getElementById('vagao-modal'))           fecharModal();
+  if (e.target === document.getElementById('tv-fechar'))             fecharModoTV();
+  if (e.target === document.getElementById('tv-overlay'))            fecharModoTV();
+  if (e.target === document.getElementById('modal-editar-usuario'))  document.getElementById('modal-editar-usuario').style.display = 'none';
 });
 
 document.addEventListener('keydown', e => {
@@ -829,6 +975,18 @@ function configurarGestao() {
       } catch (e) { ok = null; }
     }
 
+    if (!ok) {
+      // Fallback: rota /usuarios do AgendaCD (Basic Auth)
+      try {
+        const res = await fetch('/usuarios', {
+          method: 'POST',
+          headers: getBasicAuthHeader(),
+          body: JSON.stringify({ nome: login, senha, perfil: nivel === 'admin' ? 'admin' : nivel === 'view' ? 'operacao' : nivel })
+        });
+        ok = res.ok ? await res.json() : null;
+      } catch (e) { ok = null; }
+    }
+
     btn.disabled = false; btn.textContent = 'Adicionar Usuário';
 
     if (ok) {
@@ -847,29 +1005,105 @@ async function carregarListaUsuarios() {
   const listEl = document.getElementById('user-list');
   if (!listEl) return;
 
-  // Tenta endpoint do Arará, depois do AgendaCD
-  let usuarios = await api('GET', '/usuarios');
-  if (!usuarios) {
-    try {
-      const res = await fetch('/usuarios', { method: 'GET', headers: getBasicAuthHeader() });
-      usuarios = res.ok ? await res.json() : null;
-    } catch (e) { usuarios = null; }
-  }
+  listEl.innerHTML = '<p class="info-text" style="margin:0;opacity:.5;">Carregando…</p>';
+  const usuarios = await api('GET', '/usuarios');
 
   if (!Array.isArray(usuarios) || usuarios.length === 0) {
-    listEl.innerHTML = '<p class="info-text" style="margin:0;">Nenhum usuário cadastrado ou sem permissão para listar.</p>';
+    listEl.innerHTML = '<p class="info-text" style="margin:0;">Nenhum usuário encontrado.</p>';
     return;
   }
 
   const nivelLabel = { operacao: 'Operação', portaria: 'Portaria', relatorio: 'Relatório', admin: 'Administrador' };
+  const euId = ARARA_USUARIO?._id || null; // para marcar conta própria
+
   listEl.innerHTML = usuarios.map(u => `
-    <div class="user-item" style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.07);">
-      <div>
-        <strong>@${u.nome}</strong>
+    <div class="user-row" data-id="${u.id}" style="
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.07); gap:10px;">
+      <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+        <div style="
+          width:32px;height:32px;border-radius:50%;
+          background:var(--accent,#6366f1);
+          display:flex;align-items:center;justify-content:center;
+          font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0;">
+          ${u.nome.charAt(0).toUpperCase()}
+        </div>
+        <div style="min-width:0;">
+          <div style="font-weight:600;font-size:0.9rem;">@${u.nome}</div>
+          <div style="font-size:0.75rem;opacity:.5;">${nivelLabel[u.perfil] || u.perfil}</div>
+        </div>
       </div>
-      <span class="modal-vagao-badge">${nivelLabel[u.perfil] || u.perfil || '—'}</span>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button class="btn btn-outline btn-sm" onclick="abrirEditarUsuario(${u.id}, '${u.nome}', '${u.perfil}')">✏ Editar</button>
+        <button class="btn btn-sm" style="background:rgba(220,38,38,0.15);color:#f87171;border:1px solid rgba(220,38,38,0.3);"
+          onclick="excluirUsuario(${u.id}, '${u.nome}')">✕</button>
+      </div>
     </div>
   `).join('');
+}
+
+function abrirEditarUsuario(id, nome, perfilAtual) {
+  // Popula e exibe o modal de edição
+  document.getElementById('edit-user-id').value      = id;
+  document.getElementById('edit-user-nome').value    = nome;
+  document.getElementById('edit-user-senha').value   = '';
+  document.getElementById('edit-user-perfil').value  = perfilAtual;
+  document.getElementById('edit-user-erro').style.display = 'none';
+  document.getElementById('modal-editar-usuario').style.display = 'flex';
+}
+
+async function excluirUsuario(id, nome) {
+  if (!confirm(`Excluir o usuário "@${nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
+  const ok = await api('DELETE', `/usuarios/${id}`);
+  if (ok) {
+    carregarListaUsuarios();
+  } else {
+    alert('Erro ao excluir usuário.');
+  }
+}
+
+function configurarModalEditarUsuario() {
+  document.getElementById('modal-editar-usuario-fechar')?.addEventListener('click', () => {
+    document.getElementById('modal-editar-usuario').style.display = 'none';
+  });
+
+  document.getElementById('btn-salvar-edicao-user')?.addEventListener('click', async () => {
+    const id     = document.getElementById('edit-user-id').value;
+    const senha  = document.getElementById('edit-user-senha').value;
+    const perfil = document.getElementById('edit-user-perfil').value;
+    const erroEl = document.getElementById('edit-user-erro');
+    const btn    = document.getElementById('btn-salvar-edicao-user');
+
+    if (!senha && !perfil) {
+      erroEl.textContent = 'Informe a nova senha ou perfil.';
+      erroEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true; btn.textContent = 'Salvando…';
+    erroEl.style.display = 'none';
+
+    const body = {};
+    if (senha.trim())  body.senha  = senha.trim();
+    if (perfil)        body.perfil = perfil;
+
+    const res = await fetch(`/api/vagoes/usuarios/${id}`, {
+      method:  'PUT',
+      headers: getHeaders(),
+      body:    JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+
+    btn.disabled = false; btn.textContent = 'Salvar';
+
+    if (res.ok) {
+      document.getElementById('modal-editar-usuario').style.display = 'none';
+      carregarListaUsuarios();
+    } else {
+      erroEl.textContent = data.erro || 'Erro ao salvar.';
+      erroEl.style.display = 'block';
+    }
+  });
 }
 
 // ════════════════════════════════════════
