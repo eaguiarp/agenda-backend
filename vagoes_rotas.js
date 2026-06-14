@@ -240,16 +240,35 @@ module.exports = function(app, db, verificarAcesso) {
     if (!chegadaDt || !Array.isArray(vagoes) || vagoes.length === 0) {
       return res.status(400).json({ erro: 'Dados incompletos.' });
     }
+
+    const idsLimpos = [...new Set(
+      vagoes.map(v => String(v).replace(/\s+/g, '').toUpperCase()).filter(v => v.length > 0)
+    )];
+    if (idsLimpos.length === 0) {
+      return res.status(400).json({ erro: 'Nenhum ID de vagão válido informado.' });
+    }
+
     try {
+      // Verifica duplicidade: vagões ativos (não devolvidos) com o mesmo ID
+      const existentes = await db.query(
+        "SELECT vagao_id FROM vagoes WHERE vagao_id = ANY($1) AND status != 'devolvido'",
+        [idsLimpos]
+      );
+      if (existentes.rows.length > 0) {
+        const duplicados = existentes.rows.map(r => r.vagao_id);
+        return res.status(409).json({
+          erro: `Vagão(ões) já ativo(s) no pátio: ${duplicados.join(', ')}`,
+          duplicados
+        });
+      }
+
       await db.query('BEGIN');
       const compRes = await db.query(
         'INSERT INTO vagoes_composicoes (chegada_dt) VALUES ($1) RETURNING id',
         [chegadaDt]
       );
       const composicaoId = compRes.rows[0].id;
-      for (const vagaoId of vagoes) {
-        const idLimpo = vagaoId.replace(/\s+/g, '').toUpperCase();
-        if (!idLimpo) continue;
+      for (const idLimpo of idsLimpos) {
         await db.query(
           "INSERT INTO vagoes (composicao_id, vagao_id, status) VALUES ($1, $2, 'nao_posicionado')",
           [composicaoId, idLimpo]

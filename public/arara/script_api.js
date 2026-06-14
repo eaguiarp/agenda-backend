@@ -21,7 +21,7 @@ function getBasicAuthHeader() {
   return { 'Content-Type': 'application/json', 'Authorization': `Basic ${token}` };
 }
 
-async function api(method, path, body) {
+async function api(method, path, body, throwOnError) {
   try {
     const url = '/api/vagoes' + (path.startsWith('/') ? path : '/' + path);
     const res = await fetch(url, {
@@ -35,10 +35,13 @@ async function api(method, path, body) {
     }
     if (!res.ok) {
       const e = await res.json().catch(() => ({}));
-      throw new Error(e.erro || `HTTP ${res.status}`);
+      if (throwOnError) throw new Error(e.erro || `HTTP ${res.status}`);
+      console.error('[api]', method, path, e.erro || `HTTP ${res.status}`);
+      return null;
     }
     return await res.json();
   } catch (e) {
+    if (throwOnError) throw e;
     console.error('[api]', method, path, e);
     return null;
   }
@@ -327,17 +330,19 @@ function configurarFormComposicao() {
     const btn = document.getElementById('btn-nova-comp');
     btn.disabled = true; btn.textContent = 'Registrando…';
 
-    const resultado = await api('POST', '/composicoes', {
-      chegadaDt: `${data}T${hora}`,
-      vagoes: ids
-    });
+    try {
+      const resultado = await api('POST', '/composicoes', {
+        chegadaDt: `${data}T${hora}`,
+        vagoes: ids
+      }, true);
 
-    btn.disabled = false; btn.textContent = 'Registrar Composição';
-
-    if (resultado) {
       document.getElementById('comp-vagoes').value = '';
       alert(`${ids.length} vagão(ões) inserido(s) no pátio.`);
       await carregarTudo();
+    } catch (e) {
+      alert(e.message || 'Erro ao registrar composição.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Registrar Composição';
     }
   });
 }
