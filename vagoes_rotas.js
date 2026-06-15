@@ -307,7 +307,7 @@ module.exports = function(app, db, verificarAcesso) {
       if (nf !== undefined && nf !== null) { camposQuery += `, nf = $${idx++}`; params.push(nf); }
 
       params.push(vagoes);
-      await db.query(`UPDATE vagoes SET ${camposQuery} WHERE vagao_id = ANY($${idx})`, params);
+      await db.query(`UPDATE vagoes SET ${camposQuery} WHERE vagao_id = ANY($${idx}) AND status != 'devolvido'`, params);
 
       for (const vid of vagoes) {
         await db.query(

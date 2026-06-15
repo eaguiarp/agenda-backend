@@ -393,12 +393,14 @@ function renderPainelFIFO() {
       else if (tpvMs >= limRis) { alertaClass = 'alerta-risco';   tooltipExtra = ` ⚠ RISCO ${formatarMs(tpvMs)}`; }
 
       const isSelecionado = vagoesSelecionados.has(v.id);
+      const nfHtml = v.nf ? `<div class="vagao-nf">NF ${v.nf}</div>` : '';
 
       if (modoSelecaoMultipla) {
         slot.innerHTML = `
           <div class="bolinha ${cssClass} ${alertaClass} ${isSelecionado ? 'bolinha-selecionada' : ''}"
                title="${v.id} — ${statusLabel(v.status)}${tooltipExtra}" style="cursor:pointer;"></div>
           <div class="vagao-id">${idCurto}</div>
+          ${nfHtml}
           ${isSelecionado ? '<div class="sel-check">✓</div>' : ''}`;
         slot.classList.toggle('slot-selecionado', isSelecionado);
         slot.style.cursor = 'pointer';
@@ -407,7 +409,8 @@ function renderPainelFIFO() {
         slot.innerHTML = `
           <div class="bolinha ${cssClass} ${alertaClass}"
                title="${v.id} — ${statusLabel(v.status)}${tooltipExtra}" style="cursor:pointer;"></div>
-          <div class="vagao-id">${idCurto}</div>`;
+          <div class="vagao-id">${idCurto}</div>
+          ${nfHtml}`;
         slot.querySelector('.bolinha').addEventListener('click', () => abrirModal(v.id));
       }
     } else {
