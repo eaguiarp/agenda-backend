@@ -480,6 +480,53 @@
       margin-bottom: 18px;
     }
 
+    /* ── VASILHAME ────────────────────────── */
+    .vasilhame-painel {
+      display: none; margin-top: 8px;
+      background: #fffbf0; border: 1.5px solid #f1c40f;
+      border-radius: 6px; padding: 14px 16px;
+      animation: fadeIn 0.18s ease;
+    }
+    .vasilhame-painel.aberto { display: block; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+
+    .vasilhame-titulo {
+      font-size: 0.72rem; font-family: var(--fn-mono); letter-spacing: 0.1em;
+      text-transform: uppercase; color: #7a5c00; margin-bottom: 10px; font-weight: 700;
+    }
+    .vasilhame-opcoes { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .btn-vasilhame {
+      border: 1.5px solid var(--border); border-radius: 4px;
+      padding: 9px 16px; background: var(--surface);
+      font-family: var(--fn-body); font-weight: 600; font-size: 0.82rem;
+      cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+    }
+    .btn-vasilhame:hover { border-color: #c49f2a; background: #fdf8e8; }
+    .btn-vasilhame.selecionado-sim { border-color: var(--green); background: #eef5ef; color: var(--green); }
+    .btn-vasilhame.selecionado-nao { border-color: var(--muted); background: #f0f0f0; color: var(--muted); }
+
+    .vasilhame-qtd {
+      display: none; margin-top: 6px; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .vasilhame-qtd.visivel { display: flex; }
+    .vasilhame-qtd label {
+      font-size: 0.65rem; font-family: var(--fn-mono); letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--muted); white-space: nowrap;
+    }
+    .vasilhame-qtd input {
+      border: 1px solid var(--border); border-radius: 4px; padding: 7px 10px;
+      font-family: var(--fn-mono); font-size: 0.9rem; width: 110px;
+      background: var(--bg); color: var(--text);
+    }
+    .vasilhame-qtd input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,86,164,0.12); }
+    .btn-confirmar-finalizar {
+      background: #2ecc71; color: white; border: none;
+      padding: 9px 18px; border-radius: 4px; font-family: var(--fn-body);
+      font-weight: 700; font-size: 0.82rem; cursor: pointer;
+      transition: opacity 0.15s; white-space: nowrap;
+    }
+    .btn-confirmar-finalizar:hover { opacity: 0.85; }
+
     /* ── MENSAGEM ──────────────────────────── */
     #mensagem {
       position: fixed; top: 16px; right: 16px; padding: 12px 18px;
@@ -1189,6 +1236,8 @@
                 ${item.transportadora ? ` · ${item.transportadora}` : ''}
                 ${item.nota_fiscal    ? ` · NF: ${item.nota_fiscal}` : ''}
                 ${item.quantidade     ? ` · ${item.quantidade}` : ''}
+                ${item.vasilhame && item.vasilhame !== 'sem troca' ? ` · 🔄 Vasilhame: ${item.vasilhame}` : ''}
+                ${item.vasilhame === 'sem troca' ? ` · 🚫 Sem troca de vasilhame` : ''}
               </div>
             ` : `
               <div class="item-extras">
@@ -1221,13 +1270,26 @@
             <div class="item-acoes">
               ${item.status === 'agendado'      ? `<button class="btn-acao btn-chamar"  onclick="acao('${item.id}','chamar')">CHAMAR</button>` : ''}
               ${item.status === 'chamando'       ? `<button class="btn-acao btn-descarga" onclick="acao('${item.id}','descarregando')">DESCARREGANDO</button>` : ''}
-              ${['chamando','descarregando'].includes(item.status) ? `<button class="btn-acao btn-finalizar" onclick="acao('${item.id}','finalizar')">FINALIZAR</button>` : ''}
+              ${['chamando','descarregando'].includes(item.status) ? `<button class="btn-acao btn-finalizar" onclick="abrirVasilhame('${item.id}')">FINALIZAR</button>` : ''}
               ${!encerrado ? `<button class="btn-acao btn-salvar" onclick="salvarExtras('${item.id}')">SALVAR</button>` : ''}
               ${!encerrado ? `
                 <button class="btn-acao btn-cancelar" onclick="if(confirm('Cancelar agendamento?')) acao('${item.id}','cancelar')">CANCELAR</button>
                 <button class="btn-acao btn-ausente"  onclick="if(confirm('Marcar como ausente?'))  acao('${item.id}','ausente')">AUSENTE</button>` : ''}
               ${btnTriagem}
             </div>
+            ${['chamando','descarregando'].includes(item.status) ? `
+            <div class="vasilhame-painel" id="vasilhame-${item.id}">
+              <div class="vasilhame-titulo">🔄 Troca de vasilhame — veículo leva paletes vazios?</div>
+              <div class="vasilhame-opcoes">
+                <button class="btn-vasilhame" id="vsim-${item.id}" onclick="selecionarVasilhame('${item.id}', true)">✅ Sim, com troca</button>
+                <button class="btn-vasilhame" id="vnao-${item.id}" onclick="selecionarVasilhame('${item.id}', false)">🚫 Não, sem troca</button>
+              </div>
+              <div class="vasilhame-qtd" id="vqtd-${item.id}">
+                <label>Qtd de paletes vazios:</label>
+                <input type="number" id="vnum-${item.id}" min="1" placeholder="Ex: 8">
+                <button class="btn-confirmar-finalizar" onclick="confirmarFinalizar('${item.id}')">Confirmar saída</button>
+              </div>
+            </div>` : ''}
           </div>`;
       }).join("");
     }
@@ -1291,6 +1353,55 @@
             </div>
           </div>`;
       }).join("");
+    }
+
+    /* ── VASILHAME ─────────────────────────── */
+    const vasilhameState = {}; // { [id]: { troca: bool|null } }
+
+    function abrirVasilhame(id) {
+      const painel = document.getElementById(`vasilhame-${id}`);
+      if (!painel) { acao(id, 'finalizar'); return; }
+      // Fecha qualquer outro aberto
+      document.querySelectorAll('.vasilhame-painel.aberto').forEach(p => {
+        if (p.id !== `vasilhame-${id}`) p.classList.remove('aberto');
+      });
+      painel.classList.toggle('aberto');
+      if (!vasilhameState[id]) vasilhameState[id] = { troca: null };
+    }
+
+    function selecionarVasilhame(id, comTroca) {
+      vasilhameState[id] = { troca: comTroca };
+      const btnSim = document.getElementById(`vsim-${id}`);
+      const btnNao = document.getElementById(`vnao-${id}`);
+      const qtdDiv = document.getElementById(`vqtd-${id}`);
+      if (btnSim) { btnSim.className = 'btn-vasilhame' + (comTroca  ? ' selecionado-sim' : ''); }
+      if (btnNao) { btnNao.className = 'btn-vasilhame' + (!comTroca ? ' selecionado-nao' : ''); }
+      if (qtdDiv) { qtdDiv.classList.toggle('visivel', comTroca); }
+      if (!comTroca) { confirmarFinalizar(id); }
+    }
+
+    async function confirmarFinalizar(id) {
+      const state   = vasilhameState[id] || {};
+      const comTroca = state.troca;
+      const campos  = { status: 'finalizado', hora_saida: horaAgora() };
+
+      if (comTroca === true) {
+        const qtdInput = document.getElementById(`vnum-${id}`);
+        const qtd = qtdInput ? qtdInput.value.trim() : '';
+        if (!qtd) { qtdInput && (qtdInput.style.borderColor = 'var(--red)'); mostrarMensagem('Informe a quantidade de paletes.', 'erro'); return; }
+        campos.vasilhame = qtd + ' paletes';
+      } else if (comTroca === false) {
+        campos.vasilhame = 'sem troca';
+      }
+      // se não selecionou nada, finaliza sem campo vasilhame
+
+      if (await atualizarRegistro(id, campos)) {
+        mostrarMensagem('Veículo finalizado!', 'sucesso');
+        renderizarDescarga();
+        renderizarCarga();
+      } else {
+        mostrarMensagem('Erro ao finalizar.', 'erro');
+      }
     }
 
     /* ── AÇÕES STATUS ──────────────────────── */
