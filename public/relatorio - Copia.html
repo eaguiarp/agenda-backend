@@ -766,7 +766,7 @@
           <tr>
             <th>Data</th><th>Hora Ag.</th><th>H. Entrada</th><th>H. Saída</th><th>Perm.</th>
             <th>Placa</th><th>Produto</th><th>Status</th><th>Tipo Op.</th>
-            <th>Qtd (sc)</th><th>NF</th><th>Transportadora</th><th>Vasilhame</th><th>Usuário</th>
+            <th>Qtd (sc)</th><th>NF</th><th>Transportadora</th><th>Usuário</th>
           </tr>
         </thead>
         <tbody id="tabela-body">
@@ -1075,7 +1075,7 @@
     function renderizarTabela() {
       const tbody=document.getElementById("tabela-body");
       const btnExp=document.getElementById("btn-exportar");
-      if(!dadosFiltrados.length){tbody.innerHTML=`<tr><td colspan="14" class="vazio">Nenhum registro encontrado.</td></tr>`;btnExp.disabled=true;return;}
+      if(!dadosFiltrados.length){tbody.innerHTML=`<tr><td colspan="13" class="vazio">Nenhum registro encontrado.</td></tr>`;btnExp.disabled=true;return;}
       btnExp.disabled=false;
       tbody.innerHTML=dadosFiltrados.map(item=>{
         const perm=calcularMinutos(item.hora_entrada,item.hora_saida);
@@ -1093,12 +1093,6 @@
           <td>${v(item.quantidade)}</td>
           <td>${v(item.nota_fiscal)}</td>
           <td>${v(item.transportadora)}</td>
-          <td>${item.vasilhame && item.vasilhame !== 'sem troca'
-            ? `<span class="td-mono" style="color:var(--green)">🔄 ${item.vasilhame}</span>`
-            : item.vasilhame === 'sem troca'
-              ? `<span class="td-vazio">sem troca</span>`
-              : `<span class="td-vazio">—</span>`
-          }</td>
           <td class="td-mono">${item.alterado_por||"<span class='td-vazio'>—</span>"}</td>
         </tr>`;
       }).join("");
@@ -1115,11 +1109,10 @@
         "Permanência":formatarTempo(calcularMinutos(item.hora_entrada,item.hora_saida)),"Placa":item.placa||"",
         "Produto":simplificarProduto(item.produto),"Status":(item.status||"").toUpperCase(),
         "Tipo Operação":item.tipo_operacao?item.tipo_operacao.toUpperCase():"","Qtd (sacos)":item.quantidade||"",
-        "Nota Fiscal":item.nota_fiscal||"","Transportadora":item.transportadora||"",
-        "Vasilhame":item.vasilhame||"","Usuário":item.alterado_por||"",
+        "Nota Fiscal":item.nota_fiscal||"","Transportadora":item.transportadora||"","Usuário":item.alterado_por||"",
       }));
       const ws=XLSX.utils.json_to_sheet(linhas);
-      ws["!cols"]=[{wch:12},{wch:10},{wch:10},{wch:10},{wch:12},{wch:12},{wch:10},{wch:14},{wch:14},{wch:10},{wch:14},{wch:18},{wch:14},{wch:12}];
+      ws["!cols"]=[{wch:12},{wch:10},{wch:10},{wch:10},{wch:12},{wch:12},{wch:10},{wch:14},{wch:14},{wch:10},{wch:14},{wch:18},{wch:12}];
       const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Agendamentos");
       XLSX.writeFile(wb,`relatorio-cd-itaborai-${new Date().toISOString().split("T")[0]}.xlsx`);
     }
