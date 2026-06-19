@@ -1356,51 +1356,81 @@
     }
 
     /* ── VASILHAME ─────────────────────────── */
-    const vasilhameState = {}; // { [id]: { troca: bool|null } }
+    const vasilhameState = {};
+    let _finalizando = false; // trava para evitar duplo clique
 
     function abrirVasilhame(id) {
       const painel = document.getElementById(`vasilhame-${id}`);
       if (!painel) { acao(id, 'finalizar'); return; }
-      // Fecha qualquer outro aberto
+
+      const jaAberto = painel.classList.contains('aberto');
+
+      // Fecha todos e limpa estado visual de qualquer painel aberto
       document.querySelectorAll('.vasilhame-painel.aberto').forEach(p => {
-        if (p.id !== `vasilhame-${id}`) p.classList.remove('aberto');
+        p.classList.remove('aberto');
       });
-      painel.classList.toggle('aberto');
-      if (!vasilhameState[id]) vasilhameState[id] = { troca: null };
+
+      if (!jaAberto) {
+        // Limpa estado anterior deste ID ao reabrir
+        vasilhameState[id] = { troca: null };
+        const btnSim = document.getElementById(`vsim-${id}`);
+        const btnNao = document.getElementById(`vnao-${id}`);
+        const qtdDiv = document.getElementById(`vqtd-${id}`);
+        const numInp = document.getElementById(`vnum-${id}`);
+        if (btnSim) btnSim.className = 'btn-vasilhame';
+        if (btnNao) btnNao.className = 'btn-vasilhame';
+        if (qtdDiv) qtdDiv.classList.remove('visivel');
+        if (numInp) { numInp.value = ''; numInp.style.borderColor = ''; }
+        painel.classList.add('aberto');
+      }
     }
 
     function selecionarVasilhame(id, comTroca) {
+      if (_finalizando) return;
       vasilhameState[id] = { troca: comTroca };
       const btnSim = document.getElementById(`vsim-${id}`);
       const btnNao = document.getElementById(`vnao-${id}`);
       const qtdDiv = document.getElementById(`vqtd-${id}`);
-      if (btnSim) { btnSim.className = 'btn-vasilhame' + (comTroca  ? ' selecionado-sim' : ''); }
-      if (btnNao) { btnNao.className = 'btn-vasilhame' + (!comTroca ? ' selecionado-nao' : ''); }
-      if (qtdDiv) { qtdDiv.classList.toggle('visivel', comTroca); }
-      if (!comTroca) { confirmarFinalizar(id); }
+      if (btnSim) btnSim.className = 'btn-vasilhame' + (comTroca  ? ' selecionado-sim' : '');
+      if (btnNao) btnNao.className = 'btn-vasilhame' + (!comTroca ? ' selecionado-nao' : '');
+      if (qtdDiv) qtdDiv.classList.toggle('visivel', comTroca);
+      if (!comTroca) confirmarFinalizar(id);
     }
 
     async function confirmarFinalizar(id) {
-      const state   = vasilhameState[id] || {};
-      const comTroca = state.troca;
-      const campos  = { status: 'finalizado', hora_saida: horaAgora() };
+      if (_finalizando) return;
+      _finalizando = true;
 
-      if (comTroca === true) {
-        const qtdInput = document.getElementById(`vnum-${id}`);
-        const qtd = qtdInput ? qtdInput.value.trim() : '';
-        if (!qtd) { qtdInput && (qtdInput.style.borderColor = 'var(--red)'); mostrarMensagem('Informe a quantidade de paletes.', 'erro'); return; }
-        campos.vasilhame = qtd + ' paletes';
-      } else if (comTroca === false) {
-        campos.vasilhame = 'sem troca';
-      }
-      // se não selecionou nada, finaliza sem campo vasilhame
+      try {
+        const state    = vasilhameState[id] || {};
+        const comTroca = state.troca;
+        const campos   = { status: 'finalizado', hora_saida: horaAgora() };
 
-      if (await atualizarRegistro(id, campos)) {
-        mostrarMensagem('Veículo finalizado!', 'sucesso');
-        renderizarDescarga();
-        renderizarCarga();
-      } else {
-        mostrarMensagem('Erro ao finalizar.', 'erro');
+        if (comTroca === true) {
+          const qtdInput = document.getElementById(`vnum-${id}`);
+          const qtd = qtdInput ? qtdInput.value.trim() : '';
+          if (!qtd) {
+            if (qtdInput) qtdInput.style.borderColor = 'var(--red)';
+            mostrarMensagem('Informe a quantidade de paletes.', 'erro');
+            _finalizando = false;
+            return;
+          }
+          campos.vasilhame = qtd + ' paletes';
+        } else if (comTroca === false) {
+          campos.vasilhame = 'sem troca';
+        }
+
+        const ok = await atualizarRegistro(id, campos);
+        if (ok) {
+          delete vasilhameState[id];
+          mostrarMensagem('Veículo finalizado!', 'sucesso');
+          await renderizarDescarga();
+          await renderizarCarga();
+        } else {
+          mostrarMensagem('Erro ao finalizar. Tente novamente.', 'erro');
+        }
+      } finally {
+        _finalizando = false;
       }
     }
 
