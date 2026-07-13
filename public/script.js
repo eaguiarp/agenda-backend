@@ -394,7 +394,23 @@ function resolverProduto(produtoRaw) {
 
 // ===============================
 // RENDERIZAR HORÁRIOS
+// Busca config do banco em vez de usar lógica fixa
 // ===============================
+
+let _configHorarios = null; // cache da sessão
+
+async function obterConfigHorarios() {
+    if (_configHorarios) return _configHorarios;
+    try {
+        const r = await fetch("https://agenda-backend-production-5b72.up.railway.app/horarios-config");
+        _configHorarios = await r.json();
+        return _configHorarios;
+    } catch (e) {
+        console.error("Erro ao buscar config de horários", e);
+        return null;
+    }
+}
+
 async function renderizarOpcoesHorario() {
     if (!inputData.value || !selectProduto?.value) {
         inputHora.disabled = true;
@@ -405,9 +421,10 @@ async function renderizarOpcoesHorario() {
     inputHora.disabled = false;
     inputHora.innerHTML = '<option value="">Carregando horários...</option>';
 
-    const [agendamentos, bloqueios] = await Promise.all([
+    const [agendamentos, bloqueios, configDias] = await Promise.all([
         obterAgendamentos(),
-        obterBloqueios()
+        obterBloqueios(),
+        obterConfigHorarios()
     ]);
 
     inputHora.innerHTML = '<option value="">Selecione o horário</option>';
@@ -422,35 +439,49 @@ async function renderizarOpcoesHorario() {
         String(dl.getDate()).padStart(2, '0');
     const minutosAgora = new Date().getHours() * 60 + new Date().getMinutes();
 
+    // Busca config do dia no banco
+    const cfg = configDias ? configDias.find(c => c.dia_semana === diaSemana) : null;
+
     let horarios = [];
 
-    function adicionarIntervalo(inicio, fim, intervalo) {
-        for (let m = inicio; m <= fim; m += intervalo) horarios.push(m);
-    }
+    if (cfg && cfg.ativo) {
+        // Gera horários a partir da config do banco
+        for (let m = cfg.inicio; m <= cfg.fim; m += 30) horarios.push(m);
 
-     if      (diaSemana === 0) { adicionarIntervalo(6 * 60, 14 * 60, 30); }
-    else if (diaSemana === 6) {  adicionarIntervalo(0, 15 * 60 + 30, 30);   horarios = horarios.filter(m => !(m >= 6 * 60 && m < 7 * 60)); }
-    else if (diaSemana === 1) { adicionarIntervalo(7 * 60, 23 * 60 + 30, 30); }
-    else if (diaSemana >= 2 && diaSemana <= 5) {
-        adicionarIntervalo(0, 23 * 60 + 30, 30);
-        horarios = horarios.filter(m => !(m >= 6 * 60  && m < 7  * 60));
-        horarios = horarios.filter(m => !(m >= 16 * 60 && m < 17 * 60));
-    }
+        // Remove pausas configuradas
+        const pausas = cfg.pausas || [];
+        pausas.forEach(p => {
+            horarios = horarios.filter(m => !(m >= p.inicio && m < p.fim));
+        });
 
-    const HORARIOS_EXCLUSIVOS = [
-        2*60+40, 7*60+30, 9*60+30, 13*60, 15*60, 17*60+40, 21*60
-    ];
-
-    if (diaSemana >= 1 && diaSemana <= 5) {
-        horarios = souCantagalo
-            ? HORARIOS_EXCLUSIVOS
-            : horarios.filter(h => !HORARIOS_EXCLUSIVOS.includes(h));
+        // Horários exclusivos Cantagalo
+        const exclusivosCantagalo = cfg.cantagalo || [];
+        if (exclusivosCantagalo.length > 0 && (diaSemana >= 1 && diaSemana <= 5)) {
+            horarios = souCantagalo
+                ? exclusivosCantagalo
+                : horarios.filter(h => !exclusivosCantagalo.includes(h));
+        }
+    } else if (!cfg) {
+        // Fallback para lógica fixa caso API falhe
+        function adicionarIntervalo(inicio, fim, intervalo) {
+            for (let m = inicio; m <= fim; m += intervalo) horarios.push(m);
+        }
+        if      (diaSemana === 0) { adicionarIntervalo(6*60, 14*60, 30); }
+        else if (diaSemana === 6) { adicionarIntervalo(0, 15*60+30, 30); horarios = horarios.filter(m => !(m >= 6*60 && m < 7*60)); }
+        else if (diaSemana === 1) { adicionarIntervalo(7*60, 23*60+30, 30); }
+        else if (diaSemana >= 2 && diaSemana <= 5) {
+            adicionarIntervalo(0, 23*60+30, 30);
+            horarios = horarios.filter(m => !(m >= 6*60 && m < 7*60));
+            horarios = horarios.filter(m => !(m >= 16*60 && m < 17*60));
+        }
     }
+    // Se cfg existe mas ativo=false: horarios continua vazio (dia bloqueado)
+
+    const capacidade   = cfg?.capacidade   || 1820;
+    const maxVeiculos  = cfg?.max_veiculos || 4;
 
     horarios.forEach(m => {
         const horarioFormatado = String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
-
-        // Agrupa por hora cheia (07:00 e 07:30 pertencem à mesma hora)
         const horaCheia = Math.floor(m / 60);
 
         const naHoraCheia = agendamentos.filter(a => {
@@ -465,7 +496,7 @@ async function renderizarOpcoesHorario() {
         const pesoOcupado = naHoraCheia.reduce((acc, a) =>
             acc + classificarVeiculo(a.quantidade).peso, 0
         );
-        const cheio = pesoOcupado >= 1820 || naHoraCheia.length >= 4;
+        const cheio = pesoOcupado >= capacidade || naHoraCheia.length >= maxVeiculos;
 
         if (!passado && !bloqueado && !cheio) {
             const option = document.createElement("option");
@@ -478,7 +509,7 @@ async function renderizarOpcoesHorario() {
     if (inputHora.options.length === 1) {
         const opt = document.createElement("option");
         opt.value = ""; opt.disabled = true;
-        opt.textContent = "Nenhum horário disponível";
+        opt.textContent = cfg && !cfg.ativo ? "Dia sem operação" : "Nenhum horário disponível";
         inputHora.appendChild(opt);
     }
 }

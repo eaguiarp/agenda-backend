@@ -79,29 +79,8 @@
     .aviso-linha { font-size: 0.85rem; letter-spacing: 0.1em; color: #f0b429; opacity: 0.85; }
     .aviso-linha.destaque { font-weight: 700; font-size: 1rem; letter-spacing: 0.15em; opacity: 1; }
 
-    /* --- VIDEO PLAYER --- */
-    #video-container, #info-container {
-      position: absolute;
-      top: 52px;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: #000;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-    }
-    #video-container.ativo { display: flex; }
-    #info-container.ativo  { display: flex; }
-    #player-video {
-      width: auto;
-      height: auto;
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      background: #000;
-    }
+    
+    
 
     /* --- TELA ESPERA (relógio grande) --- */
     #tela-espera {
@@ -406,10 +385,6 @@
     </div>
 
     <!-- Vídeo -->
-    <div id="video-container">
-      <video id="player-video" preload="auto" playsinline></video>
-    </div>
-
     <!-- Info (clima/trânsito) -->
     <div id="info-container">
       <div id="info-conteudo"></div>
@@ -451,41 +426,6 @@
 
     
   var ultimaHoraCiclo = null;
-  var cicloEmExecucao = false;
-
-    
-  function podeRodarCicloHorario() {
-  var agora = new Date();
-  var horaAtual = agora.getHours();
-
-  // Se nunca rodou ou virou a hora
-  if (ultimaHoraCiclo === null || ultimaHoraCiclo !== horaAtual) {
-    ultimaHoraCiclo = horaAtual;
-    return true;
-  }
-  return false;
-}
-    var API_URL         = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
-    var POLL_MS         = 5000;
-    var ultimoChamadoID = null;
-    var ultimaPlacaVoz  = '';
-    var descansoAtivo   = false;
-
-    var playlist = ['/video1.mp4','/video2.mp4','/video3.mp4','/video4.mp4','/video5.mp4'];
-    var indiceVideo          = 0;
-    var modoOcioso           = false;
-    var modoInfo             = false;
-    var timerInfo            = null;
-    var indiceInfo           = 0;
-    var dadosClima           = null;
-    var dadosTransito        = null;
-    var horaUltimaAtualizacao = '--:--';
-
-    // ── MADRUGADA ────────────────────────────────────────────
-    // Entre 00:00 e 05:59, o painel entra em modo escuro.
-    // O ciclo de vídeos roda apenas se houver chamada ativa.
-    // Um único ciclo de vídeos+info é permitido às 03:00 (horário de janta).
-    var cicloBonusFeito = false;   // controla se o ciclo das 03h já rodou hoje
     var modeMadrugada   = false;
 
     function ehMadrugada() {
@@ -498,7 +438,6 @@
         // Saiu da madrugada: reseta controle do ciclo bônus
         if (modeMadrugada) {
           modeMadrugada   = false;
-          cicloBonusFeito = false;
           document.getElementById('tela-madrugada').className = '';
         }
         return false;
@@ -515,12 +454,8 @@
       var agora = new Date();
       var h = agora.getHours();
       var m = agora.getMinutes();
-      if (h === 3 && m < 5 && !cicloBonusFeito && !modoOcioso) {
-        cicloBonusFeito = true;
         modeMadrugada   = false;
         document.getElementById('tela-madrugada').className = '';
-        modoOcioso = true;
-        tocarVideo(indiceVideo);
         return true; // deixa o ciclo rodar
       }
 
@@ -529,7 +464,6 @@
         modeMadrugada = true;
         // Garante que vídeo e info estão parados
         encerrarModoOcioso();
-        modoOcioso = false;
         document.getElementById('tela-espera').className  = '';
         document.getElementById('tela-madrugada').className = 'ativo';
       }
@@ -549,7 +483,6 @@
       try { musica.play(); } catch(e) {}
 
       var video = document.getElementById('player-video');
-      video.addEventListener('ended', function() { proximoVideo(); });
 
       setInterval(atualizarTV,      POLL_MS);
       setInterval(atualizarRelogio, 1000);
@@ -641,68 +574,14 @@
     // ── ATALHO DE TESTE ──────────────────────────────────────
     document.addEventListener('keydown', function(event) {
       if (event.key === 'n' || event.key === 'N' || event.code === 'Space') {
-        if (modoOcioso && !modoInfo) { proximoVideo(); }
-        else if (modoInfo) { clearTimeout(timerInfo); tocarVideo(indiceVideo); }
       }
     });
 
     // ── ENCERRAR MODO OCIOSO ─────────────────────────────────
-    function encerrarModoOcioso() {
-      modoOcioso = false;
-      modoInfo   = false;
-      if (timerInfo) { clearTimeout(timerInfo); timerInfo = null; }
-
-      document.getElementById('video-container').className      = '';
-      document.getElementById('video-container').style.display  = 'none';
-      document.getElementById('info-container').className       = '';
-      document.getElementById('info-container').style.display   = 'none';
-      document.getElementById('tela-espera').className          = '';
-      document.getElementById('musica-fundo').volume            = 0;
-
-      var video = document.getElementById('player-video');
-      video.volume = 0;
-      video.pause();
-    }
 
     // ── PLAYLIST ─────────────────────────────────────────────
-    function tocarVideo(idx) {
-      modoInfo = false;
-      esconderTelaEspera();
-
-      var infoCont  = document.getElementById('info-container');
-      infoCont.style.display = 'none';
-      infoCont.className     = '';
-
-      var videoCont = document.getElementById('video-container');
-      videoCont.style.display = 'flex';
-      videoCont.classList.add('ativo');
-
-      document.getElementById('painel-principal').style.display = 'none';
-
-      var video  = document.getElementById('player-video');
-      video.volume = 1;
-      video.src  = playlist[idx % playlist.length];
-      video.load();
-
-      setTimeout(function() {
-        if (modoOcioso) {
-          var promise = video.play();
-          if (promise !== undefined) {
-            promise.catch(function() {
-              setTimeout(function() { if (modoOcioso) video.play(); }, 1000);
-            });
-          }
-        }
-      }, 300);
-    }
-
-    function proximoVideo() {
-      indiceVideo = (indiceVideo + 1) % playlist.length;
-      mostrarInfo();
-    }
 
     function mostrarInfo() {
-      modoInfo = true;
 
       document.getElementById('video-container').style.display = 'none';
       document.getElementById('video-container').className     = '';
@@ -717,8 +596,6 @@
       indiceInfo++;
 
      
-timerInfo = setTimeout(function() {
-  cicloEmExecucao = false;
   encerrarModoOcioso();
   mostrarTelaEspera();
 }, 20000);
@@ -912,9 +789,7 @@ timerInfo = setTimeout(function() {
 
       var proximo = listaAgendados.length > 0 ? listaAgendados[0] : null;
 
-      // Verifica modo madrugada antes de qualquer render
       if (verificarMadrugada(chamando)) {
-        // Ainda renderiza fila e status mesmo na madrugada
         renderProximo(proximo);
         renderFilaDividida(listaAgendados, dados);
         renderStatus(dados);
@@ -927,27 +802,16 @@ timerInfo = setTimeout(function() {
       renderStatus(dados);
 
       if (chamando) {
-        if (modoOcioso) encerrarModoOcioso();
         esconderTelaEspera();
         if (ultimoChamadoID !== chamando.id) {
           ultimoChamadoID = chamando.id;
           try { document.getElementById('som-alerta').play(); } catch(e) {}
           anunciarVoz(chamando.placa, chamando.motorista);
         }
-} else {
-  ultimaPlacaVoz  = '';
-  ultimoChamadoID = null;
-
-  // Só inicia vídeos/infos uma vez por hora
-  if (!modoOcioso && podeRodarCicloHorario()) {
-    modoOcioso = true;
-    cicloEmExecucao = true;
-    tocarVideo(indiceVideo);
-  } else {
-    // Fora da hora do ciclo → apenas tela de espera
-    if (!modoOcioso) {
-      mostrarTelaEspera();}
-    }
+      } else {
+        ultimaPlacaVoz  = '';
+        ultimoChamadoID = null;
+        mostrarTelaEspera();
       }
     }
 
@@ -970,7 +834,7 @@ timerInfo = setTimeout(function() {
             '<div class="aviso-linha destaque">[!] USO OBRIGATORIO DE EPIs</div>' +
           '</div>';
       } else {
-        if (modoOcioso) painel.style.display = 'none';
+        painel.style.display = 'none';
       }
     }
 

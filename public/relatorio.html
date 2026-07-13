@@ -572,6 +572,43 @@
     }
     .btn-remover:hover { opacity: 0.75; }
 
+
+    /* ─── BOTÕES DIA DA SEMANA ─── */
+    .dia-btn {
+      padding: 8px 12px;
+      border: 1px solid var(--borda);
+      border-radius: var(--radius);
+      font-family: var(--fn-body);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--fundo);
+      color: var(--texto-sec);
+      transition: all 0.15s;
+    }
+    .dia-btn:hover { border-color: var(--azul); color: var(--azul); }
+    .dia-btn.ativo { background: var(--azul); color: var(--branco); border-color: var(--azul); }
+    .pausa-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--fundo);
+      border: 1px solid var(--borda);
+      border-radius: 6px;
+      font-family: var(--fn-mono);
+      font-size: 0.82rem;
+    }
+    .pausa-item button {
+      background: #fad6d6;
+      color: var(--red);
+      border: none;
+      border-radius: 4px;
+      padding: 3px 10px;
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
     /* ─── LISTA DE USUÁRIOS ─── */
     .usuario-item {
       display: flex;
@@ -815,6 +852,59 @@
       <div id="lista-usuarios"><div class="vazio">Carregando...</div></div>
     </div>
 
+    <!-- ── CONFIGURAÇÃO DE HORÁRIOS ── -->
+    <div class="card">
+      <div class="card-titulo">
+        Configuracao de Horarios por Dia
+        <span style="background:rgba(255,255,255,0.18);color:#fff;font-family:var(--fn-mono);font-size:0.6rem;padding:2px 8px;border-radius:2px;" id="badge-horarios">Carregando...</span>
+      </div>
+      <div style="padding:16px;">
+        <div style="margin-bottom:14px;">
+          <div style="font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-family:var(--fn-mono);margin-bottom:8px;">Selecione o dia da semana</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="dia-btn ativo" onclick="selecionarDia(0)" id="dia-btn-0">Dom</button>
+            <button class="dia-btn"       onclick="selecionarDia(1)" id="dia-btn-1">Seg</button>
+            <button class="dia-btn"       onclick="selecionarDia(2)" id="dia-btn-2">Ter</button>
+            <button class="dia-btn"       onclick="selecionarDia(3)" id="dia-btn-3">Qua</button>
+            <button class="dia-btn"       onclick="selecionarDia(4)" id="dia-btn-4">Qui</button>
+            <button class="dia-btn"       onclick="selecionarDia(5)" id="dia-btn-5">Sex</button>
+            <button class="dia-btn"       onclick="selecionarDia(6)" id="dia-btn-6">Sab</button>
+          </div>
+        </div>
+        <div id="form-horario">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;background:var(--fundo);border-radius:var(--radius);border:1px solid var(--borda);">
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:600;cursor:pointer;margin:0;">
+              <input type="checkbox" id="hr-ativo" style="width:16px;height:16px;accent-color:var(--azul);">
+              Dia com operacao ativa
+            </label>
+          </div>
+          <div class="form-2col">
+            <div class="campo"><label>Inicio das operacoes</label><input type="time" id="hr-inicio" value="07:00"></div>
+            <div class="campo"><label>Fim das operacoes</label><input type="time" id="hr-fim" value="23:30"></div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-family:var(--fn-mono);margin-bottom:8px;">Pausas do dia (horarios sem agendamento)</div>
+            <div id="lista-pausas" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+              <div class="campo" style="margin:0;flex:1;min-width:100px;"><label>De</label><input type="time" id="pausa-inicio" value="06:00"></div>
+              <div class="campo" style="margin:0;flex:1;min-width:100px;"><label>Ate</label><input type="time" id="pausa-fim" value="07:00"></div>
+              <button class="btn-submit verde" style="width:auto;padding:10px 16px;margin:0;" onclick="adicionarPausa()">+ Pausa</button>
+            </div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-family:var(--fn-mono);margin-bottom:6px;">Horarios exclusivos Cantagalo (minutos desde meia-noite, separados por virgula)</div>
+            <input type="text" id="hr-cantagalo" placeholder="Ex: 160,450,570,780,900,1060,1260" style="font-family:var(--fn-mono);font-size:0.82rem;width:100%;padding:10px;border:1px solid var(--borda);border-radius:6px;background:var(--fundo);">
+            <div style="font-size:0.7rem;color:var(--muted);margin-top:4px;">Deixe vazio para sem restricao.</div>
+          </div>
+          <div class="form-2col" style="margin-bottom:14px;">
+            <div class="campo"><label>Capacidade por hora (sacas)</label><input type="number" id="hr-capacidade" value="1820" min="100" max="5000"></div>
+            <div class="campo"><label>Max. veiculos por hora</label><input type="number" id="hr-maxveiculos" value="4" min="1" max="10"></div>
+          </div>
+          <button class="btn-submit verde" onclick="salvarConfigHorario()">Salvar configuracao</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ── BLOQUEIOS: CRIAR ── -->
     <div class="card">
       <div class="card-titulo">Novo bloqueio de horários</div>
@@ -955,7 +1045,7 @@
       document.querySelectorAll(".aba").forEach((b,i)=>b.classList.toggle("ativa",abas[i]===aba));
       abas.forEach(id=>document.getElementById(`painel-${id}`).classList.toggle("ativo",id===aba));
       document.getElementById("btn-exportar").style.display=aba==='relatorio'?'block':'none';
-      if (aba==='controle') { renderizarUsuarios(); renderizarBloqueios(); }
+      if (aba==='controle') { renderizarUsuarios(); renderizarBloqueios(); carregarConfigHorarios(); }
     }
 
     // ── PERÍODO ──
@@ -1268,6 +1358,109 @@
       }catch(e){mostrarMsg("Erro de conexão.","erro");}
     }
 
+
+    // ── CONFIGURAÇÃO DE HORÁRIOS ──
+    const HORARIOS_CONFIG_URL = 'https://agenda-backend-production-5b72.up.railway.app/horarios-config';
+    const DIAS_NOMES = ['Domingo','Segunda','Terca','Quarta','Quinta','Sexta','Sabado'];
+    let configHorarios = [];
+    let diaSelecionado = 0;
+    let pausasTemp = [];
+
+    function minToTime(m) {
+      return String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
+    }
+    function timeToMin(t) {
+      const [h,m] = t.split(':').map(Number);
+      return h*60 + m;
+    }
+
+    async function carregarConfigHorarios() {
+      try {
+        const res = await fetch(HORARIOS_CONFIG_URL);
+        configHorarios = await res.json();
+        document.getElementById('badge-horarios').textContent = 'Ativo';
+        selecionarDia(0);
+      } catch(e) {
+        document.getElementById('badge-horarios').textContent = 'Erro';
+        console.error('Erro ao carregar horarios', e);
+      }
+    }
+
+    function selecionarDia(dia) {
+      diaSelecionado = dia;
+      // Atualiza botões
+      for (let i = 0; i <= 6; i++) {
+        const btn = document.getElementById('dia-btn-' + i);
+        if (btn) btn.classList.toggle('ativo', i === dia);
+      }
+      const cfg = configHorarios.find(c => c.dia_semana === dia);
+      if (!cfg) return;
+
+      document.getElementById('hr-ativo').checked = cfg.ativo;
+      document.getElementById('hr-inicio').value  = minToTime(cfg.inicio);
+      document.getElementById('hr-fim').value      = minToTime(cfg.fim);
+      document.getElementById('hr-capacidade').value   = cfg.capacidade || 1820;
+      document.getElementById('hr-maxveiculos').value  = cfg.max_veiculos || 4;
+
+      const cantagalo = cfg.cantagalo || [];
+      document.getElementById('hr-cantagalo').value = cantagalo.join(',');
+
+      pausasTemp = (cfg.pausas || []).map(p => ({...p}));
+      renderizarPausas();
+    }
+
+    function renderizarPausas() {
+      const el = document.getElementById('lista-pausas');
+      if (!pausasTemp.length) { el.innerHTML = '<div style="font-size:0.78rem;color:var(--muted);padding:4px 0;">Nenhuma pausa configurada</div>'; return; }
+      el.innerHTML = pausasTemp.map((p, i) => `
+        <div class="pausa-item">
+          <span>${minToTime(p.inicio)} &rarr; ${minToTime(p.fim)}</span>
+          <button onclick="removerPausa(${i})">Remover</button>
+        </div>`).join('');
+    }
+
+    function adicionarPausa() {
+      const ini = timeToMin(document.getElementById('pausa-inicio').value);
+      const fim = timeToMin(document.getElementById('pausa-fim').value);
+      if (ini >= fim) { mostrarMsg('Hora inicio deve ser menor que hora fim.', 'erro'); return; }
+      if (pausasTemp.some(p => p.inicio === ini && p.fim === fim)) { mostrarMsg('Pausa ja existe.', 'erro'); return; }
+      pausasTemp.push({ inicio: ini, fim: fim });
+      pausasTemp.sort((a,b) => a.inicio - b.inicio);
+      renderizarPausas();
+    }
+
+    function removerPausa(idx) {
+      pausasTemp.splice(idx, 1);
+      renderizarPausas();
+    }
+
+    async function salvarConfigHorario() {
+      const ativo     = document.getElementById('hr-ativo').checked;
+      const inicio    = timeToMin(document.getElementById('hr-inicio').value);
+      const fim       = timeToMin(document.getElementById('hr-fim').value);
+      const capac     = parseInt(document.getElementById('hr-capacidade').value) || 1820;
+      const maxVeic   = parseInt(document.getElementById('hr-maxveiculos').value) || 4;
+      const cantStr   = document.getElementById('hr-cantagalo').value.trim();
+      const cantagalo = cantStr ? cantStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n)) : [];
+
+      if (inicio >= fim) { mostrarMsg('Horario inicio deve ser menor que fim.', 'erro'); return; }
+
+      try {
+        const res = await fetch(HORARIOS_CONFIG_URL + '/' + diaSelecionado, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ativo, inicio, fim, pausas: pausasTemp, cantagalo, capacidade: capac, max_veiculos: maxVeic })
+        });
+        if (res.ok) {
+          mostrarMsg('Configuracao de ' + DIAS_NOMES[diaSelecionado] + ' salva com sucesso!', 'sucesso');
+          await carregarConfigHorarios();
+        } else {
+          const err = await res.json();
+          mostrarMsg(err.erro || 'Erro ao salvar.', 'erro');
+        }
+      } catch(e) { mostrarMsg('Erro de conexao.', 'erro'); }
+    }
+
     // ── INIT ──
     async function carregar() {
       try{
@@ -1296,6 +1489,7 @@
       if (ativo) toggleDesktopMode();
     }
     carregar();
+    carregarConfigHorarios();
     aplicarDesktopModeInicial();
   </script>
 </body>

@@ -664,16 +664,86 @@ app.get("/api/traffic", async (req, res) => {
 });
 
 // ========================================================
-// 🎬 ROTA — LISTA DE VÍDEOS
+// 🕐 ROTAS — CONFIGURAÇÃO DE HORÁRIOS
 // ========================================================
-app.get("/api/videos", function(req, res) {
-  res.json([
-    { nome: "Video 1", arquivo: "/video1.mp4" },
-    { nome: "Video 2", arquivo: "/video2.mp4" },
-    { nome: "Video 3", arquivo: "/video3.mp4" },
-    { nome: "Video 4", arquivo: "/video4.mp4" },
-    { nome: "Video 5", arquivo: "/video5.mp4" }
-  ]);
+
+// Garante que a tabela existe (chamada automática no start)
+async function criarTabelaHorariosConfig() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS horarios_config (
+      dia_semana  INTEGER PRIMARY KEY, -- 0=Dom, 1=Seg, 2=Sab=6
+      ativo       BOOLEAN DEFAULT true,
+      inicio      INTEGER NOT NULL DEFAULT 0,    -- minutos desde meia-noite
+      fim         INTEGER NOT NULL DEFAULT 1410, -- 23:30
+      pausas      JSONB   DEFAULT '[]',          -- [{inicio:360,fim:420}]
+      cantagalo   JSONB   DEFAULT '[]',          -- minutos exclusivos cantagalo
+      capacidade  INTEGER DEFAULT 1820,          -- sc por hora
+      max_veiculos INTEGER DEFAULT 4,
+      atualizado_em TIMESTAMP DEFAULT NOW()
+    );
+  `);
+
+  // Insere configuração padrão se a tabela estiver vazia
+  const check = await pool.query("SELECT COUNT(*) FROM horarios_config");
+  if (parseInt(check.rows[0].count) === 0) {
+    const defaults = [
+      // Dom: 06h–14h, sem pausas
+      { dia: 0, ativo: true, inicio: 360,  fim: 840,  pausas: [],                       cantagalo: [] },
+      // Seg: 07h–23h30, pausa 16h–17h
+      { dia: 1, ativo: true, inicio: 420,  fim: 1410, pausas: [{inicio:960,fim:1020}],   cantagalo: [160,450,570,780,900,1060,1260] },
+      // Ter–Sex: 00h–23h30, pausas 06h–07h e 16h–17h
+      { dia: 2, ativo: true, inicio: 0,    fim: 1410, pausas: [{inicio:360,fim:420},{inicio:960,fim:1020}], cantagalo: [160,450,570,780,900,1060,1260] },
+      { dia: 3, ativo: true, inicio: 0,    fim: 1410, pausas: [{inicio:360,fim:420},{inicio:960,fim:1020}], cantagalo: [160,450,570,780,900,1060,1260] },
+      { dia: 4, ativo: true, inicio: 0,    fim: 1410, pausas: [{inicio:360,fim:420},{inicio:960,fim:1020}], cantagalo: [160,450,570,780,900,1060,1260] },
+      { dia: 5, ativo: true, inicio: 0,    fim: 1410, pausas: [{inicio:360,fim:420},{inicio:960,fim:1020}], cantagalo: [160,450,570,780,900,1060,1260] },
+      // Sab: 00h–15h30, pausa 06h–07h
+      { dia: 6, ativo: true, inicio: 0,    fim: 930,  pausas: [{inicio:360,fim:420}],   cantagalo: [] },
+    ];
+    for (const d of defaults) {
+      await pool.query(
+        `INSERT INTO horarios_config (dia_semana, ativo, inicio, fim, pausas, cantagalo)
+         VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (dia_semana) DO NOTHING`,
+        [d.dia, d.ativo, d.inicio, d.fim, JSON.stringify(d.pausas), JSON.stringify(d.cantagalo)]
+      );
+    }
+  }
+}
+criarTabelaHorariosConfig().catch(e => console.error("Erro ao criar tabela horarios_config:", e));
+
+// GET — retorna configuração de todos os dias (público, usado pelo script.js)
+app.get("/horarios-config", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM horarios_config ORDER BY dia_semana");
+    res.json(result.rows);
+  } catch (e) {
+    res.status(500).json({ erro: "Erro ao buscar configuração" });
+  }
+});
+
+// PUT — atualiza configuração de um dia específico (requer perfil relatorio ou superior)
+app.put("/horarios-config/:dia", auth(3, 'Controle de Horarios'), async (req, res) => {
+  try {
+    const dia = parseInt(req.params.dia);
+    if (dia < 0 || dia > 6) return res.status(400).json({ erro: "Dia inválido (0-6)" });
+    const { ativo, inicio, fim, pausas, cantagalo, capacidade, max_veiculos } = req.body;
+    await pool.query(`
+      INSERT INTO horarios_config (dia_semana, ativo, inicio, fim, pausas, cantagalo, capacidade, max_veiculos, atualizado_em)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
+      ON CONFLICT (dia_semana) DO UPDATE SET
+        ativo        = EXCLUDED.ativo,
+        inicio       = EXCLUDED.inicio,
+        fim          = EXCLUDED.fim,
+        pausas       = EXCLUDED.pausas,
+        cantagalo    = EXCLUDED.cantagalo,
+        capacidade   = EXCLUDED.capacidade,
+        max_veiculos = EXCLUDED.max_veiculos,
+        atualizado_em = NOW()
+    `, [dia, ativo, inicio, fim, JSON.stringify(pausas || []), JSON.stringify(cantagalo || []), capacidade || 1820, max_veiculos || 4]);
+    res.json({ sucesso: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ erro: "Erro ao salvar configuração" });
+  }
 });
 
 // ========================================================
