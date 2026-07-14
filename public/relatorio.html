@@ -892,9 +892,11 @@
             </div>
           </div>
           <div style="margin-bottom:12px;">
-            <div style="font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-family:var(--fn-mono);margin-bottom:6px;">Horarios exclusivos Cantagalo (minutos desde meia-noite, separados por virgula)</div>
-            <input type="text" id="hr-cantagalo" placeholder="Ex: 160,450,570,780,900,1060,1260" style="font-family:var(--fn-mono);font-size:0.82rem;width:100%;padding:10px;border:1px solid var(--borda);border-radius:6px;background:var(--fundo);">
-            <div style="font-size:0.7rem;color:var(--muted);margin-top:4px;">Deixe vazio para sem restricao.</div>
+            <div style="font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-family:var(--fn-mono);margin-bottom:8px;">Horarios exclusivos Cantagalo</div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">Marque os horarios reservados apenas para produto Cantagalo. Os horarios disponiveis mudam conforme o inicio/fim configurado acima.</div>
+            <div id="cantagalo-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:12px;background:var(--fundo);border:1px solid var(--borda);border-radius:8px;min-height:48px;">
+              <span style="font-size:0.78rem;color:var(--muted);">Selecione um dia para ver os horarios</span>
+            </div>
           </div>
           <div class="form-2col" style="margin-bottom:14px;">
             <div class="campo"><label>Capacidade por hora (em sacos)</label><input type="number" id="hr-capacidade" value="1820" min="100" max="5000"></div>
@@ -1386,6 +1388,45 @@
       }
     }
 
+
+    function minToTime(m) {
+      return String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
+    }
+
+    function renderizarCantagaloGrid(inicio, fim, selecionados) {
+      const grid = document.getElementById('cantagalo-grid');
+      if (!grid) return;
+
+      // Gera todos os horários de 30 em 30 entre início e fim do dia
+      const horarios = [];
+      for (let m = inicio; m <= fim; m += 30) horarios.push(m);
+
+      if (!horarios.length) {
+        grid.innerHTML = '<span style="font-size:0.78rem;color:var(--muted);">Nenhum horario disponivel para este dia</span>';
+        return;
+      }
+
+      grid.innerHTML = horarios.map(m => {
+        const checked = selecionados.includes(m) ? 'checked' : '';
+        const label   = minToTime(m);
+        return `<label style="display:flex;align-items:center;gap:5px;padding:5px 10px;background:white;border:1px solid var(--borda);border-radius:6px;cursor:pointer;font-size:0.8rem;font-family:var(--fn-mono);white-space:nowrap;transition:border-color 0.15s;">
+          <input type="checkbox" value="${m}" ${checked} style="accent-color:var(--azul);width:14px;height:14px;">
+          ${label}
+        </label>`;
+      }).join('');
+
+      // Highlight nos selecionados
+      grid.querySelectorAll('label').forEach(lbl => {
+        const cb = lbl.querySelector('input');
+        lbl.style.borderColor   = cb.checked ? 'var(--azul)' : 'var(--borda)';
+        lbl.style.background    = cb.checked ? 'var(--azul-cl)' : 'white';
+        cb.addEventListener('change', () => {
+          lbl.style.borderColor = cb.checked ? 'var(--azul)' : 'var(--borda)';
+          lbl.style.background  = cb.checked ? 'var(--azul-cl)' : 'white';
+        });
+      });
+    }
+
     function selecionarDia(dia) {
       diaSelecionado = dia;
       // Atualiza botões
@@ -1403,7 +1444,7 @@
       document.getElementById('hr-maxveiculos').value  = cfg.max_veiculos || 4;
 
       const cantagalo = cfg.cantagalo || [];
-      document.getElementById('hr-cantagalo').value = cantagalo.join(',');
+      renderizarCantagaloGrid(cfg.inicio, cfg.fim, cantagalo);
 
       pausasTemp = (cfg.pausas || []).map(p => ({...p}));
       renderizarPausas();
@@ -1434,14 +1475,24 @@
       renderizarPausas();
     }
 
+    function atualizarGridCantagalo() {
+      const inicio = timeToMin(document.getElementById('hr-inicio').value);
+      const fim    = timeToMin(document.getElementById('hr-fim').value);
+      const selecionados = Array.from(document.querySelectorAll('#cantagalo-grid input[type=checkbox]:checked'))
+        .map(cb => parseInt(cb.value));
+      renderizarCantagaloGrid(inicio, fim, selecionados);
+    }
+    document.getElementById('hr-inicio').addEventListener('change', atualizarGridCantagalo);
+    document.getElementById('hr-fim').addEventListener('change', atualizarGridCantagalo);
+
     async function salvarConfigHorario() {
       const ativo     = document.getElementById('hr-ativo').checked;
       const inicio    = timeToMin(document.getElementById('hr-inicio').value);
       const fim       = timeToMin(document.getElementById('hr-fim').value);
       const capac     = parseInt(document.getElementById('hr-capacidade').value) || 1820;
       const maxVeic   = parseInt(document.getElementById('hr-maxveiculos').value) || 4;
-      const cantStr   = document.getElementById('hr-cantagalo').value.trim();
-      const cantagalo = cantStr ? cantStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n)) : [];
+      const cantagalo = Array.from(document.querySelectorAll('#cantagalo-grid input[type=checkbox]:checked'))
+        .map(cb => parseInt(cb.value));
 
       if (inicio >= fim) { mostrarMsg('Horario inicio deve ser menor que fim.', 'erro'); return; }
 
