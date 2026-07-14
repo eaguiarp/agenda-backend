@@ -427,6 +427,7 @@
     
   var ultimaHoraCiclo = null;
     var modeMadrugada   = false;
+    var indiceInfo = 0;
 
     function ehMadrugada() {
       var h = new Date().getHours();
@@ -468,7 +469,7 @@
       var ponto = document.getElementById('ponto-conexao');
       if (ponto) ponto.style.background = '#f59e0b';
 
-      sseConnection = new EventSource('/events');
+      sseConnection = new EventSource('/events/public');
       sseConnection.onopen = function() {
         if (ponto) ponto.style.background = '#00e676';
       };
@@ -599,13 +600,13 @@
     // ── PLAYLIST ─────────────────────────────────────────────
 
     function mostrarInfo() {
-      document.getElementById('video-container').style.display = 'none';
-      document.getElementById('video-container').className     = '';
-      document.getElementById('painel-principal').style.display = 'none';
+      var vid = document.getElementById('video-container');
+      if (vid) { vid.style.display = 'none'; vid.className = ''; }
+      var painel = document.getElementById('painel-principal');
+      if (painel) painel.style.display = 'none';
 
       var infoCont = document.getElementById('info-container');
-      infoCont.style.display = 'flex';
-      infoCont.className     = 'ativo';
+      if (infoCont) { infoCont.style.display = 'flex'; infoCont.className = 'ativo'; }
 
       if (indiceInfo % 2 === 0) { renderInfoClima(); }
       else                       { renderInfoTransito(); }

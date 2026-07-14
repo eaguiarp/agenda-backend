@@ -154,6 +154,11 @@ app.get('/events', auth(1, 'CD Itaborai'), (req, res) => {
   registerSseClient(req, res);
 });
 
+// Rota pública para painéis (sem autenticação) — envia mesmos eventos SSE
+app.get('/events/public', (req, res) => {
+  registerSseClient(req, res);
+});
+
 app.get("/eu", auth(1, 'CD Itaborai'), (req, res) => {
   res.json({ usuario: req.auth.user });
 });
