@@ -693,6 +693,30 @@
     }
     .msg-sucesso { background: #d6f0e0; color: #0f6b2f; border: 1px solid #a8d8bc; }
     .msg-erro    { background: #fad6d6; color: #8b1a1a; border: 1px solid #dbb8b8; }
+
+    /* ─── COLLAPSIBLE SECTIONS (botões de expandir/ocultar por módulo) ─── */
+    .card-subtitulo {
+      padding: 8px 16px;
+      background: var(--fundo);
+      border-bottom: 1px solid var(--borda);
+      font-size: 0.82rem;
+      color: var(--texto-sec);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-toggle {
+      background: transparent;
+      border: 1px solid rgba(0,0,0,0.06);
+      color: var(--azul);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: none;
+    }
+    .section-toggle[aria-expanded="false"] { color: var(--texto-sec); }
+    .card.collapsed > :not(.card-titulo):not(.card-subtitulo) { display: none; }
   </style>
   <link rel="icon" type="image/png" sizes="72x72" href="icon-72.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -1123,6 +1147,8 @@
         const el=document.getElementById(`inv-ab-${produto}`);
         if(el&&el.value) el.dispatchEvent(new Event('input'));
       });
+      // reaplica toggles para cards gerados dinamicamente
+      setupCardToggles();
     }
 
     function recalcular(produto, entradas, saidas, data, turno) {
@@ -1245,6 +1271,8 @@
               <button class="btn-usr btn-excluir" onclick="excluirUsuario(${u.id},'${u.nome}')">Excluir</button>
             </div>
           </div>`).join("");
+        // reaplica toggles caso algum card interno tenha sido alterado
+        setupCardToggles();
       } catch(e) { console.error("Erro ao carregar usuários", e); }
     }
 
@@ -1349,6 +1377,8 @@
             <button class="btn-remover" onclick="removerBloqueio(${b.id})">Remover</button>
           </div>`;
         }).join("");
+        // reaplica toggles caso o DOM interno de cards tenha mudado
+        setupCardToggles();
       }catch(e){console.error("Erro ao carregar bloqueios",e);}
     }
     async function removerBloqueio(id) {
@@ -1485,6 +1515,30 @@
     document.getElementById('hr-inicio').addEventListener('change', atualizarGridCantagalo);
     document.getElementById('hr-fim').addEventListener('change', atualizarGridCantagalo);
 
+    // ── COLLAPSIBLE CARDS: inserir botão e comportamento
+    function setupCardToggles() {
+      document.querySelectorAll('.card').forEach(card => {
+        if (card.querySelector('.card-subtitulo')) return;
+        const titleEl = card.querySelector('.card-titulo');
+        if (!titleEl) return;
+        // cria subtítulo com botão
+        const label = (titleEl.textContent || '').trim().replace(/\s+/g, ' ');
+        const sub = document.createElement('div'); sub.className = 'card-subtitulo';
+        const btn = document.createElement('button'); btn.className = 'section-toggle'; btn.type = 'button';
+        btn.setAttribute('aria-expanded', 'true');
+        const shortLabel = label.length > 30 ? label.slice(0,30).trim() + '…' : label;
+        btn.textContent = `▼ ${shortLabel}`;
+        btn.addEventListener('click', () => {
+          const expanded = btn.getAttribute('aria-expanded') === 'true';
+          btn.setAttribute('aria-expanded', (!expanded).toString());
+          card.classList.toggle('collapsed', expanded);
+          btn.textContent = expanded ? `▶ ${shortLabel}` : `▼ ${shortLabel}`;
+        });
+        sub.appendChild(btn);
+        titleEl.insertAdjacentElement('afterend', sub);
+      });
+    }
+
     async function salvarConfigHorario() {
       const ativo     = document.getElementById('hr-ativo').checked;
       const inicio    = timeToMin(document.getElementById('hr-inicio').value);
@@ -1542,6 +1596,7 @@
     carregar();
     carregarConfigHorarios();
     aplicarDesktopModeInicial();
+    setupCardToggles();
   </script>
 </body>
 </html>
