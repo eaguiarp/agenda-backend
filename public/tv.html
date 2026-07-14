@@ -435,39 +435,55 @@
 
     function verificarMadrugada(chamando) {
       if (!ehMadrugada()) {
-        // Saiu da madrugada: reseta controle do ciclo bônus
         if (modeMadrugada) {
-          modeMadrugada   = false;
+          modeMadrugada = false;
           document.getElementById('tela-madrugada').className = '';
         }
         return false;
       }
 
-      // Está na madrugada E há chamada → sai do modo madrugada temporariamente
       if (chamando) {
         document.getElementById('tela-madrugada').className = '';
         modeMadrugada = false;
         return false;
       }
 
-      // Ciclo bônus das 03:00 (só uma vez por madrugada)
-      var agora = new Date();
-      var h = agora.getHours();
-      var m = agora.getMinutes();
-        modeMadrugada   = false;
-        document.getElementById('tela-madrugada').className = '';
-        return true; // deixa o ciclo rodar
-      }
-
-      // Modo madrugada padrão: tela escura
       if (!modeMadrugada) {
         modeMadrugada = true;
-        // Garante que vídeo e info estão parados
         encerrarModoOcioso();
-        document.getElementById('tela-espera').className  = '';
+        document.getElementById('tela-espera').className = '';
         document.getElementById('tela-madrugada').className = 'ativo';
       }
       return true;
+    }
+
+    let sseConnection = null;
+    let sseReconnectTimer = null;
+
+    function conectarSseTV() {
+      if (sseConnection) sseConnection.close();
+      if (sseReconnectTimer) clearTimeout(sseReconnectTimer);
+
+      var ponto = document.getElementById('ponto-conexao');
+      if (ponto) ponto.style.background = '#f59e0b';
+
+      sseConnection = new EventSource('/events');
+      sseConnection.onopen = function() {
+        if (ponto) ponto.style.background = '#00e676';
+      };
+      sseConnection.onmessage = function(event) {
+        try {
+          var payload = JSON.parse(event.data);
+          if (payload.type === 'agendamentos' || payload.type === 'bloqueios' || payload.type === 'usuarios' || payload.type === 'horarios') {
+            atualizarTV();
+          }
+        } catch (e) {}
+      };
+      sseConnection.onerror = function() {
+        if (ponto) ponto.style.background = '#ff0000';
+        if (sseConnection) sseConnection.close();
+        sseReconnectTimer = setTimeout(conectarSseTV, 3000);
+      };
     }
 
     // ── INICIO ───────────────────────────────────────────────
@@ -484,9 +500,9 @@
 
       var video = document.getElementById('player-video');
 
-      setInterval(atualizarTV,      POLL_MS);
       setInterval(atualizarRelogio, 1000);
       setInterval(atualizarDados,   3600000); // trânsito a cada 1h
+      conectarSseTV();
       atualizarRelogio();
       atualizarDados();
 
@@ -582,7 +598,6 @@
     // ── PLAYLIST ─────────────────────────────────────────────
 
     function mostrarInfo() {
-
       document.getElementById('video-container').style.display = 'none';
       document.getElementById('video-container').className     = '';
       document.getElementById('painel-principal').style.display = 'none';
@@ -595,11 +610,13 @@
       else                       { renderInfoTransito(); }
       indiceInfo++;
 
-     
-  encerrarModoOcioso();
-  mostrarTelaEspera();
-}, 20000);
+      encerrarModoOcioso();
+      mostrarTelaEspera();
     }
+
+    setInterval(function() {
+      mostrarInfo();
+    }, 20000);
 
 
     // ── ÍCONE DO CLIMA ───────────────────────────────────────

@@ -1174,6 +1174,28 @@
       setTimeout(() => { el.style.display = "none"; }, 3000);
     }
 
+    let sseConnection = null;
+    let sseReconnectTimer = null;
+
+    function conectarSse() {
+      if (sseConnection) sseConnection.close();
+      if (sseReconnectTimer) clearTimeout(sseReconnectTimer);
+
+      sseConnection = new EventSource('/events');
+      sseConnection.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.type === 'agendamentos' || payload.type === 'bloqueios' || payload.type === 'usuarios' || payload.type === 'horarios') {
+            atualizarTudo();
+          }
+        } catch (e) {}
+      };
+      sseConnection.onerror = () => {
+        if (sseConnection) sseConnection.close();
+        sseReconnectTimer = setTimeout(conectarSse, 3000);
+      };
+    }
+
     /* ── API ────────────────────────────────── */
     async function obterAgendamentos() {
       const res = await fetch(API_URL);
@@ -1876,7 +1898,7 @@
     }
 
     setInterval(atualizarRelogio, 1000);
-    setInterval(atualizarTudo, 10000);
+    conectarSse();
 
     document.getElementById('chave_nfe')?.addEventListener('input', validarChaveNfeInput);
 

@@ -87,6 +87,47 @@ function auth(nivelMinimo, realm) {
   });
 }
 
+const sseClients = new Set();
+
+function broadcastSseUpdate(type) {
+  const payload = JSON.stringify({ type, ts: Date.now() });
+  const message = `event: update\ndata: ${payload}\n\n`;
+
+  for (const client of Array.from(sseClients)) {
+    try {
+      client.write(message);
+    } catch (err) {
+      client.end();
+      sseClients.delete(client);
+    }
+  }
+}
+
+function registerSseClient(req, res) {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+
+  sseClients.add(res);
+  res.write(': connected\n\n');
+
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(': ping\n\n');
+    } catch (err) {
+      clearInterval(heartbeat);
+      sseClients.delete(res);
+      res.end();
+    }
+  }, 15000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    sseClients.delete(res);
+  });
+}
+
 // ========================================================
 // 🛡️ BLOCO DE SEGURANÇA
 // ========================================================
@@ -108,6 +149,10 @@ app.use((req, res, next) => {
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/events', auth(1, 'CD Itaborai'), (req, res) => {
+  registerSseClient(req, res);
+});
 
 app.get("/eu", auth(1, 'CD Itaborai'), (req, res) => {
   res.json({ usuario: req.auth.user });
@@ -396,6 +441,7 @@ app.put("/agendamentos/:id", async (req, res) => {
     const setClause = chaves.map((k, i) => `${k} = $${i + 1}`).join(", ");
     const valores   = [...chaves.map(k => campos[k]), id];
     await pool.query(`UPDATE agendamentos SET ${setClause} WHERE id = $${chaves.length + 1}`, valores);
+    broadcastSseUpdate('agendamentos');
     res.json({ sucesso: true });
   } catch (error) {
     res.status(500).json({ erro: "Erro ao atualizar" });
@@ -405,6 +451,7 @@ app.put("/agendamentos/:id", async (req, res) => {
 app.delete("/agendamentos/:id", async (req, res) => {
   try {
     await pool.query("DELETE FROM agendamentos WHERE id = $1", [req.params.id]);
+    broadcastSseUpdate('agendamentos');
     res.json({ sucesso: true });
   } catch (error) {
     res.status(500).json({ erro: "Erro ao deletar" });
@@ -431,6 +478,7 @@ app.post("/bloqueios", async (req, res) => {
       "INSERT INTO bloqueios (data_inicio, data_fim, hora_inicio, hora_fim, motivo, criado_por) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *",
       [data_inicio, data_fim, hora_inicio || null, hora_fim || null, motivo || null, criado_por || null]
     );
+    broadcastSseUpdate('bloqueios');
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).send("Erro ao criar bloqueio");
@@ -440,6 +488,7 @@ app.post("/bloqueios", async (req, res) => {
 app.delete("/bloqueios/:id", async (req, res) => {
   try {
     await pool.query("DELETE FROM bloqueios WHERE id = $1", [req.params.id]);
+    broadcastSseUpdate('bloqueios');
     res.json({ sucesso: true });
   } catch (error) {
     res.status(500).json({ erro: "Erro ao deletar bloqueio" });
@@ -466,6 +515,7 @@ app.post("/usuarios", async (req, res) => {
       "INSERT INTO usuarios (nome, senha, perfil) VALUES ($1, $2, $3) RETURNING id, nome, perfil",
       [nome.toLowerCase().trim(), senha, perfil || 'operacao']
     );
+    broadcastSseUpdate('usuarios');
     res.json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ erro: "Usuário já existe" });
@@ -482,6 +532,7 @@ app.put("/usuarios/:id", async (req, res) => {
     if (!campos.length) return res.status(400).json({ erro: "Nada para atualizar" });
     valores.push(req.params.id);
     await pool.query(`UPDATE usuarios SET ${campos.join(', ')} WHERE id = $${valores.length}`, valores);
+    broadcastSseUpdate('usuarios');
     res.json({ sucesso: true });
   } catch (error) {
     res.status(500).json({ erro: "Erro ao atualizar usuário" });
@@ -491,6 +542,7 @@ app.put("/usuarios/:id", async (req, res) => {
 app.delete("/usuarios/:id", async (req, res) => {
   try {
     await pool.query("DELETE FROM usuarios WHERE id = $1", [req.params.id]);
+    broadcastSseUpdate('usuarios');
     res.json({ sucesso: true });
   } catch (error) {
     res.status(500).json({ erro: "Erro ao deletar usuário" });
@@ -740,6 +792,7 @@ app.put("/horarios-config/:dia", auth(3, 'Controle de Horarios'), async (req, re
         max_veiculos = EXCLUDED.max_veiculos,
         atualizado_em = NOW()
     `, [dia, ativo, inicio, fim, JSON.stringify(pausas || []), JSON.stringify(cantagalo || []), capacidade || 1820, max_veiculos || 4]);
+    broadcastSseUpdate('horarios');
     res.json({ sucesso: true });
   } catch (e) {
     console.error(e);

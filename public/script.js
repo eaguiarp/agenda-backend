@@ -47,6 +47,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     renderizarLista();
+    conectarSse();
 
     form?.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -71,6 +72,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 // USUÁRIO LOGADO
 // ===============================
 let usuarioLogado = null;
+let sseConnection = null;
+let sseReconnectTimer = null;
+
+function conectarSse() {
+    if (sseConnection) sseConnection.close();
+    if (sseReconnectTimer) clearTimeout(sseReconnectTimer);
+
+    sseConnection = new EventSource('/events');
+    sseConnection.onmessage = (event) => {
+        try {
+            const payload = JSON.parse(event.data);
+            if (payload.type === 'agendamentos' || payload.type === 'bloqueios' || payload.type === 'usuarios' || payload.type === 'horarios') {
+                renderizarLista();
+                if (inputData?.value && selectProduto?.value) renderizarOpcoesHorario();
+            }
+        } catch (e) {}
+    };
+    sseConnection.onerror = () => {
+        if (sseConnection) sseConnection.close();
+        sseReconnectTimer = setTimeout(conectarSse, 3000);
+    };
+}
 
 async function carregarUsuario() {
     try {
