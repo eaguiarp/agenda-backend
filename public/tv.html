@@ -428,6 +428,9 @@
   var ultimaHoraCiclo = null;
     var modeMadrugada   = false;
     var indiceInfo = 0;
+    var dadosClima = null;
+    var dadosTransito = null;
+    var horaUltimaAtualizacao = '';
 
     function ehMadrugada() {
       var h = new Date().getHours();
@@ -576,12 +579,14 @@
     }
 
     function mostrarTelaEspera() {
-      document.getElementById('video-container').style.display  = 'none';
-      document.getElementById('video-container').className      = '';
-      document.getElementById('info-container').style.display   = 'none';
-      document.getElementById('info-container').className       = '';
-      document.getElementById('painel-principal').style.display = 'none';
-      document.getElementById('tela-espera').className          = 'ativo';
+      var vid = document.getElementById('video-container');
+      if (vid) { vid.style.display = 'none'; vid.className = ''; }
+      var info = document.getElementById('info-container');
+      if (info) { info.style.display = 'none'; info.className = ''; }
+      var painel = document.getElementById('painel-principal');
+      if (painel) painel.style.display = 'none';
+      var tela = document.getElementById('tela-espera');
+      if (tela) tela.className = 'ativo';
       atualizarTelaEspera();
     }
 
