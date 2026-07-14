@@ -450,12 +450,13 @@
 
       if (!modeMadrugada) {
         modeMadrugada = true;
-        encerrarModoOcioso();
         document.getElementById('tela-espera').className = '';
         document.getElementById('tela-madrugada').className = 'ativo';
       }
       return true;
     }
+
+    var API_URL = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
 
     let sseConnection = null;
     let sseReconnectTimer = null;
@@ -610,7 +611,6 @@
       else                       { renderInfoTransito(); }
       indiceInfo++;
 
-      encerrarModoOcioso();
       mostrarTelaEspera();
     }
 
