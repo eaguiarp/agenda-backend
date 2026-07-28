@@ -641,6 +641,31 @@ async function renderizarLista() {
 // MENSAGEM
 // ===============================
 function mostrarMensagem(texto, tipo) {
+    if (tipo === 'erro') {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) {
+                const ctx = new AudioCtx();
+                const oscillator = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(620, ctx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(280, ctx.currentTime + 0.2);
+
+                gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.03, ctx.currentTime + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
+
+                oscillator.connect(gain);
+                gain.connect(ctx.destination);
+                oscillator.start();
+                oscillator.stop(ctx.currentTime + 0.2);
+                setTimeout(() => ctx.close(), 250);
+            }
+        } catch (e) {}
+    }
+
     // Usa notificação no header se disponível
     if (window.notificarHeader) {
         window.notificarHeader(texto, tipo === 'erro' ? 'erro' : 'sucesso');
