@@ -641,10 +641,16 @@ async function renderizarLista() {
 // MENSAGEM
 // ===============================
 function mostrarMensagem(texto, tipo) {
+    // Usa notificação no header se disponível
+    if (window.notificarHeader) {
+        window.notificarHeader(texto, tipo === 'erro' ? 'erro' : 'sucesso');
+        return;
+    }
+    // Fallback para o elemento antigo
     const el = document.getElementById("mensagem");
     if (!el) return;
     el.textContent   = texto;
     el.className     = tipo === "erro" ? "mensagem-erro" : "mensagem-sucesso";
     el.style.display = "block";
-    setTimeout(function() { el.style.display = "none"; }, 4000);
+    setTimeout(function() { el.style.display = "none"; }, 5000);
 }

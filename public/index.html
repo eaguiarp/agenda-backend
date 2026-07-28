@@ -320,15 +320,59 @@
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--borda); border-radius: 4px; }
+
+    /* ── NOTIFICAÇÃO NO HEADER ── */
+    .header-notif {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .header-notif.ativo { display: flex; }
+    .header-notif-texto {
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      animation: slideIn 0.25s ease;
+    }
+    .header-notif-sub {
+      font-size: 0.68rem;
+      opacity: 0.85;
+      margin-top: 1px;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .header-notif.erro  { --notif-cor: #ff6b6b; }
+    .header-notif.sucesso { --notif-cor: #69db7c; }
+    .header-notif-barra {
+      position: absolute;
+      bottom: 0; left: 0;
+      height: 3px;
+      background: var(--notif-cor, white);
+      animation: encolher 5s linear forwards;
+      border-radius: 0 2px 2px 0;
+    }
+    @keyframes encolher {
+      from { width: 100%; }
+      to   { width: 0%; }
+    }
   </style>
 </head>
 
 <body>
 
-  <div class="header">
-    <div class="header-left">
+  <div class="header" style="position:relative;">
+    <!-- Estado normal: título -->
+    <div class="header-left" id="header-titulo">
       <h1>CD Itaboraí</h1>
       <p>Sistema de Agendamento e Gestão Logística</p>
+    </div>
+    <!-- Estado notificação: substitui título -->
+    <div class="header-notif" id="header-notif">
+      <div class="header-notif-texto" id="header-notif-texto"></div>
+      <div class="header-notif-sub" id="header-notif-sub"></div>
+      <div class="header-notif-barra" id="header-notif-barra"></div>
     </div>
     <div class="header-right" id="header-usuario"></div>
   </div>
@@ -462,6 +506,48 @@
     }
   </script>
 
+  <script>
+    let _notifTimer = null;
+
+    function notificarHeader(mensagem, tipo, sub) {
+      // tipo: 'sucesso' ou 'erro'
+      const titulo  = document.getElementById('header-titulo');
+      const notif   = document.getElementById('header-notif');
+      const texto   = document.getElementById('header-notif-texto');
+      const subEl   = document.getElementById('header-notif-sub');
+      const barra   = document.getElementById('header-notif-barra');
+
+      // Limpa timer anterior se houver
+      if (_notifTimer) { clearTimeout(_notifTimer); _notifTimer = null; }
+
+      // Ícone por tipo
+      const icone = tipo === 'sucesso' ? '✔' : '✖';
+      texto.textContent  = icone + '  ' + mensagem;
+      subEl.textContent  = sub || '';
+      subEl.style.display = sub ? 'block' : 'none';
+
+      // Remove classes antigas e aplica nova
+      notif.className = 'header-notif ativo ' + tipo;
+
+      // Reinicia animação da barra — clone trick
+      const novasBarra = barra.cloneNode(true);
+      barra.parentNode.replaceChild(novasBarra, barra);
+
+      // Esconde título, mostra notificação
+      titulo.style.display = 'none';
+      notif.style.display  = 'flex';
+
+      // Volta ao título após 5s
+      _notifTimer = setTimeout(() => {
+        notif.classList.remove('ativo');
+        notif.style.display  = 'none';
+        titulo.style.display = '';
+      }, 5000);
+    }
+
+    // Expõe globalmente para o script.js chamar
+    window.notificarHeader = notificarHeader;
+  </script>
   <script src="script.js?v=4.0.0"></script>
 
 </body>
