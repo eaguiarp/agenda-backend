@@ -357,6 +357,8 @@
     
   var ultimaHoraCiclo = null;
     var modeMadrugada   = false;
+    var ultimoChamadoID = null;
+    var ultimaPlacaVoz  = '';
     var indiceInfo = 0;
     var dadosClima = null;
     var dadosTransito = null;
@@ -433,10 +435,9 @@
       musica.volume = 0;
       try { musica.play(); } catch(e) {}
 
-      var video = document.getElementById('player-video');
-
       setInterval(atualizarRelogio, 1000);
       setInterval(atualizarDados,   3600000); // trânsito a cada 1h
+      setInterval(atualizarTV,      30000);   // fallback: atualiza a cada 30s mesmo sem SSE
       conectarSseTV();
       atualizarRelogio();
       atualizarDados();

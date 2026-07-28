@@ -13,7 +13,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
 
 // IMPORTAR as rotas dos vagões
 const vagoesRotas = require('./vagoes_rotas.js');
@@ -88,6 +87,47 @@ function auth(nivelMinimo, realm) {
   });
 }
 
+const sseClients = new Set();
+
+function broadcastSseUpdate(type) {
+  const payload = JSON.stringify({ type, ts: Date.now() });
+  const message = `event: update\ndata: ${payload}\n\n`;
+
+  for (const client of Array.from(sseClients)) {
+    try {
+      client.write(message);
+    } catch (err) {
+      client.end();
+      sseClients.delete(client);
+    }
+  }
+}
+
+function registerSseClient(req, res) {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+
+  sseClients.add(res);
+  res.write(': connected\n\n');
+
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(': ping\n\n');
+    } catch (err) {
+      clearInterval(heartbeat);
+      sseClients.delete(res);
+      res.end();
+    }
+  }, 15000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    sseClients.delete(res);
+  });
+}
+
 // ========================================================
 // 🛡️ BLOCO DE SEGURANÇA
 // ========================================================
@@ -106,6 +146,22 @@ app.use((req, res, next) => {
   }
 
   next();
+});
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Servir favicon a partir dos ícones existentes (evita 404 para /favicon.ico)
+app.get('/favicon.ico', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'icon-72.png'));
+});
+
+app.get('/events', auth(1, 'CD Itaborai'), (req, res) => {
+  registerSseClient(req, res);
+});
+
+// Rota pública para painéis (sem autenticação) — envia mesmos eventos SSE
+app.get('/events/public', (req, res) => {
+  registerSseClient(req, res);
 });
 
 app.get("/eu", auth(1, 'CD Itaborai'), (req, res) => {
@@ -138,7 +194,8 @@ app.get("/criar-banco", async (req, res) => {
       "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS hora_entrada VARCHAR(10)",
       "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS hora_saida VARCHAR(10)",
       "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS motorista VARCHAR(100)",
-      "ALTER TABLE agendamentos ALTER COLUMN produto TYPE VARCHAR(500)"
+      "ALTER TABLE agendamentos ALTER COLUMN produto TYPE VARCHAR(500)",
+      "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS vasilhame VARCHAR(50)"
     ];
 
     for (const sql of colunas) {
@@ -394,6 +451,7 @@ app.put("/agendamentos/:id", async (req, res) => {
     const setClause = chaves.map((k, i) => `${k} = $${i + 1}`).join(", ");
     const valores   = [...chaves.map(k => campos[k]), id];
     await pool.query(`UPDATE agendamentos SET ${setClause} WHERE id = $${chaves.length + 1}`, valores);
+    broadcastSseUpdate('agendamentos');
     res.json({ sucesso: true });
   } catch (error) {
     res.status(500).json({ erro: "Erro ao atualizar" });
@@ -403,6 +461,7 @@ app.put("/agendamentos/:id", async (req, res) => {
 app.delete("/agendamentos/:id", async (req, res) => {
   try {
     await pool.query("DELETE FROM agendamentos WHERE id = $1", [req.params.id]);
+    broadcastSseUpdate('agendamentos');
     res.json({ sucesso: true });
   } catch (error) {
     res.status(500).json({ erro: "Erro ao deletar" });
@@ -429,6 +488,7 @@ app.post("/bloqueios", async (req, res) => {
       "INSERT INTO bloqueios (data_inicio, data_fim, hora_inicio, hora_fim, motivo, criado_por) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *",
       [data_inicio, data_fim, hora_inicio || null, hora_fim || null, motivo || null, criado_por || null]
     );
+    broadcastSseUpdate('bloqueios');
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).send("Erro ao criar bloqueio");
@@ -438,6 +498,7 @@ app.post("/bloqueios", async (req, res) => {
 app.delete("/bloqueios/:id", async (req, res) => {
   try {
     await pool.query("DELETE FROM bloqueios WHERE id = $1", [req.params.id]);
+    broadcastSseUpdate('bloqueios');
     res.json({ sucesso: true });
   } catch (error) {
     res.status(500).json({ erro: "Erro ao deletar bloqueio" });
@@ -464,6 +525,7 @@ app.post("/usuarios", async (req, res) => {
       "INSERT INTO usuarios (nome, senha, perfil) VALUES ($1, $2, $3) RETURNING id, nome, perfil",
       [nome.toLowerCase().trim(), senha, perfil || 'operacao']
     );
+    broadcastSseUpdate('usuarios');
     res.json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ erro: "Usuário já existe" });
@@ -480,6 +542,7 @@ app.put("/usuarios/:id", async (req, res) => {
     if (!campos.length) return res.status(400).json({ erro: "Nada para atualizar" });
     valores.push(req.params.id);
     await pool.query(`UPDATE usuarios SET ${campos.join(', ')} WHERE id = $${valores.length}`, valores);
+    broadcastSseUpdate('usuarios');
     res.json({ sucesso: true });
   } catch (error) {
     res.status(500).json({ erro: "Erro ao atualizar usuário" });
@@ -489,6 +552,7 @@ app.put("/usuarios/:id", async (req, res) => {
 app.delete("/usuarios/:id", async (req, res) => {
   try {
     await pool.query("DELETE FROM usuarios WHERE id = $1", [req.params.id]);
+    broadcastSseUpdate('usuarios');
     res.json({ sucesso: true });
   } catch (error) {
     res.status(500).json({ erro: "Erro ao deletar usuário" });
@@ -550,129 +614,97 @@ app.get('/api/nfe/:chave', async (req, res) => {
 // Chamada 2: Serra → Maricá (para somar os dois trechos reais da rota)
 // ========================================================
 app.get("/api/traffic", async (req, res) => {
-  const https  = require("https");
-  const apiKey = process.env.MAPS_API_KEY;
-
-  const CD    = "-22.779214,-42.935105"; // CD Itaboraí
-  const SERRA = "-22.8590,-42.8260";     // Topo da Serra do Lagarto (checkpoint)
-
-  // Destinos da Chamada 1 (saindo do CD)
-  const destsChamada1 = [
-    "-22.7471,-42.8596", // 0 — Itaboraí Centro
-    "-22.7441,-42.9754", // 1 — Manilha (Trevo)
-    "-22.8268,-43.0600", // 2 — Alcântara / RJ-104
-    "-22.8736,-43.2075", // 3 — Niterói Centro (final da Ponte)
-    "-22.8590,-42.8260", // 4 — Serra do Lagarto (trecho 1 de Maricá)
-    "-22.8461,-42.3331"  // 5 — Via Lagos (Rio Bonito)
-  ];
-  const labelsChamada1 = [
-    "ITABORAÍ (CENTRO)",
-    "MANILHA (TREVO)",
-    "ALCÂNTARA / RJ-104",
-    "NITERÓI (CENTRO)",
-    "SERRA_TRECHO1",   // interno — não vai para saída final
-    "VIA LAGOS"
-  ];
-
-  // Destino da Chamada 2 (saindo da Serra → Maricá Centro)
-  const destsChamada2 = "-22.9192,-42.8182";
-
-  function fazerChamada(origins, destinations, cb) {
-    const url = "https://maps.googleapis.com/maps/api/distancematrix/json" +
-      "?origins="      + encodeURIComponent(origins) +
-      "&destinations=" + encodeURIComponent(destinations) +
-      "&departure_time=now" +
-      "&key=" + apiKey;
-    let data = "";
-    https.get(url, function(resp) {
-      resp.on("data",  function(chunk) { data += chunk; });
-      resp.on("end",   function() {
-        try { cb(null, JSON.parse(data)); }
-        catch(e) { cb(e); }
-      });
-    }).on("error", function(e) { cb(e); });
+  // Trânsito desativado temporariamente: retornar lista vazia para evitar 500s
+  try {
+    return res.json([]);
+  } catch (e) {
+    console.error('Erro ao responder /api/traffic (rota desativada):', e);
+    return res.json([]);
   }
-
-  // Executa chamada 1: CD → todos os destinos
-  fazerChamada(CD, destsChamada1.join("|"), function(err1, data1) {
-    if (err1) return res.status(500).json({ erro: "Erro chamada 1" });
-
-    const els1 = data1.rows[0].elements;
-
-    // Extrai trecho 1 da Serra (index 4) para somar depois
-    var serraT1 = 0, serraN1 = 0;
-    if (els1[4] && els1[4].status === "OK") {
-      serraT1 = els1[4].duration_in_traffic ? els1[4].duration_in_traffic.value / 60 : els1[4].duration.value / 60;
-      serraN1 = els1[4].duration.value / 60;
-    }
-
-    // Executa chamada 2: Serra → Maricá
-    fazerChamada(SERRA, destsChamada2, function(err2, data2) {
-      if (err2) return res.status(500).json({ erro: "Erro chamada 2" });
-
-      const el2 = data2.rows[0].elements[0];
-      var serraT2 = 0, serraN2 = 0;
-      if (el2 && el2.status === "OK") {
-        serraT2 = el2.duration_in_traffic ? el2.duration_in_traffic.value / 60 : el2.duration.value / 60;
-        serraN2 = el2.duration.value / 60;
-      }
-
-      // Monta resultado final
-      var final = [];
-
-      els1.forEach(function(el, i) {
-        var label = labelsChamada1[i];
-        if (label === "SERRA_TRECHO1") return; // ignora checkpoint interno
-
-        var comTrafico, normal;
-        if (el.status !== "OK") {
-          final.push({ destino: label, tempo: 0, atraso: 0, status: "SEM DADOS", cor: "gray" });
-          return;
-        }
-        comTrafico = el.duration_in_traffic ? el.duration_in_traffic.value / 60 : el.duration.value / 60;
-        normal     = el.duration.value / 60;
-
-        var atraso = comTrafico - normal;
-        var status = "LIVRE"; var cor = "green";
-        if (atraso > 15)     { status = "LENTO";    cor = "red";    }
-        else if (atraso > 5) { status = "MODERADO"; cor = "yellow"; }
-
-        final.push({ destino: label, tempo: Math.round(comTrafico), atraso: Math.round(atraso), status: status, cor: cor });
-      });
-
-      // Maricá = trecho1 (CD→Serra) + trecho2 (Serra→Maricá) — rota real pela Serra do Lagarto
-      var maricaTempo  = serraT1 + serraT2;
-      var maricaNormal = serraN1 + serraN2;
-      var maricaAtraso = maricaTempo - maricaNormal;
-      var maricaStatus = "LIVRE"; var maricaCor = "green";
-      if (maricaAtraso > 15)     { maricaStatus = "LENTO";    maricaCor = "red";    }
-      else if (maricaAtraso > 5) { maricaStatus = "MODERADO"; maricaCor = "yellow"; }
-
-      // Insere Maricá após Niterói (posição 4)
-      final.splice(4, 0, {
-        destino: "MARICÁ (VIA SERRA)",
-        tempo:   Math.round(maricaTempo),
-        atraso:  Math.round(maricaAtraso),
-        status:  maricaStatus,
-        cor:     maricaCor
-      });
-
-      res.json(final);
-    });
-  });
 });
 
 // ========================================================
-// 🎬 ROTA — LISTA DE VÍDEOS
+// 🕐 ROTAS — CONFIGURAÇÃO DE HORÁRIOS
 // ========================================================
-app.get("/api/videos", function(req, res) {
-  res.json([
-    { nome: "Video 1", arquivo: "/video1.mp4" },
-    { nome: "Video 2", arquivo: "/video2.mp4" },
-    { nome: "Video 3", arquivo: "/video3.mp4" },
-    { nome: "Video 4", arquivo: "/video4.mp4" },
-    { nome: "Video 5", arquivo: "/video5.mp4" }
-  ]);
+
+// Garante que a tabela existe (chamada automática no start)
+async function criarTabelaHorariosConfig() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS horarios_config (
+      dia_semana  INTEGER PRIMARY KEY, -- 0=Dom, 1=Seg, 2=Sab=6
+      ativo       BOOLEAN DEFAULT true,
+      inicio      INTEGER NOT NULL DEFAULT 0,    -- minutos desde meia-noite
+      fim         INTEGER NOT NULL DEFAULT 1410, -- 23:30
+      pausas      JSONB   DEFAULT '[]',          -- [{inicio:360,fim:420}]
+      cantagalo   JSONB   DEFAULT '[]',          -- minutos exclusivos cantagalo
+      capacidade  INTEGER DEFAULT 1820,          -- sc por hora
+      max_veiculos INTEGER DEFAULT 4,
+      atualizado_em TIMESTAMP DEFAULT NOW()
+    );
+  `);
+
+  // Insere configuração padrão se a tabela estiver vazia
+  const check = await pool.query("SELECT COUNT(*) FROM horarios_config");
+  if (parseInt(check.rows[0].count) === 0) {
+    const defaults = [
+      // Dom: 06h–14h, sem pausas
+      { dia: 0, ativo: true, inicio: 360,  fim: 840,  pausas: [],                       cantagalo: [] },
+      // Seg: 07h–23h30, pausa 16h–17h
+      { dia: 1, ativo: true, inicio: 420,  fim: 1410, pausas: [{inicio:960,fim:1020}],   cantagalo: [160,450,570,780,900,1060,1260] },
+      // Ter–Sex: 00h–23h30, pausas 06h–07h e 16h–17h
+      { dia: 2, ativo: true, inicio: 0,    fim: 1410, pausas: [{inicio:360,fim:420},{inicio:960,fim:1020}], cantagalo: [160,450,570,780,900,1060,1260] },
+      { dia: 3, ativo: true, inicio: 0,    fim: 1410, pausas: [{inicio:360,fim:420},{inicio:960,fim:1020}], cantagalo: [160,450,570,780,900,1060,1260] },
+      { dia: 4, ativo: true, inicio: 0,    fim: 1410, pausas: [{inicio:360,fim:420},{inicio:960,fim:1020}], cantagalo: [160,450,570,780,900,1060,1260] },
+      { dia: 5, ativo: true, inicio: 0,    fim: 1410, pausas: [{inicio:360,fim:420},{inicio:960,fim:1020}], cantagalo: [160,450,570,780,900,1060,1260] },
+      // Sab: 00h–15h30, pausa 06h–07h
+      { dia: 6, ativo: true, inicio: 0,    fim: 930,  pausas: [{inicio:360,fim:420}],   cantagalo: [] },
+    ];
+    for (const d of defaults) {
+      await pool.query(
+        `INSERT INTO horarios_config (dia_semana, ativo, inicio, fim, pausas, cantagalo)
+         VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (dia_semana) DO NOTHING`,
+        [d.dia, d.ativo, d.inicio, d.fim, JSON.stringify(d.pausas), JSON.stringify(d.cantagalo)]
+      );
+    }
+  }
+}
+criarTabelaHorariosConfig().catch(e => console.error("Erro ao criar tabela horarios_config:", e));
+
+// GET — retorna configuração de todos os dias (público, usado pelo script.js)
+app.get("/horarios-config", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM horarios_config ORDER BY dia_semana");
+    res.json(result.rows);
+  } catch (e) {
+    res.status(500).json({ erro: "Erro ao buscar configuração" });
+  }
+});
+
+// PUT — atualiza configuração de um dia específico (requer perfil relatorio ou superior)
+app.put("/horarios-config/:dia", auth(3, 'Controle de Horarios'), async (req, res) => {
+  try {
+    const dia = parseInt(req.params.dia);
+    if (dia < 0 || dia > 6) return res.status(400).json({ erro: "Dia inválido (0-6)" });
+    const { ativo, inicio, fim, pausas, cantagalo, capacidade, max_veiculos } = req.body;
+    await pool.query(`
+      INSERT INTO horarios_config (dia_semana, ativo, inicio, fim, pausas, cantagalo, capacidade, max_veiculos, atualizado_em)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
+      ON CONFLICT (dia_semana) DO UPDATE SET
+        ativo        = EXCLUDED.ativo,
+        inicio       = EXCLUDED.inicio,
+        fim          = EXCLUDED.fim,
+        pausas       = EXCLUDED.pausas,
+        cantagalo    = EXCLUDED.cantagalo,
+        capacidade   = EXCLUDED.capacidade,
+        max_veiculos = EXCLUDED.max_veiculos,
+        atualizado_em = NOW()
+    `, [dia, ativo, inicio, fim, JSON.stringify(pausas || []), JSON.stringify(cantagalo || []), capacidade || 1820, max_veiculos || 4]);
+    broadcastSseUpdate('horarios');
+    res.json({ sucesso: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ erro: "Erro ao salvar configuração" });
+  }
 });
 
 // ========================================================

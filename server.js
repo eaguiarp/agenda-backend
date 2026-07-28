@@ -435,6 +435,7 @@ app.post("/agendamentos", async (req, res) => {
         motorista      || null
       ]
     );
+    broadcastSseUpdate('agendamentos');
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
