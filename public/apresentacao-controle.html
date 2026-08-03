@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle — Apresentação</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:     #0d1117;
+      --bg2:    #161b22;
+      --borda:  #21262d;
+      --verde:  #3fb950;
+      --branco: #f0f6fc;
+      --muted:  #8b949e;
+      --red:    #f85149;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Sora', sans-serif;
+      background: var(--bg);
+      color: var(--branco);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
+      gap: 24px;
+    }
+
+    .badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    h1 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      text-align: center;
+    }
+
+    /* Contador de conectados */
+    .conectados {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg2);
+      border: 1px solid var(--borda);
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .conectados strong {
+      font-size: 1.4rem;
+      color: var(--verde);
+      font-family: 'Sora', sans-serif;
+    }
+
+    /* Cards de mensagem */
+    .card-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .card-msg {
+      background: var(--bg2);
+      border: 1px solid var(--borda);
+      border-radius: 12px;
+      padding: 16px 18px;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .card-msg:hover  { border-color: var(--verde); }
+    .card-msg:active { transform: scale(0.98); }
+    .card-msg.selecionado { border-color: var(--verde); background: rgba(63,185,80,0.06); }
+
+    .card-icone { font-size: 1.8rem; }
+    .card-info  { flex: 1; }
+    .card-titulo-msg {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--branco);
+    }
+    .card-sub-msg {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* Configuração personalizada */
+    .config {
+      width: 100%;
+      max-width: 360px;
+      background: var(--bg2);
+      border: 1px solid var(--borda);
+      border-radius: 12px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .config label {
+      font-size: 0.65rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .config input, .config select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--borda);
+      border-radius: 8px;
+      color: var(--branco);
+      padding: 10px 12px;
+      font-family: 'Sora', sans-serif;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .config input:focus, .config select:focus { border-color: var(--verde); }
+    .config select option { background: var(--bg2); }
+
+    /* Botão disparar */
+    #btn-disparar {
+      width: 100%;
+      max-width: 360px;
+      padding: 18px;
+      font-family: 'Sora', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      background: var(--verde);
+      color: #0d1117;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    #btn-disparar:hover  { opacity: 0.88; }
+    #btn-disparar:active { transform: scale(0.98); }
+    #btn-disparar:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Feedback */
+    #feedback {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 1px;
+      min-height: 18px;
+      text-align: center;
+    }
+    #feedback.ok  { color: var(--verde); }
+    #feedback.err { color: var(--red); }
+
+    .divider {
+      width: 100%;
+      max-width: 360px;
+      height: 1px;
+      background: var(--borda);
+    }
+    .section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      align-self: flex-start;
+      width: 100%;
+      max-width: 360px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="badge">Painel do Apresentador</div>
+  <h1>Controle da Apresentação</h1>
+
+  <!-- Contador de conectados -->
+  <div class="conectados">
+    <strong id="num-conectados">0</strong>
+    espectadores conectados agora
+  </div>
+
+  <div class="divider"></div>
+  <div class="section-label">Mensagens rápidas</div>
+
+  <!-- Mensagens pré-definidas -->
+  <div class="card-grid" id="card-grid">
+
+    <div class="card-msg selecionado" data-icone="🙏" data-titulo="Muito obrigado!" data-sub="Desenvolvido com dedicação para otimizar a operação logística do CD Itaboraí." data-som="fanfarra">
+      <div class="card-icone">🙏</div>
+      <div class="card-info">
+        <div class="card-titulo-msg">Muito obrigado!</div>
+        <div class="card-sub-msg">Mensagem de encerramento padrão</div>
+      </div>
+    </div>
+
+    <div class="card-msg" data-icone="🚛" data-titulo="AgendaCD" data-sub="Sistema de agendamento logístico do CD Itaboraí — desenvolvido internamente." data-som="positivo">
+      <div class="card-icone">🚛</div>
+      <div class="card-info">
+        <div class="card-titulo-msg">AgendaCD</div>
+        <div class="card-sub-msg">Apresentação do sistema</div>
+      </div>
+    </div>
+
+    <div class="card-msg" data-icone="📱" data-titulo="Escaneie o QR!" data-sub="Acesse agora o sistema que os motoristas usam em tempo real." data-som="positivo">
+      <div class="card-icone">📱</div>
+      <div class="card-info">
+        <div class="card-titulo-msg">Escaneie o QR!</div>
+        <div class="card-sub-msg">Convite para interação</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="divider"></div>
+  <div class="section-label">Personalizar mensagem</div>
+
+  <!-- Configuração personalizada -->
+  <div class="config">
+    <div>
+      <label>Ícone (emoji)</label>
+      <input type="text" id="cfg-icone" value="🙏" maxlength="4">
+    </div>
+    <div>
+      <label>Título</label>
+      <input type="text" id="cfg-titulo" value="Muito obrigado!">
+    </div>
+    <div>
+      <label>Subtítulo</label>
+      <input type="text" id="cfg-sub" value="Desenvolvido com dedicação para otimizar a operação logística do CD Itaboraí.">
+    </div>
+    <div>
+      <label>Som</label>
+      <select id="cfg-som">
+        <option value="fanfarra">Fanfarra (sequência festiva)</option>
+        <option value="positivo">Positivo (dois bipes suaves)</option>
+        <option value="nenhum">Sem som</option>
+      </select>
+    </div>
+  </div>
+
+  <button id="btn-disparar">🚀 Disparar para todos</button>
+  <div id="feedback"></div>
+
+  <script>
+    const API_DISPARAR  = '/apresentacao/disparar';
+    const API_CONECTADOS = '/apresentacao/conectados';
+
+    // ── Seleção de card ──
+    let dadosSelecionados = {
+      icone:  '🙏',
+      titulo: 'Muito obrigado!',
+      sub:    'Desenvolvido com dedicação para otimizar a operação logística do CD Itaboraí.',
+      som:    'fanfarra'
+    };
+
+    document.querySelectorAll('.card-msg').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.card-msg').forEach(c => c.classList.remove('selecionado'));
+        card.classList.add('selecionado');
+
+        dadosSelecionados = {
+          icone:  card.dataset.icone,
+          titulo: card.dataset.titulo,
+          sub:    card.dataset.sub,
+          som:    card.dataset.som
+        };
+
+        // Preenche campos de personalização
+        document.getElementById('cfg-icone').value  = dadosSelecionados.icone;
+        document.getElementById('cfg-titulo').value = dadosSelecionados.titulo;
+        document.getElementById('cfg-sub').value    = dadosSelecionados.sub;
+        document.getElementById('cfg-som').value    = dadosSelecionados.som;
+      });
+    });
+
+    // ── Disparar ──
+    document.getElementById('btn-disparar').addEventListener('click', async () => {
+      const payload = {
+        icone:  document.getElementById('cfg-icone').value  || '🙏',
+        titulo: document.getElementById('cfg-titulo').value || 'Muito obrigado!',
+        sub:    document.getElementById('cfg-sub').value    || '',
+        som:    document.getElementById('cfg-som').value    || 'fanfarra'
+      };
+
+      const btn = document.getElementById('btn-disparar');
+      const fb  = document.getElementById('feedback');
+      btn.disabled = true;
+      fb.className = '';
+      fb.textContent = 'Enviando...';
+
+      try {
+        const res = await fetch(API_DISPARAR, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(payload)
+        });
+        if (res.ok) {
+          fb.className   = 'ok';
+          fb.textContent = '✔ DISPARADO PARA ' + document.getElementById('num-conectados').textContent + ' DISPOSITIVOS';
+        } else {
+          fb.className   = 'err';
+          fb.textContent = 'ERRO AO DISPARAR';
+        }
+      } catch(e) {
+        fb.className   = 'err';
+        fb.textContent = 'ERRO DE CONEXÃO';
+      }
+
+      setTimeout(() => {
+        btn.disabled   = false;
+        fb.textContent = '';
+        fb.className   = '';
+      }, 4000);
+    });
+
+    // ── Contador de conectados ──
+    async function atualizarConectados() {
+      try {
+        const res = await fetch(API_CONECTADOS);
+        const data = await res.json();
+        document.getElementById('num-conectados').textContent = data.total || 0;
+      } catch(e) {}
+    }
+    atualizarConectados();
+    setInterval(atualizarConectados, 3000);
+  </script>
+</body>
+</html>

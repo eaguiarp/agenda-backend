@@ -435,7 +435,6 @@ app.post("/agendamentos", async (req, res) => {
         motorista      || null
       ]
     );
-    broadcastSseUpdate('agendamentos');
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -708,6 +707,56 @@ app.put("/horarios-config/:dia", auth(3, 'Controle de Horarios'), async (req, re
   }
 });
 
+
+// ========================================================
+// 🎤 APRESENTAÇÃO — SSE + CONTROLE
+// ========================================================
+let clientesApresentacao = [];
+
+// SSE: espectadores se conectam aqui
+app.get('/events/apresentacao', (req, res) => {
+  res.setHeader('Content-Type',  'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection',    'keep-alive');
+  res.flushHeaders();
+
+  // Mantém conexão viva
+  const keepAlive = setInterval(() => res.write(': ping\n\n'), 20000);
+
+  clientesApresentacao.push(res);
+  console.log(`[Apresentação] Conectados: ${clientesApresentacao.length}`);
+
+  req.on('close', () => {
+    clearInterval(keepAlive);
+    clientesApresentacao = clientesApresentacao.filter(c => c !== res);
+    console.log(`[Apresentação] Desconectados. Total: ${clientesApresentacao.length}`);
+  });
+});
+
+// Retorna número de espectadores conectados
+app.get('/apresentacao/conectados', (req, res) => {
+  res.json({ total: clientesApresentacao.length });
+});
+
+// Dispara mensagem para todos os espectadores
+app.post('/apresentacao/disparar', (req, res) => {
+  const { icone, titulo, sub, som } = req.body;
+  const payload = JSON.stringify({
+    type:   'mensagem',
+    icone:  icone  || '🙏',
+    titulo: titulo || 'Muito obrigado!',
+    sub:    sub    || '',
+    som:    som    || 'fanfarra'
+  });
+
+  clientesApresentacao.forEach(cliente => {
+    try { cliente.write(`data: ${payload}\n\n`); } catch(e) {}
+  });
+
+  console.log(`[Apresentação] Mensagem disparada para ${clientesApresentacao.length} dispositivos`);
+  res.json({ sucesso: true, disparado_para: clientesApresentacao.length });
+});
+
 // ========================================================
 // 🖥️ ROTAS DE PÁGINAS
 // ========================================================
@@ -717,6 +766,8 @@ app.get("/portaria",  (req, res) => res.sendFile(__dirname + "/public/portaria.h
 app.get("/relatorio", (req, res) => res.sendFile(__dirname + "/public/relatorio.html"));
 app.get("/motorista", (req, res) => res.sendFile(__dirname + "/public/motorista/consulta.html"));
 app.use("/motorista", express.static(path.join(__dirname, "public/motorista")));
+app.get("/apresentacao",          (req, res) => res.sendFile(__dirname + "/public/apresentacao.html"));
+app.get("/apresentacao-controle", (req, res) => res.sendFile(__dirname + "/public/apresentacao-controle.html"));
 
 // ========================================================
 // 🚀 START

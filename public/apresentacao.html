@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>AgendaCD — CD Itaboraí</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #0d1117;
+      --bg2:       #161b22;
+      --borda:     #21262d;
+      --verde:     #3fb950;
+      --verde-dim: #1a3d23;
+      --branco:    #f0f6fc;
+      --muted:     #8b949e;
+      --ouro:      #d4a843;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Sora', sans-serif;
+      background: var(--bg);
+      color: var(--branco);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      overflow: hidden;
+    }
+
+    /* ── ESTADO ESPERA ── */
+    #tela-espera {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+      width: 100%;
+      max-width: 360px;
+      animation: fadeIn 0.8s ease;
+    }
+
+    .badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--verde);
+      border: 1px solid var(--verde-dim);
+      padding: 5px 14px;
+      border-radius: 20px;
+      background: rgba(63,185,80,0.06);
+    }
+
+    .titulo {
+      text-align: center;
+    }
+    .titulo h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -1px;
+      line-height: 1.1;
+      color: var(--branco);
+    }
+    .titulo h1 span {
+      color: var(--verde);
+    }
+    .titulo p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 10px;
+      line-height: 1.6;
+      font-weight: 300;
+    }
+
+    /* QR code placeholder — substitua pela imagem real */
+    .qr-wrap {
+      background: var(--branco);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 0 0 1px var(--borda), 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .qr-wrap img {
+      width: 180px;
+      height: 180px;
+      display: block;
+      border-radius: 4px;
+    }
+
+    .desc {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 280px;
+    }
+    .desc strong { color: var(--branco); font-weight: 600; }
+
+    /* Indicador de conexão */
+    .status-conexao {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--muted);
+      letter-spacing: 1px;
+    }
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--verde);
+      animation: pulsar 2s infinite;
+    }
+    .status-dot.desconectado { background: #f85149; animation: none; }
+    @keyframes pulsar {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    /* ── ESTADO MENSAGEM FINAL ── */
+    #tela-mensagem {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      text-align: center;
+      animation: fadeIn 1.2s ease;
+    }
+
+    .msg-icone {
+      font-size: 3.5rem;
+      animation: aparecer 0.6s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .msg-titulo {
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: -1px;
+      line-height: 1.1;
+      animation: subirFade 0.8s ease 0.2s both;
+    }
+    .msg-sub {
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-weight: 300;
+      line-height: 1.6;
+      max-width: 280px;
+      animation: subirFade 0.8s ease 0.4s both;
+    }
+    .msg-linha {
+      width: 40px;
+      height: 2px;
+      background: var(--verde);
+      border-radius: 2px;
+      animation: expandir 0.6s ease 0.6s both;
+    }
+
+    /* partícula de brilho */
+    .brilhos {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .brilho {
+      position: absolute;
+      border-radius: 50%;
+      background: var(--verde);
+      opacity: 0;
+      animation: brilhar var(--dur) ease var(--delay) forwards;
+    }
+    @keyframes brilhar {
+      0%   { opacity: 0; transform: scale(0) translateY(0); }
+      30%  { opacity: 0.6; }
+      100% { opacity: 0; transform: scale(1) translateY(-120px); }
+    }
+
+    @keyframes fadeIn    { from { opacity:0; } to { opacity:1; } }
+    @keyframes aparecer  { from { transform:scale(0.5); opacity:0; } to { transform:scale(1); opacity:1; } }
+    @keyframes subirFade { from { transform:translateY(16px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+    @keyframes expandir  { from { width:0; opacity:0; } to { width:40px; opacity:1; } }
+  </style>
+</head>
+<body>
+
+  <!-- TELA DE ESPERA -->
+  <div id="tela-espera">
+    <div class="badge">CD Itaboraí · 2025</div>
+
+    <div class="titulo">
+      <h1>Agenda<span>CD</span></h1>
+      <p>Sistema de agendamento e gestão logística de descarga desenvolvido internamente.</p>
+    </div>
+
+    <div class="qr-wrap">
+      <!-- Substitua pelo caminho do seu QR code -->
+      <img src="/motorista/icon-192.png" alt="QR Code" id="qr-img">
+    </div>
+
+    <div class="desc">
+      <strong>Escaneie o QR code</strong> para acessar o sistema de consulta de fila — o mesmo que os motoristas usam em tempo real.
+    </div>
+
+    <div class="status-conexao">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-texto">CONECTADO</span>
+    </div>
+  </div>
+
+  <!-- TELA DE MENSAGEM FINAL -->
+  <div id="tela-mensagem">
+    <div class="brilhos" id="brilhos"></div>
+    <div class="msg-icone" id="msg-icone">🙏</div>
+    <div class="msg-titulo" id="msg-titulo">Muito obrigado!</div>
+    <div class="msg-linha"></div>
+    <div class="msg-sub" id="msg-sub">Desenvolvido com dedicação para otimizar a operação logística do CD Itaboraí.</div>
+  </div>
+
+  <script>
+    const SSE_URL = '/events/apresentacao';
+    let sse = null;
+    let reconectarTimer = null;
+
+    function conectar() {
+      if (sse) sse.close();
+      sse = new EventSource(SSE_URL);
+
+      sse.onopen = () => {
+        document.getElementById('status-dot').classList.remove('desconectado');
+        document.getElementById('status-texto').textContent = 'CONECTADO';
+      };
+
+      sse.onmessage = (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload.type === 'mensagem') {
+            exibirMensagem(payload);
+          }
+        } catch(err) {}
+      };
+
+      sse.onerror = () => {
+        document.getElementById('status-dot').classList.add('desconectado');
+        document.getElementById('status-texto').textContent = 'RECONECTANDO...';
+        sse.close();
+        reconectarTimer = setTimeout(conectar, 3000);
+      };
+    }
+
+    function exibirMensagem(payload) {
+      // Toca som se houver
+      tocarSom(payload.som || 'fanfarra');
+
+      // Atualiza textos
+      document.getElementById('msg-icone').textContent  = payload.icone  || '🙏';
+      document.getElementById('msg-titulo').textContent = payload.titulo  || 'Muito obrigado!';
+      document.getElementById('msg-sub').textContent    = payload.sub     || '';
+
+      // Troca de tela
+      document.getElementById('tela-espera').style.display    = 'none';
+      document.getElementById('tela-mensagem').style.display  = 'flex';
+
+      // Brilhos
+      gerarBrilhos();
+    }
+
+    function gerarBrilhos() {
+      const container = document.getElementById('brilhos');
+      container.innerHTML = '';
+      for (let i = 0; i < 18; i++) {
+        const el = document.createElement('div');
+        el.className = 'brilho';
+        el.style.cssText = `
+          left: ${10 + Math.random() * 80}%;
+          top:  ${30 + Math.random() * 60}%;
+          width:  ${4 + Math.random() * 8}px;
+          height: ${4 + Math.random() * 8}px;
+          --dur:   ${0.8 + Math.random() * 1.2}s;
+          --delay: ${Math.random() * 0.6}s;
+        `;
+        container.appendChild(el);
+      }
+    }
+
+    // ── SOM ──
+    function tocarSom(tipo) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (tipo === 'fanfarra') tocarFanfarra(ctx);
+        else if (tipo === 'positivo') tocarPositivo(ctx);
+      } catch(e) {}
+    }
+
+    function nota(ctx, freq, start, dur, vol) {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(vol, ctx.currentTime + start);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+      osc.start(ctx.currentTime + start);
+      osc.stop(ctx.currentTime + start + dur + 0.05);
+    }
+
+    function tocarFanfarra(ctx) {
+      // Sequência ascendente festiva
+      nota(ctx, 523, 0.0,  0.15, 0.3); // Do
+      nota(ctx, 659, 0.18, 0.15, 0.3); // Mi
+      nota(ctx, 784, 0.36, 0.15, 0.3); // Sol
+      nota(ctx, 1047,0.54, 0.35, 0.4); // Do alto
+    }
+
+    function tocarPositivo(ctx) {
+      nota(ctx, 880,  0.0,  0.12, 0.25);
+      nota(ctx, 1100, 0.15, 0.25, 0.3);
+    }
+
+    conectar();
+  </script>
+</body>
+</html>
