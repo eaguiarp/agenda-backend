@@ -1,0 +1,859 @@
+require('dotenv').config();
+
+const express    = require("express");
+const cors       = require("cors");
+const { Pool }   = require("pg");
+const path       = require("path");
+const basicAuth  = require('express-basic-auth');
+const multer     = require('multer');
+const fs         = require('fs');
+const { Resend } = require('resend');
+
+const app = express();
+app.use(require('compression')()); // gzip (SSE responses are skipped via Cache-Control: no-transform)
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// IMPORTAR as rotas dos vagões
+const vagoesRotas = require('./vagoes_rotas.js');
+
+// ========================================================
+// 📁 PASTA DE UPLOADS TEMPORÁRIOS
+// ========================================================
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'uploads/'),
+  filename:    (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB por foto (frontend já comprime antes de enviar)
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Apenas imagens são aceitas'));
+  }
+});
+
+// ========================================================
+// 📧 RESEND (HTTP — funciona no Railway)
+// ========================================================
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// ========================================================
+// 🗄️ BANCO DE DADOS
+// ========================================================
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
+// ========================================================
+// 🔑 HIERARQUIA DE PERFIS
+// admin(4) > relatorio(3) > portaria(2) > operacao(1)
+// ========================================================
+const NIVEL = { admin: 4, relatorio: 3, portaria: 2, operacao: 1 };
+
+async function verificarAcesso(user, pass, nivelMinimo) {
+  try {
+    const result = await pool.query(
+      "SELECT perfil FROM usuarios WHERE nome = $1 AND senha = $2",
+      [user, pass]
+    );
+    if (!result.rows.length) return false;
+    const nivel = NIVEL[result.rows[0].perfil] || 1;
+    return nivel >= nivelMinimo;
+  } catch (e) {
+    console.error("Erro ao verificar acesso:", e);
+    return false;
+  }
+}
+
+vagoesRotas(app, pool, verificarAcesso);
+
+// Fila online de motoristas (QR dinâmico) — rotas em /api/fila/*
+require('./fila-routes')(app, pool);
+
+function auth(nivelMinimo, realm) {
+  return basicAuth({
+    authorizer: (user, pass, cb) => {
+      verificarAcesso(user, pass, nivelMinimo)
+        .then(ok => cb(null, ok))
+        .catch(() => cb(null, false));
+    },
+    authorizeAsync: true,
+    challenge: true,
+    realm
+  });
+}
+
+const sseClients = new Set();
+
+function broadcastSseUpdate(type) {
+  const payload = JSON.stringify({ type, ts: Date.now() });
+  const message = `event: update\ndata: ${payload}\n\n`;
+
+  for (const client of Array.from(sseClients)) {
+    try {
+      client.write(message);
+    } catch (err) {
+      client.end();
+      sseClients.delete(client);
+    }
+  }
+}
+
+function registerSseClient(req, res) {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+
+  sseClients.add(res);
+  res.write(': connected\n\n');
+
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(': ping\n\n');
+    } catch (err) {
+      clearInterval(heartbeat);
+      sseClients.delete(res);
+      res.end();
+    }
+  }, 15000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    sseClients.delete(res);
+  });
+}
+
+// ========================================================
+// 🛡️ BLOCO DE SEGURANÇA
+// ========================================================
+app.use((req, res, next) => {
+
+  if (req.path === '/' || req.path === '/index.html') {
+    return auth(1, 'Painel Logistico Itaborai')(req, res, next);
+  }
+
+  if (req.path === '/portaria' || req.path === '/portaria.html') {
+    return auth(2, 'Portaria CD Itaborai')(req, res, next);
+  }
+
+  if (req.path === '/relatorio' || req.path === '/relatorio.html') {
+    return auth(3, 'Relatorio CD Itaborai')(req, res, next);
+  }
+
+  next();
+});
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Servir favicon a partir dos ícones existentes (evita 404 para /favicon.ico)
+app.get('/favicon.ico', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'icon-72.png'));
+});
+
+app.get('/events', auth(1, 'CD Itaborai'), (req, res) => {
+  registerSseClient(req, res);
+});
+
+// Rota pública para painéis (sem autenticação) — envia mesmos eventos SSE
+app.get('/events/public', (req, res) => {
+  registerSseClient(req, res);
+});
+
+app.get("/eu", auth(1, 'CD Itaborai'), (req, res) => {
+  res.json({ usuario: req.auth.user });
+});
+
+// ========================================================
+//  ROTA DE MIGRAÇÃO
+// ========================================================
+app.get("/criar-banco", async (req, res) => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS agendamentos (
+        id SERIAL PRIMARY KEY,
+        data VARCHAR(20) NOT NULL,
+        hora VARCHAR(10) NOT NULL,
+        placa VARCHAR(20) NOT NULL,
+        produto VARCHAR(50),
+        status VARCHAR(20) DEFAULT 'agendado'
+      );
+    `);
+
+    const colunas = [
+      "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS produto VARCHAR(50)",
+      "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS alterado_por VARCHAR(50)",
+      "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS tipo_operacao VARCHAR(20) DEFAULT 'transferencia'",
+      "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS quantidade VARCHAR(20)",
+      "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS nota_fiscal VARCHAR(30)",
+      "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS transportadora VARCHAR(50)",
+      "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS hora_entrada VARCHAR(10)",
+      "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS hora_saida VARCHAR(10)",
+      "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS motorista VARCHAR(100)",
+      "ALTER TABLE agendamentos ALTER COLUMN produto TYPE VARCHAR(500)",
+      "ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS vasilhame VARCHAR(50)"
+    ];
+
+    for (const sql of colunas) {
+      try { await pool.query(sql); } catch (e) {}
+    }
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS bloqueios (
+        id SERIAL PRIMARY KEY,
+        data_inicio VARCHAR(20) NOT NULL,
+        data_fim    VARCHAR(20) NOT NULL,
+        hora_inicio VARCHAR(10),
+        hora_fim    VARCHAR(10),
+        motivo      VARCHAR(200),
+        criado_por  VARCHAR(50),
+        criado_em   TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS usuarios (
+        id        SERIAL PRIMARY KEY,
+        nome      VARCHAR(50) UNIQUE NOT NULL,
+        senha     VARCHAR(100) NOT NULL,
+        perfil    VARCHAR(20) DEFAULT 'operacao',
+        criado_em TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    const usuariosPadrao = [
+      { nome: 'eduardo',   senha: 'senhaMestre1',  perfil: 'admin'     },
+      { nome: 'gabriel',   senha: 'logistica2026', perfil: 'relatorio' },
+      { nome: 'portaria',  senha: 'portaria2026',  perfil: 'portaria'  },
+      { nome: 'operacao',  senha: 'patio123',      perfil: 'operacao'  },
+      { nome: 'tora',      senha: 'tora2026',      perfil: 'operacao'  },
+      { nome: 'transagil', senha: 'trans2026',     perfil: 'operacao'  },
+      { nome: 'uillian',   senha: 'uillian2026',   perfil: 'operacao'  },
+      { nome: 'fabiano',   senha: 'fabiano2026',   perfil: 'operacao'  },
+    ];
+
+    for (const u of usuariosPadrao) {
+      try {
+        await pool.query(
+          "INSERT INTO usuarios (nome, senha, perfil) VALUES ($1, $2, $3) ON CONFLICT (nome) DO NOTHING",
+          [u.nome, u.senha, u.perfil]
+        );
+      } catch (e) {}
+    }
+
+    // ── TABELAS DO MÓDULO DE VAGÕES (CD Arará) ──
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS vagoes_composicoes (
+        id         SERIAL PRIMARY KEY,
+        chegada_dt TIMESTAMP NOT NULL,
+        criado_em  TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS vagoes (
+        id            SERIAL PRIMARY KEY,
+        composicao_id INTEGER REFERENCES vagoes_composicoes(id),
+        vagao_id      VARCHAR(20) NOT NULL,
+        status        VARCHAR(30) DEFAULT 'nao_posicionado',
+        pos_dt        TIMESTAMP,
+        fim_dt        TIMESTAMP,
+        atualizado_em TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS vagoes_log (
+        id              SERIAL PRIMARY KEY,
+        vagao_id        VARCHAR(20),
+        status_anterior VARCHAR(30),
+        status_novo     VARCHAR(30),
+        motivo          TEXT,
+        usuario         VARCHAR(100),
+        criado_em       TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS vagoes_config (
+        chave VARCHAR(50) PRIMARY KEY,
+        valor TEXT
+      )
+    `);
+
+    await pool.query(`
+      INSERT INTO vagoes_config (chave, valor)
+      VALUES ('limite_estadia', '24')
+      ON CONFLICT (chave) DO NOTHING
+    `);
+
+    // ── TABELAS DA FILA ONLINE DE MOTORISTAS ──
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS fila_motoristas (
+        id SERIAL PRIMARY KEY,
+        data_fila DATE NOT NULL,
+        placa VARCHAR(8) NOT NULL,
+        nome VARCHAR(40) NOT NULL,
+        registrado_em TIMESTAMPTZ NOT NULL DEFAULT now(),
+        ip VARCHAR(64),
+        user_agent TEXT,
+        lat NUMERIC,
+        lng NUMERIC,
+        status VARCHAR(16) NOT NULL DEFAULT 'aguardando',
+        status_alterado_em TIMESTAMPTZ,
+        status_alterado_por VARCHAR(60),
+        motivo TEXT,
+        UNIQUE (data_fila, placa)
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_fila_data_ordem ON fila_motoristas (data_fila, registrado_em, id)`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS fila_tokens (
+        token VARCHAR(40) PRIMARY KEY,
+        criado_em TIMESTAMPTZ NOT NULL DEFAULT now(),
+        expira_em TIMESTAMPTZ NOT NULL,
+        usado_em TIMESTAMPTZ,
+        sessao VARCHAR(40),
+        sessao_expira TIMESTAMPTZ,
+        sessao_usada_em TIMESTAMPTZ,
+        ip VARCHAR(64)
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_fila_tokens_sessao ON fila_tokens (sessao)`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS fila_log (
+        id SERIAL PRIMARY KEY,
+        fila_id INTEGER NOT NULL REFERENCES fila_motoristas(id),
+        status_anterior VARCHAR(16),
+        status_novo VARCHAR(16) NOT NULL,
+        motivo TEXT,
+        operador VARCHAR(60),
+        em TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+
+    res.send("<h1>✅ Sucesso! Tabelas verificadas e atualizadas (incluindo vagões e fila de motoristas).</h1>");
+  } catch (error) {
+    res.status(500).send("Erro: " + error.message);
+  }
+});
+
+// ========================================================
+// 🚨 ROTA — ANOMALIAS
+// portaria(2) ou superior
+// ========================================================
+app.post('/anomalia',
+  auth(2, 'Registro de Anomalia'),
+  upload.array('fotos', 3),
+  async (req, res) => {
+    const fotos = req.files || [];
+
+    try {
+      const { tipo, descricao } = req.body;
+      const usuario = req.auth.user;
+
+      const agora = new Date();
+      const dataHora = agora.toLocaleString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        day:    '2-digit',
+        month:  '2-digit',
+        year:   'numeric',
+        hour:   '2-digit',
+        minute: '2-digit'
+      });
+
+      // Lê fotos como buffer para o Resend (API HTTP, sem SMTP)
+      const attachments = fotos.map((foto, i) => ({
+        filename:    `foto-${i + 1}.jpg`,
+        content:     fs.readFileSync(foto.path),
+        contentType: 'image/jpeg'
+      }));
+
+      const { error: resendError } = await resend.emails.send({
+        from:        'CD Itaboraí — Anomalias <onboarding@resend.dev>',
+        to:          process.env.EMAIL_USER,
+        subject:     `🚨 Nova Anomalia Operacional — ${tipo}`,
+        attachments,
+        html: `
+          <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
+            <div style="background:#b52a2a;padding:20px 24px;border-radius:6px 6px 0 0;">
+              <h2 style="color:white;margin:0;font-size:1.2rem;">🚨 Nova Anomalia Operacional</h2>
+            </div>
+            <div style="border:1px solid #e0ddd6;border-top:none;padding:24px;border-radius:0 0 6px 6px;">
+              <table style="width:100%;border-collapse:collapse;">
+                <tr>
+                  <td style="padding:8px 0;color:#888;font-size:0.85rem;width:140px;">Tipo</td>
+                  <td style="padding:8px 0;font-weight:700;color:#b52a2a;">${tipo}</td>
+                </tr>
+                <tr style="border-top:1px solid #f0ede6;">
+                  <td style="padding:8px 0;color:#888;font-size:0.85rem;">Registrado em</td>
+                  <td style="padding:8px 0;font-family:monospace;">${dataHora}</td>
+                </tr>
+                <tr style="border-top:1px solid #f0ede6;">
+                  <td style="padding:8px 0;color:#888;font-size:0.85rem;">Usuário</td>
+                  <td style="padding:8px 0;font-family:monospace;">${usuario}</td>
+                </tr>
+                <tr style="border-top:1px solid #f0ede6;">
+                  <td style="padding:8px 0;color:#888;font-size:0.85rem;vertical-align:top;">Descrição</td>
+                  <td style="padding:8px 0;line-height:1.6;">${(descricao || '').replace(/\n/g, '<br>')}</td>
+                </tr>
+                ${fotos.length > 0 ? `
+                <tr style="border-top:1px solid #f0ede6;">
+                  <td style="padding:8px 0;color:#888;font-size:0.85rem;">Fotos</td>
+                  <td style="padding:8px 0;">${fotos.length} foto(s) anexada(s)</td>
+                </tr>` : ''}
+              </table>
+            </div>
+            <p style="font-size:0.72rem;color:#aaa;margin-top:12px;text-align:center;">
+              CD Itaboraí · Sistema de Gestão Logística
+            </p>
+          </div>
+        `
+      });
+
+      if (resendError) throw new Error(resendError.message);
+
+      // Apaga fotos temporárias após envio
+      fotos.forEach(foto => {
+        fs.unlink(foto.path, err => {
+          if (err) console.error("Erro ao deletar arquivo:", err);
+        });
+      });
+
+      res.json({ sucesso: true });
+
+    } catch (err) {
+      console.error("Erro ao enviar anomalia:", err);
+
+      // Tenta apagar fotos mesmo em caso de erro
+      fotos.forEach(foto => {
+        fs.unlink(foto.path, () => {});
+      });
+
+      res.status(500).json({ erro: 'Erro ao registrar anomalia. Tente novamente.' });
+    }
+  }
+);
+
+// ========================================================
+// 🚏 ROTAS — AGENDAMENTOS
+// ========================================================
+const DIAS_PASSADO = parseInt(process.env.AGENDAMENTOS_DIAS_PASSADO, 10) || 3;
+
+app.get("/agendamentos", async (req, res) => {
+  try {
+    // Padrão: só agendamentos recentes (últimos DIAS_PASSADO dias, hoje e futuro)
+    // + qualquer agendamento ainda em aberto, mesmo que antigo.
+    // ?todos=1 devolve a tabela inteira; ?desde=YYYY-MM-DD&ate=YYYY-MM-DD define um intervalo.
+    const ISO = /^\d{4}-\d{2}-\d{2}$/;
+    const { todos, desde, ate } = req.query;
+    let result;
+    if (todos === '1' || todos === 'true') {
+      result = await pool.query("SELECT * FROM agendamentos ORDER BY data, hora");
+    } else if (desde || ate) {
+      if ((desde && !ISO.test(desde)) || (ate && !ISO.test(ate))) {
+        return res.status(400).json({ erro: "Datas devem estar no formato YYYY-MM-DD" });
+      }
+      result = await pool.query(
+        "SELECT * FROM agendamentos WHERE ($1::text IS NULL OR data >= $1) AND ($2::text IS NULL OR data <= $2) ORDER BY data, hora",
+        [desde || null, ate || null]
+      );
+    } else {
+      result = await pool.query(
+        `SELECT * FROM agendamentos
+          WHERE data >= to_char((now() AT TIME ZONE 'America/Sao_Paulo')::date - $1::int, 'YYYY-MM-DD')
+             OR status IN ('agendado','chamando','descarregando','reagendado_fila')
+          ORDER BY data, hora`,
+        [DIAS_PASSADO]
+      );
+    }
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ erro: "Erro ao buscar dados" });
+  }
+});
+
+app.post("/agendamentos", async (req, res) => {
+  try {
+    const {
+      data, hora, placa, produto, alterado_por,
+      tipo_operacao, quantidade, nota_fiscal,
+      transportadora, hora_entrada, hora_saida, status, motorista
+    } = req.body;
+
+    const result = await pool.query(`
+      INSERT INTO agendamentos
+        (data, hora, placa, produto, status, alterado_por,
+         tipo_operacao, quantidade, nota_fiscal, transportadora,
+         hora_entrada, hora_saida, motorista)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+      RETURNING *`,
+      [
+        data, hora, placa,
+        produto        || 'Geral',
+        status         || 'agendado',
+        alterado_por   || null,
+        tipo_operacao  || null,
+        quantidade     || null,
+        nota_fiscal    || null,
+        transportadora || null,
+        hora_entrada   || null,
+        hora_saida     || null,
+        motorista      || null
+      ]
+    );
+    broadcastSseUpdate('agendamentos');
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Erro ao salvar");
+  }
+});
+
+app.put("/agendamentos/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const campos  = req.body;
+    const chaves  = Object.keys(campos);
+    if (!chaves.length) return res.status(400).json({ erro: "Nenhum campo enviado" });
+    const setClause = chaves.map((k, i) => `${k} = $${i + 1}`).join(", ");
+    const valores   = [...chaves.map(k => campos[k]), id];
+    await pool.query(`UPDATE agendamentos SET ${setClause} WHERE id = $${chaves.length + 1}`, valores);
+    broadcastSseUpdate('agendamentos');
+    res.json({ sucesso: true });
+  } catch (error) {
+    res.status(500).json({ erro: "Erro ao atualizar" });
+  }
+});
+
+app.delete("/agendamentos/:id", async (req, res) => {
+  try {
+    await pool.query("DELETE FROM agendamentos WHERE id = $1", [req.params.id]);
+    broadcastSseUpdate('agendamentos');
+    res.json({ sucesso: true });
+  } catch (error) {
+    res.status(500).json({ erro: "Erro ao deletar" });
+  }
+});
+
+// ========================================================
+// 🚫 ROTAS — BLOQUEIOS
+// ========================================================
+app.get("/bloqueios", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM bloqueios ORDER BY data_inicio, hora_inicio");
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ erro: "Erro ao buscar bloqueios" });
+  }
+});
+
+app.post("/bloqueios", async (req, res) => {
+  try {
+    const { data_inicio, data_fim, hora_inicio, hora_fim, motivo, criado_por } = req.body;
+    if (!data_inicio || !data_fim) return res.status(400).json({ erro: "Datas obrigatórias" });
+    const result = await pool.query(
+      "INSERT INTO bloqueios (data_inicio, data_fim, hora_inicio, hora_fim, motivo, criado_por) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *",
+      [data_inicio, data_fim, hora_inicio || null, hora_fim || null, motivo || null, criado_por || null]
+    );
+    broadcastSseUpdate('bloqueios');
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).send("Erro ao criar bloqueio");
+  }
+});
+
+app.delete("/bloqueios/:id", async (req, res) => {
+  try {
+    await pool.query("DELETE FROM bloqueios WHERE id = $1", [req.params.id]);
+    broadcastSseUpdate('bloqueios');
+    res.json({ sucesso: true });
+  } catch (error) {
+    res.status(500).json({ erro: "Erro ao deletar bloqueio" });
+  }
+});
+
+// ========================================================
+// 👥 ROTAS — USUÁRIOS
+// ========================================================
+app.get("/usuarios", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT id, nome, perfil, criado_em FROM usuarios ORDER BY nome");
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ erro: "Erro ao buscar usuários" });
+  }
+});
+
+app.post("/usuarios", async (req, res) => {
+  try {
+    const { nome, senha, perfil } = req.body;
+    if (!nome || !senha) return res.status(400).json({ erro: "Nome e senha obrigatórios" });
+    const result = await pool.query(
+      "INSERT INTO usuarios (nome, senha, perfil) VALUES ($1, $2, $3) RETURNING id, nome, perfil",
+      [nome.toLowerCase().trim(), senha, perfil || 'operacao']
+    );
+    broadcastSseUpdate('usuarios');
+    res.json(result.rows[0]);
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ erro: "Usuário já existe" });
+    res.status(500).json({ erro: "Erro ao criar usuário" });
+  }
+});
+
+app.put("/usuarios/:id", async (req, res) => {
+  try {
+    const { senha, perfil } = req.body;
+    const campos = [], valores = [];
+    if (senha)  { campos.push(`senha  = $${campos.length + 1}`); valores.push(senha); }
+    if (perfil) { campos.push(`perfil = $${campos.length + 1}`); valores.push(perfil); }
+    if (!campos.length) return res.status(400).json({ erro: "Nada para atualizar" });
+    valores.push(req.params.id);
+    await pool.query(`UPDATE usuarios SET ${campos.join(', ')} WHERE id = $${valores.length}`, valores);
+    broadcastSseUpdate('usuarios');
+    res.json({ sucesso: true });
+  } catch (error) {
+    res.status(500).json({ erro: "Erro ao atualizar usuário" });
+  }
+});
+
+app.delete("/usuarios/:id", async (req, res) => {
+  try {
+    await pool.query("DELETE FROM usuarios WHERE id = $1", [req.params.id]);
+    broadcastSseUpdate('usuarios');
+    res.json({ sucesso: true });
+  } catch (error) {
+    res.status(500).json({ erro: "Erro ao deletar usuário" });
+  }
+});
+
+// ========================================================
+// 🌤️ ROTA — CLIMA (Open-Meteo, sem chave)
+// ========================================================
+app.get("/api/weather", async (req, res) => {
+  const https = require("https");
+  const url = "https://api.open-meteo.com/v1/forecast?latitude=-22.779214&longitude=-42.935105&current_weather=true";
+  https.get(url, function(resp) {
+    let data = "";
+    resp.on("data", function(chunk) { data += chunk; });
+    resp.on("end", function() {
+      try {
+        const w = JSON.parse(data).current_weather;
+        const codigos = {
+          0:"Céu limpo", 1:"Quase limpo", 2:"Parcialmente nublado", 3:"Nublado",
+          45:"Neblina", 48:"Neblina com geada", 51:"Garoa leve", 53:"Garoa moderada",
+          55:"Garoa intensa", 61:"Chuva leve", 63:"Chuva moderada", 65:"Chuva forte",
+          80:"Pancadas leves", 81:"Pancadas moderadas", 82:"Pancadas fortes",
+          95:"Tempestade", 96:"Tempestade c/ granizo", 99:"Tempestade c/ granizo forte"
+        };
+        res.json({
+          temperatura: w.temperature,
+          vento:       w.windspeed,
+          descricao:   codigos[w.weathercode] || "Condição " + w.weathercode
+        });
+      } catch(e) { res.status(500).json({ erro: "Erro ao processar clima" }); }
+    });
+  }).on("error", function() { res.status(500).json({ erro: "Erro ao obter clima" }); });
+});
+
+app.get('/api/nfe/:chave', async (req, res) => {
+  const { chave } = req.params;
+  if (!chave || !/^[0-9]{44}$/.test(chave)) {
+    return res.status(400).json({ erro: 'Chave de acesso inválida. Deve conter 44 dígitos.' });
+  }
+
+  try {
+    const fetchFn = typeof fetch === 'function' ? fetch : require('node-fetch');
+    const respostaApi = await fetchFn(`https://consultadanfe.com/api/v1/chave/${chave}`);
+    if (!respostaApi.ok) {
+      return res.status(404).json({ erro: 'Nota fiscal não encontrada ou limite da API atingido.' });
+    }
+    const data = await respostaApi.json();
+    return res.json(data);
+  } catch (error) {
+    console.error('Erro ao consultar NF-e:', error);
+    return res.status(500).json({ erro: 'Erro interno ao processar a consulta da nota.' });
+  }
+});
+
+// ========================================================
+// 🚗 ROTA — TRÂNSITO (duas chamadas: CD e Serra como origem)
+// Chamada 1: CD → destinos diretos (Centro, Manilha, Alcântara, Niterói, Serra, Via Lagos)
+// Chamada 2: Serra → Maricá (para somar os dois trechos reais da rota)
+// ========================================================
+app.get("/api/traffic", async (req, res) => {
+  // Trânsito desativado temporariamente: retornar lista vazia para evitar 500s
+  try {
+    return res.json([]);
+  } catch (e) {
+    console.error('Erro ao responder /api/traffic (rota desativada):', e);
+    return res.json([]);
+  }
+});
+
+// ========================================================
+// 🕐 ROTAS — CONFIGURAÇÃO DE HORÁRIOS
+// ========================================================
+
+// Garante que a tabela existe (chamada automática no start)
+async function criarTabelaHorariosConfig() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS horarios_config (
+      dia_semana  INTEGER PRIMARY KEY, -- 0=Dom, 1=Seg, 2=Sab=6
+      ativo       BOOLEAN DEFAULT true,
+      inicio      INTEGER NOT NULL DEFAULT 0,    -- minutos desde meia-noite
+      fim         INTEGER NOT NULL DEFAULT 1410, -- 23:30
+      pausas      JSONB   DEFAULT '[]',          -- [{inicio:360,fim:420}]
+      cantagalo   JSONB   DEFAULT '[]',          -- minutos exclusivos cantagalo
+      capacidade  INTEGER DEFAULT 1820,          -- sc por hora
+      max_veiculos INTEGER DEFAULT 4,
+      atualizado_em TIMESTAMP DEFAULT NOW()
+    );
+  `);
+
+  // Insere configuração padrão se a tabela estiver vazia
+  const check = await pool.query("SELECT COUNT(*) FROM horarios_config");
+  if (parseInt(check.rows[0].count) === 0) {
+    const defaults = [
+      // Dom: 06h–14h, sem pausas
+      { dia: 0, ativo: true, inicio: 360,  fim: 840,  pausas: [],                       cantagalo: [] },
+      // Seg: 07h–23h30, pausa 16h–17h
+      { dia: 1, ativo: true, inicio: 420,  fim: 1410, pausas: [{inicio:960,fim:1020}],   cantagalo: [160,450,570,780,900,1060,1260] },
+      // Ter–Sex: 00h–23h30, pausas 06h–07h e 16h–17h
+      { dia: 2, ativo: true, inicio: 0,    fim: 1410, pausas: [{inicio:360,fim:420},{inicio:960,fim:1020}], cantagalo: [160,450,570,780,900,1060,1260] },
+      { dia: 3, ativo: true, inicio: 0,    fim: 1410, pausas: [{inicio:360,fim:420},{inicio:960,fim:1020}], cantagalo: [160,450,570,780,900,1060,1260] },
+      { dia: 4, ativo: true, inicio: 0,    fim: 1410, pausas: [{inicio:360,fim:420},{inicio:960,fim:1020}], cantagalo: [160,450,570,780,900,1060,1260] },
+      { dia: 5, ativo: true, inicio: 0,    fim: 1410, pausas: [{inicio:360,fim:420},{inicio:960,fim:1020}], cantagalo: [160,450,570,780,900,1060,1260] },
+      // Sab: 00h–15h30, pausa 06h–07h
+      { dia: 6, ativo: true, inicio: 0,    fim: 930,  pausas: [{inicio:360,fim:420}],   cantagalo: [] },
+    ];
+    for (const d of defaults) {
+      await pool.query(
+        `INSERT INTO horarios_config (dia_semana, ativo, inicio, fim, pausas, cantagalo)
+         VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (dia_semana) DO NOTHING`,
+        [d.dia, d.ativo, d.inicio, d.fim, JSON.stringify(d.pausas), JSON.stringify(d.cantagalo)]
+      );
+    }
+  }
+}
+criarTabelaHorariosConfig().catch(e => console.error("Erro ao criar tabela horarios_config:", e));
+
+// GET — retorna configuração de todos os dias (público, usado pelo script.js)
+app.get("/horarios-config", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM horarios_config ORDER BY dia_semana");
+    res.json(result.rows);
+  } catch (e) {
+    res.status(500).json({ erro: "Erro ao buscar configuração" });
+  }
+});
+
+// PUT — atualiza configuração de um dia específico (requer perfil relatorio ou superior)
+app.put("/horarios-config/:dia", auth(3, 'Controle de Horarios'), async (req, res) => {
+  try {
+    const dia = parseInt(req.params.dia);
+    if (dia < 0 || dia > 6) return res.status(400).json({ erro: "Dia inválido (0-6)" });
+    const { ativo, inicio, fim, pausas, cantagalo, capacidade, max_veiculos } = req.body;
+    await pool.query(`
+      INSERT INTO horarios_config (dia_semana, ativo, inicio, fim, pausas, cantagalo, capacidade, max_veiculos, atualizado_em)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
+      ON CONFLICT (dia_semana) DO UPDATE SET
+        ativo        = EXCLUDED.ativo,
+        inicio       = EXCLUDED.inicio,
+        fim          = EXCLUDED.fim,
+        pausas       = EXCLUDED.pausas,
+        cantagalo    = EXCLUDED.cantagalo,
+        capacidade   = EXCLUDED.capacidade,
+        max_veiculos = EXCLUDED.max_veiculos,
+        atualizado_em = NOW()
+    `, [dia, ativo, inicio, fim, JSON.stringify(pausas || []), JSON.stringify(cantagalo || []), capacidade || 1820, max_veiculos || 4]);
+    broadcastSseUpdate('horarios');
+    res.json({ sucesso: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ erro: "Erro ao salvar configuração" });
+  }
+});
+
+
+// ========================================================
+// 🎤 APRESENTAÇÃO — SSE + CONTROLE
+// ========================================================
+let clientesApresentacao = [];
+
+// SSE: espectadores se conectam aqui
+app.get('/events/apresentacao', (req, res) => {
+  res.setHeader('Content-Type',  'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection',    'keep-alive');
+  res.flushHeaders();
+
+  // Mantém conexão viva
+  const keepAlive = setInterval(() => res.write(': ping\n\n'), 20000);
+
+  clientesApresentacao.push(res);
+  console.log(`[Apresentação] Conectados: ${clientesApresentacao.length}`);
+
+  req.on('close', () => {
+    clearInterval(keepAlive);
+    clientesApresentacao = clientesApresentacao.filter(c => c !== res);
+    console.log(`[Apresentação] Desconectados. Total: ${clientesApresentacao.length}`);
+  });
+});
+
+// Retorna número de espectadores conectados
+app.get('/apresentacao/conectados', (req, res) => {
+  res.json({ total: clientesApresentacao.length });
+});
+
+// Dispara mensagem para todos os espectadores
+app.post('/apresentacao/disparar', (req, res) => {
+  const { icone, titulo, sub, som } = req.body;
+  const payload = JSON.stringify({
+    type:   'mensagem',
+    icone:  icone  || '🙏',
+    titulo: titulo || 'Muito obrigado!',
+    sub:    sub    || '',
+    som:    som    || 'fanfarra'
+  });
+
+  clientesApresentacao.forEach(cliente => {
+    try { cliente.write(`data: ${payload}\n\n`); } catch(e) {}
+  });
+
+  console.log(`[Apresentação] Mensagem disparada para ${clientesApresentacao.length} dispositivos`);
+  res.json({ sucesso: true, disparado_para: clientesApresentacao.length });
+});
+
+// ========================================================
+// 🖥️ ROTAS DE PÁGINAS
+// ========================================================
+app.get("/tv",        (req, res) => res.sendFile(__dirname + "/public/tv.html"));
+app.get("/mobile",    (req, res) => res.sendFile(__dirname + "/public/mobile.html"));
+app.get("/portaria",  (req, res) => res.sendFile(__dirname + "/public/portaria.html"));
+app.get("/relatorio", (req, res) => res.sendFile(__dirname + "/public/relatorio.html"));
+app.get("/motorista", (req, res) => res.sendFile(__dirname + "/public/motorista/consulta.html"));
+app.use("/motorista", express.static(path.join(__dirname, "public/motorista")));
+app.get("/apresentacao",          (req, res) => res.sendFile(__dirname + "/public/apresentacao.html"));
+app.get("/apresentacao-controle", (req, res) => res.sendFile(__dirname + "/public/apresentacao-controle.html"));
+
+// ========================================================
+// 🚀 START
+// ========================================================
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("Servidor rodando na porta " + PORT);
+});
+
+// Express (Node.js)
+app.get('/api/config', (req, res) => {
+  res.json({ tomtomKey: process.env.TOMTOM_KEY });
+});

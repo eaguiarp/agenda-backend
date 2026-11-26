@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fila de motoristas</title>
+<style>
+  :root { --bg:#f3f5f8; --card:#fff; --tx:#16202e; --mut:#5b6879; --pri:#0a5cd6; --ok:#0b7a43; --err:#b3261e; --bd:#d6dce5; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0f141b; --card:#18202b; --tx:#e8edf3; --mut:#9aa7b8; --pri:#5b9cff; --ok:#4cc38a; --err:#ff8a80; --bd:#2b3646; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--tx); }
+  main { max-width:440px; margin:0 auto; padding:20px 16px 40px; }
+  h1 { font-size:22px; margin:8px 0 4px; }
+  .sub { color:var(--mut); margin:0 0 18px; font-size:14px; }
+  .card { background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:18px; }
+  label { display:block; font-weight:600; margin:14px 0 6px; }
+  input { width:100%; font-size:22px; padding:14px; border:2px solid var(--bd); border-radius:10px; background:var(--bg); color:var(--tx); }
+  input:focus { outline:none; border-color:var(--pri); }
+  #placa { text-transform:uppercase; letter-spacing:3px; text-align:center; font-weight:700; }
+  button { width:100%; margin-top:20px; padding:16px; font-size:18px; font-weight:700; border:0; border-radius:10px; background:var(--pri); color:#fff; }
+  button:disabled { opacity:.5; }
+  .msg { margin-top:14px; padding:12px; border-radius:10px; font-size:15px; }
+  .msg.err { background:color-mix(in srgb, var(--err) 14%, transparent); color:var(--err); }
+  .timer { text-align:right; font-size:13px; color:var(--mut); }
+  .hidden { display:none; }
+  .ok-title { color:var(--ok); font-size:20px; font-weight:700; margin:0 0 10px; }
+  .pos { font-size:64px; font-weight:800; line-height:1; margin:6px 0; }
+  .row { display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid var(--bd); }
+  .row span:first-child { color:var(--mut); }
+  .aviso { font-size:13px; color:var(--mut); margin-top:14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Fila de motoristas</h1>
+  <p class="sub">Registro de chegada do dia</p>
+
+  <div id="carregando" class="card">Validando QR…</div>
+
+  <div id="erro" class="card hidden">
+    <p id="erroTxt" style="margin:0"></p>
+    <p class="aviso">Para tentar de novo, escaneie o QR que está na portaria.</p>
+  </div>
+
+  <form id="form" class="card hidden" autocomplete="off">
+    <div class="timer">Tempo para concluir: <b id="tempo">--:--</b></div>
+    <label for="placa">Placa do veículo</label>
+    <input id="placa" maxlength="8" inputmode="text" autocapitalize="characters" placeholder="ABC1D23" required>
+    <label for="nome">Primeiro nome</label>
+    <input id="nome" maxlength="40" autocapitalize="words" placeholder="João" required>
+    <button id="btn" type="submit">Entrar na fila</button>
+    <div id="formMsg" class="msg err hidden"></div>
+    <p class="aviso">Data e horário são registrados automaticamente pelo sistema.</p>
+  </form>
+
+  <div id="comprovante" class="card hidden">
+    <p class="ok-title">✔ Você está na fila</p>
+    <div>Sua posição</div>
+    <div class="pos" id="cPos">-</div>
+    <div class="row"><span>Placa</span><b id="cPlaca"></b></div>
+    <div class="row"><span>Nome</span><b id="cNome"></b></div>
+    <div class="row"><span>Registrado em</span><b id="cHora"></b></div>
+    <p class="aviso">Tire um print desta tela como comprovante. A posição pode mudar se houver cancelamentos, mas o horário registrado não muda.</p>
+  </div>
+</main>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var sessao = null, geoExigida = false, expiraEm = 0, timerId = null;
+
+  function mostrar(id) {
+    ['carregando', 'erro', 'form', 'comprovante'].forEach(function (x) { $(x).classList.toggle('hidden', x !== id); });
+  }
+  function erro(t) { $('erroTxt').textContent = t; mostrar('erro'); }
+
+  function api(url, body) {
+    return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); });
+  }
+
+  function iniciarRelogio(seg) {
+    expiraEm = Date.now() + seg * 1000;
+    clearInterval(timerId);
+    timerId = setInterval(function () {
+      var s = Math.max(0, Math.round((expiraEm - Date.now()) / 1000));
+      $('tempo').textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+      if (s <= 0) { clearInterval(timerId); erro('Tempo esgotado.'); }
+    }, 500);
+  }
+
+  function comprovante(d) {
+    clearInterval(timerId);
+    $('cPos').textContent = d.posicao + 'º';
+    $('cPlaca').textContent = d.placa;
+    $('cNome').textContent = d.nome || '';
+    $('cHora').textContent = d.registrado_em;
+    mostrar('comprovante');
+  }
+
+  var k = new URLSearchParams(location.search).get('k');
+  if (!k) { erro('Escaneie o QR Code que está na portaria para entrar na fila.'); return; }
+  history.replaceState(null, '', location.pathname); // tira o token da barra de endereço
+
+  api('/api/fila/entrar', { k: k }).then(function (r) {
+    if (r.status !== 200) return erro(r.j.erro || 'Não foi possível validar o QR.');
+    sessao = r.j.sessao; geoExigida = r.j.geo;
+    iniciarRelogio(r.j.restante_s);
+    mostrar('form');
+    $('placa').focus();
+  }).catch(function () { erro('Sem conexão. Tente novamente.'); });
+
+  function posicao() {
+    return new Promise(function (ok, no) {
+      if (!navigator.geolocation) return geoExigida ? no(new Error('sem-geo')) : ok(null);
+      navigator.geolocation.getCurrentPosition(
+        function (p) { ok({ lat: p.coords.latitude, lng: p.coords.longitude }); },
+        function () { geoExigida ? no(new Error('geo')) : ok(null); },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+    });
+  }
+
+  $('placa').addEventListener('input', function () {
+    this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  });
+
+  $('form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = $('btn'), m = $('formMsg');
+    m.classList.add('hidden'); btn.disabled = true; btn.textContent = 'Registrando…';
+    function falha(t) { m.textContent = t; m.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Entrar na fila'; }
+
+    posicao().then(function (g) {
+      return api('/api/fila/registrar', {
+        sessao: sessao, placa: $('placa').value, nome: $('nome').value,
+        lat: g && g.lat, lng: g && g.lng
+      });
+    }).then(function (r) {
+      if (r.status === 200) return comprovante(r.j);
+      if (r.status === 409 && r.j.ja_registrada) {
+        return comprovante({ posicao: r.j.posicao, placa: $('placa').value, nome: $('nome').value, registrado_em: r.j.registrado_em });
+      }
+      if (r.status === 401) return erro(r.j.erro);
+      falha(r.j.erro || 'Erro ao registrar.');
+    }).catch(function (err) {
+      if (err && (err.message === 'geo' || err.message === 'sem-geo'))
+        falha('Ative a localização do celular (e permita neste site) para registrar.');
+      else falha('Sem conexão. Tente novamente.');
+    });
+  });
+})();
+</script>
+</body>
+</html>

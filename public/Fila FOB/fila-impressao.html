@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Listagem oficial da fila</title>
+<style>
+  body { font-family:Arial, Helvetica, sans-serif; color:#000; background:#fff; margin:0; padding:18mm 14mm; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  .meta { font-size:13px; margin:0 0 14px; line-height:1.5; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { border:1px solid #000; padding:5px 7px; text-align:left; }
+  th { background:#e8e8e8; }
+  td.n { text-align:center; width:40px; font-weight:700; }
+  td.placa { font-weight:700; letter-spacing:1px; }
+  .ass { margin-top:36px; display:flex; gap:40px; font-size:13px; }
+  .ass div { flex:1; border-top:1px solid #000; padding-top:4px; text-align:center; }
+  .nota { margin-top:14px; font-size:11px; color:#333; }
+  .no-print { margin-bottom:14px; }
+  .no-print button { font-size:15px; padding:8px 14px; }
+  #erro { color:#b00; }
+  @media print { .no-print { display:none; } body { padding:0; } }
+</style>
+</head>
+<body>
+  <div class="no-print"><button onclick="window.print()">Imprimir</button></div>
+  <h1>Listagem oficial da fila de motoristas</h1>
+  <p class="meta" id="meta"></p>
+  <p id="erro"></p>
+  <table>
+    <thead><tr><th>#</th><th>Data/hora do registro</th><th>Placa</th><th>Nome</th><th>Situação</th></tr></thead>
+    <tbody id="corpo"></tbody>
+  </table>
+  <div class="ass"><div>Faturista</div><div>Conferência (portaria)</div></div>
+  <p class="nota">A ordem segue exclusivamente o horário de registro eletrônico. Registros cancelados ou ausentes permanecem listados, com situação, para fins de auditoria.</p>
+
+<script>
+(function () {
+  var chave = ''; try { chave = localStorage.getItem('fila_admin') || ''; } catch (e) {}
+  var q = new URLSearchParams(location.search).get('data');
+  fetch('/api/fila/lista' + (q ? '?data=' + encodeURIComponent(q) : ''), { headers: { 'x-fila-admin': chave }, cache: 'no-store' })
+    .then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); })
+    .then(function (r) {
+      if (r.s !== 200) { document.getElementById('erro').textContent = r.j.erro || 'Erro ao carregar. Abra pela tela de gestão.'; return; }
+      var d = r.j;
+      document.getElementById('meta').textContent =
+        'Fila do dia ' + d.data + ' · Total de registros: ' + d.total + ' · Emitida em ' + d.emitido_em;
+      var corpo = document.getElementById('corpo');
+      d.itens.forEach(function (it) {
+        var tr = document.createElement('tr');
+        [[it.posicao, 'n'], [it.registrado_txt], [it.placa, 'placa'], [it.nome], [it.status === 'aguardando' ? '' : it.status]]
+          .forEach(function (c) { var td = document.createElement('td'); td.textContent = c[0]; if (c[1]) td.className = c[1]; tr.appendChild(td); });
+        corpo.appendChild(tr);
+      });
+    })
+    .catch(function () { document.getElementById('erro').textContent = 'Sem conexão com o servidor.'; });
+})();
+</script>
+</body>
+</html>

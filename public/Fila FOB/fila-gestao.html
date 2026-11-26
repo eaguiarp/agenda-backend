@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestão da fila</title>
+<style>
+  :root { --bg:#f3f5f8; --card:#fff; --tx:#16202e; --mut:#5b6879; --pri:#0a5cd6; --bd:#d6dce5; --ok:#0b7a43; --warn:#a15c00; --err:#b3261e; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0f141b; --card:#18202b; --tx:#e8edf3; --mut:#9aa7b8; --pri:#5b9cff; --bd:#2b3646; --ok:#4cc38a; --warn:#f0b24a; --err:#ff8a80; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--tx); }
+  header { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:14px 16px; background:var(--card); border-bottom:1px solid var(--bd); }
+  header h1 { font-size:18px; margin:0 auto 0 0; }
+  input, button, select { font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(--bd); background:var(--bg); color:var(--tx); }
+  button { cursor:pointer; background:var(--card); }
+  button.pri { background:var(--pri); color:#fff; border-color:var(--pri); }
+  main { padding:14px 16px; overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--bd); }
+  th, td { padding:9px 10px; border-bottom:1px solid var(--bd); text-align:left; white-space:nowrap; }
+  th { font-size:12px; text-transform:uppercase; color:var(--mut); }
+  td.pos { font-weight:700; }
+  td.placa { font-weight:700; letter-spacing:1px; }
+  .st { padding:2px 8px; border-radius:99px; font-size:12px; font-weight:700; border:1px solid currentColor; }
+  .st.aguardando { color:var(--mut); } .st.chamado { color:var(--warn); } .st.carregando { color:var(--pri); }
+  .st.finalizado { color:var(--ok); } .st.ausente, .st.cancelado { color:var(--err); }
+  tr.inativo td { opacity:.55; }
+  td.acoes button { padding:5px 8px; font-size:13px; margin-right:4px; }
+  #info { color:var(--mut); font-size:13px; margin:0 0 10px; }
+  #erro { color:var(--err); margin:8px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Fila de motoristas</h1>
+  <label>Data <input type="date" id="data"></label>
+  <button id="btnOp">Operador: <b id="opNome">—</b></button>
+  <button id="btnChave">Chave</button>
+  <button class="pri" id="btnPrint">Imprimir listagem oficial</button>
+</header>
+<main>
+  <p id="info"></p>
+  <div id="erro"></div>
+  <table>
+    <thead><tr><th>#</th><th>Registro</th><th>Placa</th><th>Nome</th><th>Status</th><th>Última ação</th><th>Ações</th></tr></thead>
+    <tbody id="corpo"></tbody>
+  </table>
+</main>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  function ler(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function gravar(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+  var chave = ler('fila_admin'), operador = ler('fila_operador');
+
+  function pedirChave() { var v = prompt('Chave de acesso da fila:'); if (v) { chave = v.trim(); gravar('fila_admin', chave); } }
+  function pedirOperador() { var v = prompt('Seu nome (fica registrado nas alterações):'); if (v) { operador = v.trim(); gravar('fila_operador', operador); } $('opNome').textContent = operador || '—'; }
+
+  $('btnChave').onclick = function () { pedirChave(); carregar(); };
+  $('btnOp').onclick = pedirOperador;
+  $('btnPrint').onclick = function () { window.open('/fila-impressao.html' + ($('data').value ? '?data=' + $('data').value : ''), '_blank'); };
+  $('data').onchange = carregar;
+  $('opNome').textContent = operador || '—';
+
+  var ACOES = [
+    ['chamado', 'Chamar'], ['carregando', 'Carregando'], ['finalizado', 'Finalizar'],
+    ['ausente', 'Ausente'], ['cancelado', 'Cancelar']
+  ];
+
+  function alterar(id, status) {
+    if (!operador) { pedirOperador(); if (!operador) return; }
+    var motivo = '';
+    if (status === 'ausente' || status === 'cancelado') {
+      motivo = prompt('Motivo (obrigatório):');
+      if (!motivo) return;
+    }
+    fetch('/api/fila/' + id + '/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-fila-admin': chave },
+      body: JSON.stringify({ status: status, motivo: motivo, operador: operador })
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      if (j.erro) alert(j.erro); carregar();
+    });
+  }
+
+  function celula(tr, txt, cls) { var td = document.createElement('td'); td.textContent = txt; if (cls) td.className = cls; tr.appendChild(td); return td; }
+
+  function render(d) {
+    $('info').textContent = 'Data ' + d.data + ' · ' + d.total + ' registro(s) · atualizado ' + d.emitido_em;
+    var corpo = $('corpo'); corpo.innerHTML = '';
+    d.itens.forEach(function (it) {
+      var tr = document.createElement('tr');
+      if (it.status === 'cancelado' || it.status === 'ausente' || it.status === 'finalizado') tr.className = 'inativo';
+      celula(tr, it.posicao, 'pos');
+      celula(tr, it.hora);
+      celula(tr, it.placa, 'placa');
+      celula(tr, it.nome);
+      var tdS = document.createElement('td'), sp = document.createElement('span');
+      sp.className = 'st ' + it.status; sp.textContent = it.status; tdS.appendChild(sp); tr.appendChild(tdS);
+      celula(tr, it.alterado_hora ? it.alterado_hora + ' · ' + it.status_alterado_por + (it.motivo ? ' · ' + it.motivo : '') : '');
+      var tdA = document.createElement('td'); tdA.className = 'acoes';
+      ACOES.forEach(function (a) {
+        if (a[0] === it.status) return;
+        var b = document.createElement('button'); b.textContent = a[1];
+        b.onclick = function () { alterar(it.id, a[0]); };
+        tdA.appendChild(b);
+      });
+      tr.appendChild(tdA);
+      corpo.appendChild(tr);
+    });
+  }
+
+  function carregar() {
+    if (!chave) pedirChave();
+    var q = $('data').value ? '?data=' + $('data').value : '';
+    fetch('/api/fila/lista' + q, { headers: { 'x-fila-admin': chave }, cache: 'no-store' })
+      .then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); })
+      .then(function (r) {
+        if (r.s === 401) { $('erro').textContent = 'Chave inválida. Clique em "Chave".'; return; }
+        $('erro').textContent = ''; render(r.j);
+      })
+      .catch(function () { $('erro').textContent = 'Sem conexão com o servidor.'; });
+  }
+
+  carregar();
+  setInterval(carregar, 15000);
+})();
+</script>
+</body>
+</html>

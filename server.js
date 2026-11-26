@@ -8,6 +8,8 @@ const basicAuth  = require('express-basic-auth');
 const multer     = require('multer');
 const fs         = require('fs');
 const { Resend } = require('resend');
+const crypto     = require('crypto');
+const util       = require('util');
 
 const app = express();
 app.use(require('compression')()); // gzip (SSE responses are skipped via Cache-Control: no-transform)
@@ -58,14 +60,63 @@ const pool = new Pool({
 // ========================================================
 const NIVEL = { admin: 4, relatorio: 3, portaria: 2, operacao: 1 };
 
+// --------------------------------------------------------
+// 🔐 SENHAS COM HASH (scrypt, sem dependência nova)
+// Formato guardado: scrypt$<salt>$<hash> (base64url).
+// Senhas antigas em texto puro continuam funcionando e são convertidas
+// para hash automaticamente no primeiro login bem-sucedido.
+// --------------------------------------------------------
+const scryptAsync = util.promisify(crypto.scrypt);
+
+async function hashSenha(senha) {
+  const salt = crypto.randomBytes(16);
+  const hash = await scryptAsync(senha, salt, 32);
+  return `scrypt$${salt.toString('base64url')}$${hash.toString('base64url')}`;
+}
+
+async function confereSenha(senha, guardada) {
+  if (typeof guardada === 'string' && guardada.startsWith('scrypt$')) {
+    const [, salt, hash] = guardada.split('$');
+    const calculado = await scryptAsync(senha, Buffer.from(salt, 'base64url'), 32);
+    const esperado  = Buffer.from(hash, 'base64url');
+    return calculado.length === esperado.length && crypto.timingSafeEqual(calculado, esperado);
+  }
+  // legado: texto puro (comparação em tempo constante)
+  const a = Buffer.from(String(senha));
+  const b = Buffer.from(String(guardada || ''));
+  return a.length === b.length && b.length > 0 && crypto.timingSafeEqual(a, b);
+}
+
+// Cache curto de logins válidos: evita rodar o scrypt a cada requisição.
+// Só guarda acertos; é limpo sempre que um usuário é criado/alterado/removido.
+const cacheAcesso = new Map();
+const CACHE_ACESSO_MS = 60 * 1000;
+
 async function verificarAcesso(user, pass, nivelMinimo) {
   try {
-    const result = await pool.query(
-      "SELECT perfil FROM usuarios WHERE nome = $1 AND senha = $2",
-      [user, pass]
-    );
-    if (!result.rows.length) return false;
-    const nivel = NIVEL[result.rows[0].perfil] || 1;
+    if (typeof user !== 'string' || typeof pass !== 'string' || !user || !pass) return false;
+    const chave = crypto.createHash('sha256').update(user + '\0' + pass).digest('hex');
+    let nivel;
+    const hit = cacheAcesso.get(chave);
+    if (hit && hit.exp > Date.now()) {
+      nivel = hit.nivel;
+    } else {
+      const result = await pool.query(
+        "SELECT id, senha, perfil FROM usuarios WHERE nome = $1", [user]
+      );
+      if (!result.rows.length) return false;
+      const u = result.rows[0];
+      if (!(await confereSenha(pass, u.senha))) return false;
+      if (!String(u.senha).startsWith('scrypt$')) {
+        // migra a senha antiga para hash (só se ela ainda não mudou)
+        hashSenha(pass)
+          .then(h => pool.query("UPDATE usuarios SET senha = $1 WHERE id = $2 AND senha = $3", [h, u.id, u.senha]))
+          .catch(e => console.error("Erro ao migrar senha:", e));
+      }
+      nivel = NIVEL[u.perfil] || 1;
+      if (cacheAcesso.size > 500) cacheAcesso.clear();
+      cacheAcesso.set(chave, { nivel, exp: Date.now() + CACHE_ACESSO_MS });
+    }
     return nivel >= nivelMinimo;
   } catch (e) {
     console.error("Erro ao verificar acesso:", e);
@@ -74,6 +125,9 @@ async function verificarAcesso(user, pass, nivelMinimo) {
 }
 
 vagoesRotas(app, pool, verificarAcesso);
+
+// Fila online de motoristas (QR dinâmico) — rotas em /api/fila/*
+require('./fila-routes')(app, pool);
 
 function auth(nivelMinimo, realm) {
   return basicAuth({
@@ -172,7 +226,7 @@ app.get("/eu", auth(1, 'CD Itaborai'), (req, res) => {
 // ========================================================
 //  ROTA DE MIGRAÇÃO
 // ========================================================
-app.get("/criar-banco", async (req, res) => {
+app.get("/criar-banco", auth(4, 'Manutencao do Banco'), async (req, res) => {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS agendamentos (
@@ -241,7 +295,7 @@ app.get("/criar-banco", async (req, res) => {
       try {
         await pool.query(
           "INSERT INTO usuarios (nome, senha, perfil) VALUES ($1, $2, $3) ON CONFLICT (nome) DO NOTHING",
-          [u.nome, u.senha, u.perfil]
+          [u.nome, await hashSenha(u.senha), u.perfil]
         );
       } catch (e) {}
     }
@@ -292,7 +346,52 @@ app.get("/criar-banco", async (req, res) => {
       ON CONFLICT (chave) DO NOTHING
     `);
 
-    res.send("<h1>✅ Sucesso! Tabelas verificadas e atualizadas (incluindo módulo de vagões).</h1>");
+    // ── TABELAS DA FILA ONLINE DE MOTORISTAS ──
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS fila_motoristas (
+        id SERIAL PRIMARY KEY,
+        data_fila DATE NOT NULL,
+        placa VARCHAR(8) NOT NULL,
+        nome VARCHAR(40) NOT NULL,
+        registrado_em TIMESTAMPTZ NOT NULL DEFAULT now(),
+        ip VARCHAR(64),
+        user_agent TEXT,
+        lat NUMERIC,
+        lng NUMERIC,
+        status VARCHAR(16) NOT NULL DEFAULT 'aguardando',
+        status_alterado_em TIMESTAMPTZ,
+        status_alterado_por VARCHAR(60),
+        motivo TEXT,
+        UNIQUE (data_fila, placa)
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_fila_data_ordem ON fila_motoristas (data_fila, registrado_em, id)`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS fila_tokens (
+        token VARCHAR(40) PRIMARY KEY,
+        criado_em TIMESTAMPTZ NOT NULL DEFAULT now(),
+        expira_em TIMESTAMPTZ NOT NULL,
+        usado_em TIMESTAMPTZ,
+        sessao VARCHAR(40),
+        sessao_expira TIMESTAMPTZ,
+        sessao_usada_em TIMESTAMPTZ,
+        ip VARCHAR(64)
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_fila_tokens_sessao ON fila_tokens (sessao)`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS fila_log (
+        id SERIAL PRIMARY KEY,
+        fila_id INTEGER NOT NULL REFERENCES fila_motoristas(id),
+        status_anterior VARCHAR(16),
+        status_novo VARCHAR(16) NOT NULL,
+        motivo TEXT,
+        operador VARCHAR(60),
+        em TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+
+    res.send("<h1>✅ Sucesso! Tabelas verificadas e atualizadas (incluindo vagões e fila de motoristas).</h1>");
   } catch (error) {
     res.status(500).send("Erro: " + error.message);
   }
@@ -470,13 +569,31 @@ app.post("/agendamentos", async (req, res) => {
   }
 });
 
+// Colunas reais da tabela (lidas do banco) — os nomes de campo vindos do
+// cliente só entram no SQL se existirem aqui. Evita SQL injection.
+let _colAgend = { set: null, exp: 0 };
+async function colunasAgendamentos() {
+  if (_colAgend.set && _colAgend.exp > Date.now()) return _colAgend.set;
+  const r = await pool.query(
+    "SELECT column_name FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'agendamentos'"
+  );
+  const set = new Set(r.rows.map(x => x.column_name));
+  set.delete('id');
+  _colAgend = { set, exp: Date.now() + 60 * 1000 };
+  return set;
+}
+
 app.put("/agendamentos/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const campos  = req.body;
+    const campos  = { ...(req.body || {}) };
+    delete campos.id; // o id nunca é alterado
     const chaves  = Object.keys(campos);
     if (!chaves.length) return res.status(400).json({ erro: "Nenhum campo enviado" });
-    const setClause = chaves.map((k, i) => `${k} = $${i + 1}`).join(", ");
+    const validas = await colunasAgendamentos();
+    const invalidas = chaves.filter(k => !validas.has(k));
+    if (invalidas.length) return res.status(400).json({ erro: "Campo(s) inválido(s): " + invalidas.join(', ') });
+    const setClause = chaves.map((k, i) => `"${k}" = $${i + 1}`).join(", ");
     const valores   = [...chaves.map(k => campos[k]), id];
     await pool.query(`UPDATE agendamentos SET ${setClause} WHERE id = $${chaves.length + 1}`, valores);
     broadcastSseUpdate('agendamentos');
@@ -536,7 +653,7 @@ app.delete("/bloqueios/:id", async (req, res) => {
 // ========================================================
 // 👥 ROTAS — USUÁRIOS
 // ========================================================
-app.get("/usuarios", async (req, res) => {
+app.get("/usuarios", auth(3, 'Usuarios'), async (req, res) => {
   try {
     const result = await pool.query("SELECT id, nome, perfil, criado_em FROM usuarios ORDER BY nome");
     res.json(result.rows);
@@ -545,14 +662,16 @@ app.get("/usuarios", async (req, res) => {
   }
 });
 
-app.post("/usuarios", async (req, res) => {
+app.post("/usuarios", auth(4, 'Usuarios (admin)'), async (req, res) => {
   try {
     const { nome, senha, perfil } = req.body;
     if (!nome || !senha) return res.status(400).json({ erro: "Nome e senha obrigatórios" });
+    if (perfil && !NIVEL[perfil]) return res.status(400).json({ erro: "Perfil inválido" });
     const result = await pool.query(
       "INSERT INTO usuarios (nome, senha, perfil) VALUES ($1, $2, $3) RETURNING id, nome, perfil",
-      [nome.toLowerCase().trim(), senha, perfil || 'operacao']
+      [String(nome).toLowerCase().trim(), await hashSenha(String(senha)), perfil || 'operacao']
     );
+    cacheAcesso.clear();
     broadcastSseUpdate('usuarios');
     res.json(result.rows[0]);
   } catch (err) {
@@ -561,15 +680,17 @@ app.post("/usuarios", async (req, res) => {
   }
 });
 
-app.put("/usuarios/:id", async (req, res) => {
+app.put("/usuarios/:id", auth(4, 'Usuarios (admin)'), async (req, res) => {
   try {
     const { senha, perfil } = req.body;
+    if (perfil && !NIVEL[perfil]) return res.status(400).json({ erro: "Perfil inválido" });
     const campos = [], valores = [];
-    if (senha)  { campos.push(`senha  = $${campos.length + 1}`); valores.push(senha); }
+    if (senha)  { campos.push(`senha  = $${campos.length + 1}`); valores.push(await hashSenha(String(senha))); }
     if (perfil) { campos.push(`perfil = $${campos.length + 1}`); valores.push(perfil); }
     if (!campos.length) return res.status(400).json({ erro: "Nada para atualizar" });
     valores.push(req.params.id);
     await pool.query(`UPDATE usuarios SET ${campos.join(', ')} WHERE id = $${valores.length}`, valores);
+    cacheAcesso.clear();
     broadcastSseUpdate('usuarios');
     res.json({ sucesso: true });
   } catch (error) {
@@ -577,9 +698,10 @@ app.put("/usuarios/:id", async (req, res) => {
   }
 });
 
-app.delete("/usuarios/:id", async (req, res) => {
+app.delete("/usuarios/:id", auth(4, 'Usuarios (admin)'), async (req, res) => {
   try {
     await pool.query("DELETE FROM usuarios WHERE id = $1", [req.params.id]);
+    cacheAcesso.clear();
     broadcastSseUpdate('usuarios');
     res.json({ sucesso: true });
   } catch (error) {

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR da Portaria</title>
+<style>
+  :root { --bg:#0b1220; --tx:#fff; --mut:#9fb0c8; --err:#ff6b6b; --ok:#4cc38a; }
+  * { box-sizing:border-box; }
+  html, body { height:100%; margin:0; }
+  body { background:var(--bg); color:var(--tx); font-family:system-ui,Segoe UI,Roboto,sans-serif;
+         display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:2vh 3vw; }
+  h1 { font-size:clamp(28px,5vw,64px); margin:0 0 1vh; }
+  .sub { font-size:clamp(18px,2.6vw,34px); color:var(--mut); margin:0 0 3vh; }
+  #qrbox { background:#fff; padding:2.2vmin; border-radius:2vmin; display:inline-block; line-height:0; }
+  #qr img, #qr canvas { width:min(52vh,60vw) !important; height:min(52vh,60vw) !important; }
+  .barra { width:min(52vh,60vw); height:1.2vh; background:#1c2a44; border-radius:99px; margin:2.5vh auto 0; overflow:hidden; }
+  #prog { height:100%; width:100%; background:var(--ok); transition:width .25s linear; }
+  #relogio { font-size:clamp(20px,3vw,40px); margin-top:2.5vh; color:var(--mut); font-variant-numeric:tabular-nums; }
+  #aviso { display:none; margin-top:2vh; font-size:clamp(20px,3vw,40px); font-weight:700; color:var(--err); }
+  #fechado { display:none; font-size:clamp(28px,4.5vw,60px); font-weight:700; color:var(--mut); }
+</style>
+</head>
+<body>
+  <h1>Fila de motoristas</h1>
+  <p class="sub">Aponte a câmera do celular para o QR Code e informe placa e nome</p>
+
+  <div id="area">
+    <div id="qrbox"><div id="qr"></div></div>
+    <div class="barra"><div id="prog"></div></div>
+  </div>
+  <div id="fechado"></div>
+  <div id="relogio"></div>
+  <div id="aviso">SEM CONEXÃO — usar a lista física</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var chave = new URLSearchParams(location.search).get('chave');
+  try { if (chave) localStorage.setItem('fila_chave', chave); else chave = localStorage.getItem('fila_chave'); } catch (e) {}
+  if (!chave) { $('fechado').style.display = 'block'; $('fechado').textContent = 'Abra esta página com ?chave=SUA_CHAVE'; $('area').style.display = 'none'; return; }
+  history.replaceState(null, '', location.pathname);
+
+  var qr = null, token = null, fimEm = 0, totalMs = 45000, falhas = 0, renovando = false;
+
+  function tick() {
+    var d = new Date();
+    $('relogio').textContent = d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + '  ' +
+      d.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    if (fimEm) $('prog').style.width = Math.max(0, Math.min(100, (fimEm - Date.now()) / totalMs * 100)) + '%';
+  }
+  setInterval(tick, 250); tick();
+
+  function desenhar(url) {
+    $('qr').innerHTML = '';
+    qr = new QRCode($('qr'), { text: url, width: 512, height: 512, correctLevel: QRCode.CorrectLevel.M });
+  }
+
+  function renovar() {
+    if (renovando) return; renovando = true;
+    fetch('/api/fila/qr-atual?chave=' + encodeURIComponent(chave), { cache: 'no-store' })
+      .then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); })
+      .then(function (r) {
+        falhas = 0; $('aviso').style.display = 'none';
+        if (r.s === 403 && r.j.fechada) {
+          token = null; fimEm = 0; $('area').style.display = 'none';
+          $('fechado').style.display = 'block'; $('fechado').textContent = r.j.erro; return;
+        }
+        if (r.s !== 200) throw new Error(r.j.erro || 'erro');
+        $('fechado').style.display = 'none'; $('area').style.display = 'block';
+        token = r.j.token; totalMs = r.j.restante_ms; fimEm = Date.now() + r.j.restante_ms;
+        desenhar(r.j.url);
+      })
+      .catch(function () { if (++falhas >= 2) { $('aviso').style.display = 'block'; } })
+      .then(function () { renovando = false; });
+  }
+
+  // Troca o QR quando foi usado ou quando faltam 10 s para expirar
+  setInterval(function () {
+    if (!token) return renovar();
+    if (fimEm - Date.now() < 10000) return renovar();
+    fetch('/api/fila/qr-status?chave=' + encodeURIComponent(chave) + '&t=' + token, { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (s) { falhas = 0; $('aviso').style.display = 'none'; if (s.usado || s.expirado) renovar(); })
+      .catch(function () { if (++falhas >= 2) $('aviso').style.display = 'block'; });
+  }, 2000);
+
+  renovar();
+})();
+</script>
+</body>
+</html>
