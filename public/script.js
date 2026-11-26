@@ -375,7 +375,7 @@ async function marcarAusente(id) {
 // ===============================
 async function obterAgendamentos() {
     try {
-        const r = await fetch(API_URL);
+        const r = await fetch(API_URL + '?todos=1');
         return await r.json();
     } catch (e) { console.error(e); return []; }
 }

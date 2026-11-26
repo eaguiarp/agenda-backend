@@ -1176,19 +1176,24 @@
 
     let sseConnection = null;
     let sseReconnectTimer = null;
+    let sseJaConectou = false;
 
     function conectarSse() {
       if (sseConnection) sseConnection.close();
       if (sseReconnectTimer) clearTimeout(sseReconnectTimer);
 
       sseConnection = new EventSource('/events');
-      sseConnection.onmessage = (event) => {
+      sseConnection.addEventListener('update', (event) => {
         try {
           const payload = JSON.parse(event.data);
           if (payload.type === 'agendamentos' || payload.type === 'bloqueios' || payload.type === 'usuarios' || payload.type === 'horarios') {
             atualizarTudo();
           }
         } catch (e) {}
+      });
+      sseConnection.onopen = () => {
+        if (sseJaConectou) atualizarTudo(); // reconexão: recupera eventos perdidos
+        sseJaConectou = true;
       };
       sseConnection.onerror = () => {
         if (sseConnection) sseConnection.close();
@@ -1212,8 +1217,8 @@
     }
 
     /* ── RENDERIZAR DESCARGA ────────────────── */
-    async function renderizarDescarga() {
-      const dados = await obterAgendamentos();
+    async function renderizarDescarga(dadosPre) {
+      const dados = dadosPre || await obterAgendamentos();
       const el    = document.getElementById("lista-descarga");
 
       const transferencias = dados
@@ -1317,8 +1322,8 @@
     }
 
     /* ── RENDERIZAR CARGA CIF/FOB ─────────── */
-    async function renderizarCarga() {
-      const dados = await obterAgendamentos();
+    async function renderizarCarga(dadosPre) {
+      const dados = dadosPre || await obterAgendamentos();
       const el    = document.getElementById("lista-carga");
 
       const cifFob = dados
@@ -1892,9 +1897,12 @@
     }
 
     /* ── POLLING ────────────────────────────── */
-    function atualizarTudo() {
-      renderizarDescarga();
-      renderizarCarga();
+    async function atualizarTudo() {
+      // uma única requisição para as duas listas
+      let dados;
+      try { dados = await obterAgendamentos(); } catch (e) { return; }
+      renderizarDescarga(dados);
+      renderizarCarga(dados);
     }
 
     setInterval(atualizarRelogio, 1000);
