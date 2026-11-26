@@ -12,6 +12,7 @@
 
 const crypto = require('crypto');
 const express = require('express');
+const QRCode = require('qrcode');
 
 const TZ = 'America/Sao_Paulo';
 const STATUS_VALIDOS = ['aguardando', 'chamado', 'carregando', 'finalizado', 'ausente', 'cancelado'];
@@ -63,6 +64,24 @@ module.exports = function montarFila(app, pool) {
   const exigirAdmin = (req, res, next) =>
     igual(req.headers['x-fila-admin'], cfg.adminKey)
       ? next() : res.status(401).json({ erro: 'Chave de acesso inválida.' });
+
+  router.get('/qr.png', exigirMonitor, async (req, res) => {
+    const texto = req.query.texto;
+    if (typeof texto !== 'string' || !texto || texto.length > 2048)
+      return res.status(400).send('Parâmetro "texto" obrigatório (máximo de 2048 caracteres).');
+
+    try {
+      const bufferPng = await QRCode.toBuffer(texto, {
+        errorCorrectionLevel: 'M',
+        margin: 4,
+        scale: 6
+      });
+      res.type('png').set('Cache-Control', 'no-store').send(bufferPng);
+    } catch (e) {
+      console.error('fila qr imagem', e);
+      res.status(500).send('Erro ao gerar QR Code.');
+    }
+  });
 
   // Janela de funcionamento, sempre pela hora do servidor/banco (nunca do celular)
   async function janela() {

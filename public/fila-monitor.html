@@ -33,7 +33,6 @@
   <div id="relogio"></div>
   <div id="aviso">SEM CONEXÃO — usar a lista física</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -42,7 +41,7 @@
   if (!chave) { $('fechado').style.display = 'block'; $('fechado').textContent = 'Abra esta página com ?chave=SUA_CHAVE'; $('area').style.display = 'none'; return; }
   history.replaceState(null, '', location.pathname);
 
-  var qr = null, token = null, fimEm = 0, totalMs = 45000, falhas = 0, renovando = false;
+  var token = null, fimEm = 0, totalMs = 45000, falhas = 0, renovando = false;
 
   function tick() {
     var d = new Date();
@@ -54,7 +53,10 @@
 
   function desenhar(url) {
     $('qr').innerHTML = '';
-    qr = new QRCode($('qr'), { text: url, width: 512, height: 512, correctLevel: QRCode.CorrectLevel.M });
+    var img = document.createElement('img');
+    img.alt = 'QR Code para entrar na fila';
+    img.src = '/api/fila/qr.png?chave=' + encodeURIComponent(chave) + '&texto=' + encodeURIComponent(url);
+    $('qr').appendChild(img);
   }
 
   function renovar() {
