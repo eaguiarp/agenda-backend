@@ -479,7 +479,7 @@
     // ─── POLLING ─────────────────────────────────────────────
     async function atualizar() {
       try {
-        const res   = await fetch(API_URL);
+        const res   = await fetch(API_URL + '?todos=1');
         const dados = await res.json();
 
         const ativos = dados

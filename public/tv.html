@@ -396,6 +396,7 @@
 
     let sseConnection = null;
     let sseReconnectTimer = null;
+    let sseJaConectou = false;
 
     function conectarSseTV() {
       if (sseConnection) sseConnection.close();
@@ -407,15 +408,17 @@
       sseConnection = new EventSource('/events/public');
       sseConnection.onopen = function() {
         if (ponto) ponto.style.background = '#00e676';
+        if (sseJaConectou) atualizarTV(); // reconexão: recupera eventos perdidos
+        sseJaConectou = true;
       };
-      sseConnection.onmessage = function(event) {
+      sseConnection.addEventListener('update', function(event) {
         try {
           var payload = JSON.parse(event.data);
           if (payload.type === 'agendamentos' || payload.type === 'bloqueios' || payload.type === 'usuarios' || payload.type === 'horarios') {
             atualizarTV();
           }
         } catch (e) {}
-      };
+      });
       sseConnection.onerror = function() {
         if (ponto) ponto.style.background = '#ff0000';
         if (sseConnection) sseConnection.close();
@@ -437,7 +440,6 @@
 
       setInterval(atualizarRelogio, 1000);
       setInterval(atualizarDados,   3600000); // trânsito a cada 1h
-      setInterval(atualizarTV,      30000);   // fallback: atualiza a cada 30s mesmo sem SSE
       conectarSseTV();
       atualizarRelogio();
       atualizarDados();

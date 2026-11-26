@@ -10,6 +10,7 @@ const fs         = require('fs');
 const { Resend } = require('resend');
 
 const app = express();
+app.use(require('compression')()); // gzip (SSE responses are skipped via Cache-Control: no-transform)
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -397,9 +398,35 @@ app.post('/anomalia',
 // ========================================================
 // 🚏 ROTAS — AGENDAMENTOS
 // ========================================================
+const DIAS_PASSADO = parseInt(process.env.AGENDAMENTOS_DIAS_PASSADO, 10) || 3;
+
 app.get("/agendamentos", async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM agendamentos ORDER BY data, hora");
+    // Padrão: só agendamentos recentes (últimos DIAS_PASSADO dias, hoje e futuro)
+    // + qualquer agendamento ainda em aberto, mesmo que antigo.
+    // ?todos=1 devolve a tabela inteira; ?desde=YYYY-MM-DD&ate=YYYY-MM-DD define um intervalo.
+    const ISO = /^\d{4}-\d{2}-\d{2}$/;
+    const { todos, desde, ate } = req.query;
+    let result;
+    if (todos === '1' || todos === 'true') {
+      result = await pool.query("SELECT * FROM agendamentos ORDER BY data, hora");
+    } else if (desde || ate) {
+      if ((desde && !ISO.test(desde)) || (ate && !ISO.test(ate))) {
+        return res.status(400).json({ erro: "Datas devem estar no formato YYYY-MM-DD" });
+      }
+      result = await pool.query(
+        "SELECT * FROM agendamentos WHERE ($1::text IS NULL OR data >= $1) AND ($2::text IS NULL OR data <= $2) ORDER BY data, hora",
+        [desde || null, ate || null]
+      );
+    } else {
+      result = await pool.query(
+        `SELECT * FROM agendamentos
+          WHERE data >= to_char((now() AT TIME ZONE 'America/Sao_Paulo')::date - $1::int, 'YYYY-MM-DD')
+             OR status IN ('agendado','chamando','descarregando','reagendado_fila')
+          ORDER BY data, hora`,
+        [DIAS_PASSADO]
+      );
+    }
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({ erro: "Erro ao buscar dados" });
@@ -435,6 +462,7 @@ app.post("/agendamentos", async (req, res) => {
         motorista      || null
       ]
     );
+    broadcastSseUpdate('agendamentos');
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
