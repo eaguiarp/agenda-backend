@@ -24,7 +24,7 @@ const cfg = {
   adminKey: process.env.FILA_ADMIN_KEY || '',
   baseUrl: (process.env.FILA_BASE_URL || '').replace(/\/$/, ''),
   horaInicio: parseInt(process.env.FILA_HORA_INICIO || '0', 10),
-  horaFim: parseInt(process.env.FILA_HORA_FIM || '18', 10),
+  horaFim: parseInt(process.env.FILA_HORA_FIM || '23', 10),
   tokenSeg: 45,
   sessaoSeg: 180,
   maxPorIp10min: 5,
