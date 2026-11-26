@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Listagem oficial da fila</title>
 <style>
+  * { box-sizing:border-box; }
   body { font-family:Arial, Helvetica, sans-serif; color:#000; background:#fff; margin:0; padding:18mm 14mm; }
   h1 { font-size:20px; margin:0 0 4px; }
   .meta { font-size:13px; margin:0 0 14px; line-height:1.5; }
@@ -28,11 +29,11 @@
   <p class="meta" id="meta"></p>
   <p id="erro"></p>
   <table>
-    <thead><tr><th>#</th><th>Data/hora do registro</th><th>Placa</th><th>Nome</th><th>Situação</th></tr></thead>
+    <thead><tr><th>#</th><th>Data/hora do registro</th><th>Placa</th><th>Nome</th><th>Situação</th><th>Observação</th></tr></thead>
     <tbody id="corpo"></tbody>
   </table>
   <div class="ass"><div>Faturista</div><div>Conferência (portaria)</div></div>
-  <p class="nota">A ordem segue exclusivamente o horário de registro eletrônico. Registros cancelados ou ausentes permanecem listados, com situação, para fins de auditoria.</p>
+  <p class="nota">A ordem prioriza retidos revalidados, depois os aguardando revalidação e, em seguida, os demais registros por horário. Registros cancelados ou ausentes permanecem listados, com situação, para fins de auditoria.</p>
 
 <script>
 (function () {
@@ -44,12 +45,21 @@
       if (r.s !== 200) { document.getElementById('erro').textContent = r.j.erro || 'Erro ao carregar. Abra pela tela de gestão.'; return; }
       var d = r.j;
       document.getElementById('meta').textContent =
-        'Fila do dia ' + d.data + ' · Total de registros: ' + d.total + ' · Emitida em ' + d.emitido_em;
+        'Fila do dia ' + d.data + ' · Modo: ' + (d.modo === 'contingencia' ? 'Contingência' : 'Normal') +
+        ' · Total de registros: ' + d.total + ' · Emitida em ' + d.emitido_em;
       var corpo = document.getElementById('corpo');
       d.itens.forEach(function (it) {
         var tr = document.createElement('tr');
         [[it.posicao, 'n'], [it.registrado_txt], [it.placa, 'placa'], [it.nome], [it.status === 'aguardando' ? '' : it.status]]
           .forEach(function (c) { var td = document.createElement('td'); td.textContent = c[0]; if (c[1]) td.className = c[1]; tr.appendChild(td); });
+        var observacoes = [];
+        if (it.retido_de) {
+          observacoes.push(it.revalidado === true ? 'Retido · Revalidado' : 'Retido · Aguardando revalidação');
+        }
+        if (it.em_contingencia === true) observacoes.push('Contingência');
+        var tdObs = document.createElement('td');
+        tdObs.textContent = observacoes.join(' · ');
+        tr.appendChild(tdObs);
         corpo.appendChild(tr);
       });
     })

@@ -44,6 +44,16 @@
     <p class="aviso">Para tentar de novo, escaneie o QR que está na portaria.</p>
   </div>
 
+  <form id="revalidacao" class="card hidden" autocomplete="off">
+    <h2 style="font-size:19px;margin:0 0 8px">Revalidação de Presença (06h às 07h)</h2>
+    <p class="aviso" style="margin-top:0">Confirme sua placa para revalidar a presença registrada anteriormente.</p>
+    <label for="placaRevalidacao">Placa do veículo</label>
+    <input id="placaRevalidacao" maxlength="8" inputmode="text" autocapitalize="characters" required>
+    <button id="btnRevalidar" type="submit">Confirmar presença na fila</button>
+    <div id="revalidacaoMsg" class="msg err hidden"></div>
+    <p class="aviso">Se não conseguir revalidar, escaneie o QR Code da portaria.</p>
+  </form>
+
   <form id="form" class="card hidden" autocomplete="off">
     <div class="timer">Tempo para concluir: <b id="tempo">--:--</b></div>
     <label for="placa">Placa do veículo</label>
@@ -57,6 +67,7 @@
 
   <div id="comprovante" class="card hidden">
     <p class="ok-title">✔ Você está na fila</p>
+    <p id="cRevalidado" class="msg" style="display:none;background:color-mix(in srgb, var(--ok) 14%, transparent);color:var(--ok);font-weight:700">✔ Presença revalidada na fila</p>
     <div>Sua posição</div>
     <div class="pos" id="cPos">-</div>
     <div class="row"><span>Placa</span><b id="cPlaca"></b></div>
@@ -70,11 +81,32 @@
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var sessao = null, geoExigida = false, expiraEm = 0, timerId = null;
+  var ultimaInscricao = null;
 
   function mostrar(id) {
-    ['carregando', 'erro', 'form', 'comprovante'].forEach(function (x) { $(x).classList.toggle('hidden', x !== id); });
+    ['carregando', 'erro', 'revalidacao', 'form', 'comprovante'].forEach(function (x) { $(x).classList.toggle('hidden', x !== id); });
   }
   function erro(t) { $('erroTxt').textContent = t; mostrar('erro'); }
+
+  function lerUltimaInscricao() {
+    try {
+      var dado = JSON.parse(localStorage.getItem('fila_ultima_inscricao') || 'null');
+      return dado && typeof dado.placa === 'string' ? dado : null;
+    } catch (e) { return null; }
+  }
+
+  function salvarInscricao(d) {
+    if (!d || !d.placa || !Object.prototype.hasOwnProperty.call(d, 'id')) return;
+    try {
+      localStorage.setItem('fila_ultima_inscricao', JSON.stringify({
+        id: d.id, placa: d.placa, nome: d.nome, registrado_em: d.registrado_em
+      }));
+    } catch (e) {}
+  }
+
+  function normalizarPlaca(placa) {
+    return String(placa || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  }
 
   function api(url, body) {
     return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -97,11 +129,66 @@
     $('cPlaca').textContent = d.placa;
     $('cNome').textContent = d.nome || '';
     $('cHora').textContent = d.registrado_em;
+    $('cRevalidado').style.display = d.revalidado === true ? 'block' : 'none';
     mostrar('comprovante');
   }
 
+  $('revalidacao').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = $('btnRevalidar'), m = $('revalidacaoMsg');
+    m.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Confirmando…';
+
+    function falha(t) {
+      m.textContent = t + ' Escaneie o QR Code da portaria se precisar tentar novamente.';
+      m.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'Confirmar presença na fila';
+    }
+
+    posicao().then(function (g) {
+      var placa = normalizarPlaca($('placaRevalidacao').value);
+      return api('/api/fila/revalidar', {
+        placa: placa,
+        id: placa === normalizarPlaca(ultimaInscricao.placa) ? ultimaInscricao.id : null,
+        lat: g && g.lat,
+        lng: g && g.lng
+      });
+    }).then(function (r) {
+      if (r.status !== 200) return falha(r.j.erro || 'Não foi possível revalidar a presença.');
+      salvarInscricao({
+        id: normalizarPlaca(r.j.placa) === normalizarPlaca(ultimaInscricao.placa) ? ultimaInscricao.id : null,
+        placa: r.j.placa, nome: r.j.nome,
+        registrado_em: r.j.registrado_em
+      });
+      comprovante({
+        posicao: r.j.posicao,
+        placa: r.j.placa,
+        nome: r.j.nome,
+        registrado_em: r.j.registrado_em,
+        revalidado: r.j.revalidado
+      });
+    }).catch(function () { falha('Sem conexão com o servidor.'); });
+  });
+
   var k = new URLSearchParams(location.search).get('k');
-  if (!k) { erro('Escaneie o QR Code que está na portaria para entrar na fila.'); return; }
+  if (!k) {
+    ultimaInscricao = lerUltimaInscricao();
+    var horaSaoPaulo = Number(new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Sao_Paulo', hour: '2-digit', hourCycle: 'h23'
+    }).format(new Date()));
+    if (ultimaInscricao && horaSaoPaulo === 6) {
+      $('placaRevalidacao').value = ultimaInscricao.placa.toUpperCase();
+      $('placaRevalidacao').addEventListener('input', function () {
+        this.value = normalizarPlaca(this.value);
+      });
+      mostrar('revalidacao');
+      return;
+    }
+    erro('Escaneie o QR Code que está na portaria para entrar na fila.');
+    return;
+  }
   history.replaceState(null, '', location.pathname); // tira o token da barra de endereço
 
   api('/api/fila/entrar', { k: k }).then(function (r) {
@@ -138,7 +225,10 @@
         lat: g && g.lat, lng: g && g.lng
       });
     }).then(function (r) {
-      if (r.status === 200) return comprovante(r.j);
+      if (r.status === 200) {
+        salvarInscricao(r.j);
+        return comprovante(r.j);
+      }
       if (r.status === 409 && r.j.ja_registrada) {
         return comprovante({ posicao: r.j.posicao, placa: $('placa').value, nome: $('nome').value, registrado_em: r.j.registrado_em });
       }

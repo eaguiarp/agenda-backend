@@ -16,6 +16,9 @@
   input, button, select { font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(--bd); background:var(--bg); color:var(--tx); }
   button { cursor:pointer; background:var(--card); }
   button.pri { background:var(--pri); color:#fff; border-color:var(--pri); }
+  button:disabled { cursor:not-allowed; opacity:.5; }
+  .modo { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+  .modo-info { flex-basis:100%; text-align:right; color:var(--mut); font-size:12px; }
   main { padding:14px 16px; overflow-x:auto; }
   table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--bd); }
   th, td { padding:9px 10px; border-bottom:1px solid var(--bd); text-align:left; white-space:nowrap; }
@@ -25,6 +28,9 @@
   .st { padding:2px 8px; border-radius:99px; font-size:12px; font-weight:700; border:1px solid currentColor; }
   .st.aguardando { color:var(--mut); } .st.chamado { color:var(--warn); } .st.carregando { color:var(--pri); }
   .st.finalizado { color:var(--ok); } .st.ausente, .st.cancelado { color:var(--err); }
+  .tag { display:inline-block; margin:3px 3px 0 0; padding:2px 7px; border-radius:99px; font-size:11px; font-weight:700; border:1px solid currentColor; }
+  .tag-retido { color:var(--mut); } .tag-ok { color:var(--ok); } .tag-warn { color:var(--warn); }
+  .tag-contingencia { color:var(--pri); }
   tr.inativo td { opacity:.55; }
   td.acoes button { padding:5px 8px; font-size:13px; margin-right:4px; }
   #info { color:var(--mut); font-size:13px; margin:0 0 10px; }
@@ -37,6 +43,11 @@
   <label>Data <input type="date" id="data"></label>
   <button id="btnOp">Operador: <b id="opNome">—</b></button>
   <button id="btnChave">Chave</button>
+  <div class="modo">
+    <b id="modoLabel">Modo: —</b>
+    <button id="btnModo" disabled>Carregando modo…</button>
+    <small id="modoInfo" class="modo-info">Carregando configuração do modo…</small>
+  </div>
   <button class="pri" id="btnPrint">Imprimir listagem oficial</button>
 </header>
 <main>
@@ -54,7 +65,7 @@
   function ler(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
   function gravar(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 
-  var chave = ler('fila_admin'), operador = ler('fila_operador');
+  var chave = ler('fila_admin'), operador = ler('fila_operador'), podeAlterarModo = false, modoAtual = null;
 
   function pedirChave() { var v = prompt('Chave de acesso da fila:'); if (v) { chave = v.trim(); gravar('fila_admin', chave); } }
   function pedirOperador() { var v = prompt('Seu nome (fica registrado nas alterações):'); if (v) { operador = v.trim(); gravar('fila_operador', operador); } $('opNome').textContent = operador || '—'; }
@@ -63,6 +74,7 @@
   $('btnOp').onclick = pedirOperador;
   $('btnPrint').onclick = function () { window.open('/fila-impressao.html' + ($('data').value ? '?data=' + $('data').value : ''), '_blank'); };
   $('data').onchange = carregar;
+  $('btnModo').onclick = alternarModo;
   $('opNome').textContent = operador || '—';
 
   var ACOES = [
@@ -86,6 +98,53 @@
     });
   }
 
+  function alternarModo() {
+    if (!podeAlterarModo) {
+      alert('O modo só pode ser alterado entre 06h e 18h.');
+      return;
+    }
+    if (!chave) { pedirChave(); if (!chave) return; }
+    if (!operador) { pedirOperador(); if (!operador) return; }
+
+    var novoModo = modoAtual === 'contingencia' ? 'normal' : 'contingencia';
+    var mensagem = novoModo === 'contingencia'
+      ? 'Ao ativar a Contingência, todos os motoristas atualmente com status "aguardando" entrarão na regra de contingência. Deseja continuar?'
+      : 'Deseja voltar ao Modo Normal?';
+    if (!confirm(mensagem)) return;
+
+    fetch('/api/fila/modo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-fila-admin': chave },
+      body: JSON.stringify({ modo: novoModo, operador: operador })
+    }).then(function (r) {
+      return r.json().then(function (j) { return { s: r.status, j: j }; });
+    }).then(function (r) {
+      if (r.s !== 200 || r.j.erro) alert(r.j.erro || 'Não foi possível alterar o modo.');
+      window.location.reload();
+    }).catch(function () {
+      alert('Sem conexão ao alterar o modo da fila.');
+      window.location.reload();
+    });
+  }
+
+  function renderModo(d) {
+    modoAtual = d.modo === 'contingencia' ? 'contingencia' : 'normal';
+    podeAlterarModo = d.pode_alterar === true;
+    $('modoLabel').textContent = 'Modo: ' + (modoAtual === 'contingencia' ? 'Contingência' : 'Normal');
+    $('modoInfo').textContent = 'Alterado por ' + (d.alterado_por || '—') + ' em ' + (d.alterado_em || '—') +
+      (podeAlterarModo ? '' : ' · Alteração permitida somente das 06h às 18h');
+    $('btnModo').textContent = modoAtual === 'contingencia' ? 'Voltar ao Normal' : 'Ativar Contingência';
+    $('btnModo').disabled = !podeAlterarModo;
+    $('btnModo').title = podeAlterarModo ? '' : 'O modo só pode ser alterado entre 06h e 18h.';
+  }
+
+  function tag(texto, classe) {
+    var el = document.createElement('span');
+    el.className = 'tag ' + classe;
+    el.textContent = texto;
+    return el;
+  }
+
   function celula(tr, txt, cls) { var td = document.createElement('td'); td.textContent = txt; if (cls) td.className = cls; tr.appendChild(td); return td; }
 
   function render(d) {
@@ -100,6 +159,12 @@
       celula(tr, it.nome);
       var tdS = document.createElement('td'), sp = document.createElement('span');
       sp.className = 'st ' + it.status; sp.textContent = it.status; tdS.appendChild(sp); tr.appendChild(tdS);
+      if (it.retido_de) {
+        tdS.appendChild(tag('Retido', 'tag-retido'));
+        tdS.appendChild(tag(it.revalidado === true ? 'Revalidado' : 'Aguardando revalidação',
+          it.revalidado === true ? 'tag-ok' : 'tag-warn'));
+      }
+      if (it.em_contingencia === true) tdS.appendChild(tag('Contingência', 'tag-contingencia'));
       celula(tr, it.alterado_hora ? it.alterado_hora + ' · ' + it.status_alterado_por + (it.motivo ? ' · ' + it.motivo : '') : '');
       var tdA = document.createElement('td'); tdA.className = 'acoes';
       ACOES.forEach(function (a) {
@@ -115,14 +180,35 @@
 
   function carregar() {
     if (!chave) pedirChave();
+    var headers = { 'x-fila-admin': chave };
     var q = $('data').value ? '?data=' + $('data').value : '';
-    fetch('/api/fila/lista' + q, { headers: { 'x-fila-admin': chave }, cache: 'no-store' })
+    fetch('/api/fila/lista' + q, { headers: headers, cache: 'no-store' })
       .then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); })
       .then(function (r) {
         if (r.s === 401) { $('erro').textContent = 'Chave inválida. Clique em "Chave".'; return; }
         $('erro').textContent = ''; render(r.j);
       })
       .catch(function () { $('erro').textContent = 'Sem conexão com o servidor.'; });
+
+    fetch('/api/fila/modo', { headers: headers, cache: 'no-store' })
+      .then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); })
+      .then(function (r) {
+        if (r.s !== 200) {
+          podeAlterarModo = false;
+          $('btnModo').disabled = true;
+          $('modoLabel').textContent = 'Modo: indisponível';
+          $('modoInfo').textContent = r.j.erro || 'Não foi possível consultar o modo da fila.';
+          if (r.s === 401) $('erro').textContent = 'Chave inválida. Clique em "Chave".';
+          return;
+        }
+        renderModo(r.j);
+      })
+      .catch(function () {
+        podeAlterarModo = false;
+        $('btnModo').disabled = true;
+        $('modoLabel').textContent = 'Modo: indisponível';
+        $('modoInfo').textContent = 'Sem conexão ao consultar o modo da fila.';
+      });
   }
 
   carregar();
