@@ -93,6 +93,10 @@ module.exports = function montarFila(app, pool) {
         ADD COLUMN IF NOT EXISTS revalidado_em timestamptz
     `);
     // Remove índice único diário antigo para permitir múltiplas entradas no modo normal
+   await pool.query(`
+      ALTER TABLE fila_motoristas
+        DROP CONSTRAINT IF EXISTS fila_motoristas_data_fila_placa_key
+    `);
     await pool.query(`
       DO $$
       DECLARE r record;
