@@ -184,12 +184,6 @@
 
     .item-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .item-placa     { font-family: var(--fn-mono); font-size: 1.1rem; font-weight: 500; }
-    .item-placa-fila {
-      padding: 0; border: 0; background: transparent; color: var(--accent);
-      font: inherit; font-family: var(--fn-mono); font-size: 1.1rem;
-      text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
-    }
-    .item-placa-fila:hover { color: var(--accent-esc); }
     .item-hora      { font-family: var(--fn-mono); font-size: 0.82rem; color: var(--muted); }
     .item-produto   { font-size: 0.75rem; font-weight: 700; color: var(--orange); }
     .item-motorista { font-size: 0.78rem; color: var(--blue); font-family: var(--fn-mono); }
@@ -821,10 +815,10 @@
       <div class="cadastro-body">
         <div id="cadastro-contexto" class="triagem-aviso info" style="display:none;"></div>
         <div class="form-grid">
-          <div class="campo full campo-chave">
+          <!--<div class="campo full campo-chave">
             <label>Chave NF-e</label>
             <input type="text" id="chave_nfe" maxlength="44" autocomplete="off" placeholder="Leitura rápida da chave NF-e">
-          </div>
+          </div>-->
           <div class="campo">
             <label>Placa</label>
             <input type="text" id="cif-placa" placeholder="ABC1D23" maxlength="7" autocomplete="off">
@@ -975,6 +969,76 @@
     ];
 
     let filaFobAtual = [];
+    let filaAdminKey = lerArmazenamento("fila_admin") || lerArmazenamento("FILA_ADMIN_KEY");
+    let filaOperador = lerArmazenamento("fila_operador");
+
+    function lerArmazenamento(chave) {
+      try {
+        return (localStorage.getItem(chave) || '').trim();
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function salvarArmazenamento(chave, valor) {
+      try {
+        localStorage.setItem(chave, valor);
+      } catch (e) {}
+    }
+
+    function obterCredenciaisFila() {
+      if (!filaAdminKey) {
+        filaAdminKey = (prompt("Informe a chave administrativa da fila:") || "").trim();
+        if (filaAdminKey) salvarArmazenamento("fila_admin", filaAdminKey);
+      }
+      if (!filaAdminKey) return false;
+
+      if (!filaOperador) {
+        filaOperador = (prompt("Informe seu nome para registrar as ações da fila:") || "").trim();
+        if (filaOperador) salvarArmazenamento("fila_operador", filaOperador);
+      }
+      return Boolean(filaOperador);
+    }
+
+    async function alterarStatusFila(id, status, botao) {
+      if (!Number.isSafeInteger(id) || id < 1 || !obterCredenciaisFila()) return;
+
+      let motivo = "";
+      if (status === "ausente" || status === "cancelado") {
+        motivo = (prompt(status === "ausente" ? "Informe o motivo da ausência:" : "Informe o motivo do cancelamento:") || "").trim();
+        if (motivo.length < 3) {
+          alert("Informe um motivo com pelo menos 3 caracteres.");
+          return;
+        }
+      }
+
+      const textoOriginal = botao.textContent;
+      botao.disabled = true;
+      botao.textContent = "AGUARDE…";
+      try {
+        const res = await fetch(`${FILA_API_URL}/${id}/status`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-fila-admin": filaAdminKey
+          },
+          body: JSON.stringify({ status, motivo, operador: filaOperador })
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          alert(json.erro || "Não foi possível atualizar o status da fila.");
+          return;
+        }
+        await renderizarCarga();
+      } catch (e) {
+        alert("Sem conexão ao atualizar o status da fila.");
+      } finally {
+        if (botao.isConnected) {
+          botao.disabled = false;
+          botao.textContent = textoOriginal;
+        }
+      }
+    }
 
     function obterChaveMonitorFila() {
       try {
@@ -1534,16 +1598,35 @@
 
       const filaHtml = filaFobAtual.map(item => {
         const id = Number(item.id);
+        const idValido = Number.isSafeInteger(id) && id > 0;
         const placa = escaparHtmlPortaria(item.placa);
         const jaNoPatio = cifFob.some(veiculo =>
           String(veiculo.placa || '').replace(/[^A-Z0-9]/gi, '').toUpperCase() ===
           String(item.placa || '').replace(/[^A-Z0-9]/gi, '').toUpperCase()
         );
-        const placaHtml = Number.isSafeInteger(id) && id > 0 && !jaNoPatio
-          ? `<button type="button" class="item-placa-fila" onclick="abrirCadastroFob(${id})" aria-label="Abrir cadastro FOB para a placa ${placa}">${placa}</button>`
-          : `<span class="item-placa">${placa}</span>`;
+        const acoesFila = idValido ? [
+          ['chamado', 'CHAMAR TV', 'btn-chamar'],
+          ['carregando', 'CARREGANDO', 'btn-descarga'],
+          ['finalizado', 'FINALIZAR', 'btn-finalizar'],
+          ['ausente', 'AUSENTE', 'btn-ausente'],
+          ['cancelado', 'CANCELAR', 'btn-cancelar']
+        ].filter(acao => acao[0] !== item.status)
+          .map(acao => `<button type="button" class="btn-acao ${acao[2]}" onclick="alterarStatusFila(${id}, '${acao[0]}', this)">${acao[1]}</button>`)
+          .join('') : '';
+        const botaoCadastro = idValido && !jaNoPatio
+          ? `<button type="button" class="btn-acao btn-salvar" onclick="abrirCadastroFob(${id})">CADASTRAR FOB</button>`
+          : '';
+        const classeStatusFila = item.status === 'chamado'
+          ? 'status-chamando'
+          : item.status === 'carregando' ? 'status-descarregando' : 'status-agendado';
+        const badgeStatusFila = item.status === 'chamado'
+          ? '<span class="badge badge-chamando">CHAMADO</span>'
+          : item.status === 'carregando'
+            ? '<span class="badge badge-descarregando">CARREGANDO</span>'
+            : '<span class="badge badge-agendado">AGUARDANDO</span>';
         const badges = [
           '<span class="badge badge-fila-fob">FILA FOB</span>',
+          badgeStatusFila,
           item.retido_de
             ? `<span class="badge ${item.revalidado === true ? 'badge-finalizado' : 'badge-agendado'}">${item.revalidado === true ? 'REVALIDADO' : 'AGUARDANDO REVALIDAÇÃO'}</span>`
             : '',
@@ -1554,15 +1637,16 @@
         ].filter(Boolean).join(' ');
 
         return `
-          <div class="item-veiculo status-agendado">
+          <div class="item-veiculo ${classeStatusFila}">
             <div class="item-info">
-              ${placaHtml}
+              <span class="item-placa">${placa}</span>
               ${item.nome ? `<span class="item-motorista">👤 ${escaparHtmlPortaria(item.nome)}</span>` : ''}
               <span class="item-hora">Fila desde: ${escaparHtmlPortaria(item.hora || '—')}</span>
               ${badges}
               <span class="permanencia">#${escaparHtmlPortaria(item.posicao || '—')}</span>
             </div>
-            <div class="item-resumo">${jaNoPatio ? 'Este veículo já tem registro ativo no pátio.' : 'Clique na placa para abrir o cadastro de entrada FOB.'}</div>
+            <div class="item-resumo">${jaNoPatio ? 'Veículo já registrado no pátio; as ações da fila continuam disponíveis.' : 'Use os botões abaixo para cadastrar a entrada ou atualizar o status da fila.'}</div>
+            <div class="item-acoes">${botaoCadastro}${acoesFila}</div>
           </div>`;
       }).join("");
 
