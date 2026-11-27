@@ -242,6 +242,8 @@
     .badge-descarregando { background: #ff6d00; color: #000; }
     .badge-carregando    { background: #4fc3f7; color: #000; }
     .badge-finalizado    { background: #00e676; color: #000; }
+    .badge-revalidacao   { background: #f0b429; color: #000; }
+    .badge-contingencia  { background: #b39ddb; color: #000; }
 
     /* --- BADGES PRODUTO --- */
     .badge-produto {
@@ -325,8 +327,11 @@
   <!-- INFERIOR -->
   <div class="area-inferior-grid">
     <div class="box-proximo" id="painel-proximo">
-      <div class="label">Próximo</div>
-      <div style="font-size:2rem; color:#555;">--</div>
+      <div id="proximo-agendamento">
+        <div class="label">Próximo</div>
+        <div style="font-size:2rem; color:#555;">--</div>
+      </div>
+      <div id="qr-fila-tv"></div>
     </div>
     <div class="box-status">
       <div class="label">Status Patio</div>
@@ -344,6 +349,8 @@
       <div class="fila-secao">
         <div class="fila-secao-titulo" style="color:#4fc3f7;">[⤒] CARGA</div>
         <div id="fila-carga"></div>
+        <div class="fila-secao-titulo" style="color:#f0b429;margin-top:12px;">FILA FOB</div>
+        <div id="fila-fob-tv"></div>
       </div>
     </div>
   </div>
@@ -394,6 +401,166 @@
 
     var API_URL = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
 
+    // --- CONFIGURAÇÃO DA FILA / QR NA TV ---
+    var FILA_BASE = 'https://agenda-backend-production-5b72.up.railway.app/api/fila';
+
+    function obterChavesFilaTV() {
+      try {
+        var params = new URLSearchParams(window.location.search);
+        var monitorUrl = (params.get('chave') || '').trim();
+        var adminUrl = (params.get('chave_admin') || '').trim();
+
+        if (monitorUrl) localStorage.setItem('tv_fila_chave', monitorUrl);
+        if (adminUrl) localStorage.setItem('tv_fila_admin_chave', adminUrl);
+
+        if (monitorUrl || adminUrl) {
+          params.delete('chave');
+          params.delete('chave_admin');
+          var novaBusca = params.toString();
+          var novaUrl = window.location.pathname + (novaBusca ? '?' + novaBusca : '') + window.location.hash;
+          window.history.replaceState({}, '', novaUrl);
+        }
+
+        var monitor = (localStorage.getItem('tv_fila_chave') || localStorage.getItem('fila_chave') || '').trim();
+        if (monitor) localStorage.setItem('tv_fila_chave', monitor);
+        return {
+          monitor: monitor,
+          admin: (localStorage.getItem('tv_fila_admin_chave') || monitor).trim()
+        };
+      } catch (e) {
+        return { monitor: '', admin: '' };
+      }
+    }
+
+    var CHAVES_FILA_TV = obterChavesFilaTV();
+    var CHAVE_MONITOR_TV = CHAVES_FILA_TV.monitor;
+    var CHAVE_ADMIN_TV = CHAVES_FILA_TV.admin;
+    var timerQrTv = null;
+    var timerFilaFobTv = null;
+
+    function escaparHtmlTV(valor) {
+      return String(valor == null ? '' : valor).replace(/[&<>"']/g, function (caractere) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[caractere];
+      });
+    }
+
+    function atualizarQrProximoTV() {
+      var el = document.getElementById('qr-fila-tv');
+      if (!el) return;
+
+      if (!CHAVE_MONITOR_TV) {
+        el.innerHTML =
+          '<div class="label" style="margin-top:14px;">Acesso Fila FOB</div>' +
+          '<div style="font-size:0.8rem;color:#888;">Informe ?chave= na URL da TV</div>';
+        return;
+      }
+
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', FILA_BASE + '/qr-atual?chave=' + encodeURIComponent(CHAVE_MONITOR_TV), true);
+      xhr.timeout = 10000;
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState !== 4) return;
+        if (xhr.status === 200) {
+          try {
+            var data = JSON.parse(xhr.responseText);
+            if (data && data.url) {
+              var imgSrc = FILA_BASE + '/qr.png?chave=' + encodeURIComponent(CHAVE_MONITOR_TV) +
+                           '&texto=' + encodeURIComponent(data.url) + '&t=' + Date.now();
+              el.innerHTML =
+                '<div class="label" style="margin-top:14px;">QR Code — Fila FOB</div>' +
+                '<div style="display:flex;align-items:center;gap:12px;">' +
+                  '<img src="' + escaparHtmlTV(imgSrc) + '" alt="QR Code Fila" style="width:92px;height:92px;background:#fff;padding:4px;border-radius:6px;flex-shrink:0;">' +
+                  '<div style="font-size:0.8rem;color:#ccc;line-height:1.35;">Escaneie com o celular para entrar na fila.</div>' +
+                '</div>';
+            }
+          } catch (e) {
+            el.innerHTML = '<div style="font-size:0.8rem;color:#888;">Não foi possível carregar o QR Code.</div>';
+          }
+        } else if (xhr.status === 403) {
+          el.innerHTML =
+            '<div class="label" style="margin-top:14px;">QR Code — Fila FOB</div>' +
+            '<div style="font-size:0.85rem;color:#888;">Fila online fechada no momento</div>';
+        } else {
+          el.innerHTML =
+            '<div class="label" style="margin-top:14px;">QR Code — Fila FOB</div>' +
+            '<div style="font-size:0.8rem;color:#888;">Não foi possível acessar a fila online.</div>';
+        }
+      };
+      xhr.onerror = function () {
+        el.innerHTML = '<div style="font-size:0.8rem;color:#888;">Sem conexão com a fila online.</div>';
+      };
+      xhr.ontimeout = xhr.onerror;
+      xhr.send();
+    }
+
+    function atualizarFilaFobTV() {
+      var alvo = document.getElementById('fila-fob-tv');
+      if (!alvo) return;
+
+      if (!CHAVE_ADMIN_TV) {
+        alvo.innerHTML = '<div style="color:#888;font-size:0.8rem;margin-top:8px;">Informe ?chave_admin= na URL da TV para carregar a lista.</div>';
+        return;
+      }
+
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', FILA_BASE + '/lista', true);
+      xhr.setRequestHeader('x-fila-admin', CHAVE_ADMIN_TV);
+      xhr.timeout = 10000;
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState !== 4) return;
+        if (xhr.status !== 200) {
+          alvo.innerHTML = xhr.status === 401
+            ? '<div style="color:#888;font-size:0.8rem;margin-top:8px;">Chave administrativa da fila inválida.</div>'
+            : '<div style="color:#888;font-size:0.8rem;margin-top:8px;">Não foi possível carregar a Fila FOB.</div>';
+          return;
+        }
+        try {
+          var res = JSON.parse(xhr.responseText);
+          var itens = (res && res.itens ? res.itens : []).filter(function (it) {
+            return it.status === 'aguardando' || it.status === 'chamado' || it.status === 'carregando';
+          });
+
+          if (!itens.length) {
+            alvo.innerHTML = '<div style="color:#444;font-size:0.8rem;margin-top:8px;">Fila FOB vazia</div>';
+            return;
+          }
+
+          var html = '';
+          for (var i = 0; i < itens.length; i++) {
+            var it = itens[i];
+            var posStr = String(it.posicao || (i + 1));
+            while (posStr.length < 3) posStr = '0' + posStr;
+            var extraTag = it.revalidado === true
+              ? ' <span class="badge badge-finalizado">REVALIDADO</span>'
+              : (it.retido_de ? ' <span class="badge badge-revalidacao">AGUARDANDO REVALIDAÇÃO</span>' : '');
+            if (it.em_contingencia === true) {
+              extraTag += ' <span class="badge badge-contingencia">CONTINGÊNCIA</span>';
+            }
+
+            html +=
+              '<div class="item-fila tipo-carga' + (i === 0 ? ' primeiro' : '') + '">' +
+                '<div class="fila-linha-topo">' +
+                  '<span class="placa-fila">' + escaparHtmlTV(it.placa) + '</span>' +
+                  '<span class="hora-fila-carga">' + escaparHtmlTV(it.hora || '') + '</span>' +
+                '</div>' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">' +
+                  '<span style="font-size:0.75rem;color:#ccc;">' + escaparHtmlTV(it.nome || '') + extraTag + '</span>' +
+                  '<span style="font-size:0.65rem;font-weight:700;color:#888;font-family:monospace;">#' + escaparHtmlTV(posStr) + '</span>' +
+                '</div>' +
+              '</div>';
+          }
+          alvo.innerHTML = html;
+        } catch (e) {
+          alvo.innerHTML = '<div style="color:#888;font-size:0.8rem;margin-top:8px;">Resposta inválida da Fila FOB.</div>';
+        }
+      };
+      xhr.onerror = function () {
+        alvo.innerHTML = '<div style="color:#888;font-size:0.8rem;margin-top:8px;">Sem conexão com a Fila FOB.</div>';
+      };
+      xhr.ontimeout = xhr.onerror;
+      xhr.send();
+    }
+
     let sseConnection = null;
     let sseReconnectTimer = null;
     let sseJaConectou = false;
@@ -443,6 +610,10 @@
       conectarSseTV();
       atualizarRelogio();
       atualizarDados();
+      atualizarQrProximoTV();
+      atualizarFilaFobTV();
+      if (!timerQrTv) timerQrTv = setInterval(atualizarQrProximoTV, 35000);
+      if (!timerFilaFobTv) timerFilaFobTv = setInterval(atualizarFilaFobTV, 15000);
 
       // Só inicia vídeo se não for madrugada
       if (!ehMadrugada()) {      
@@ -736,7 +907,7 @@
 
     // ── RENDER PRÓXIMO ───────────────────────────────────────
     function renderProximo(proximo) {
-      var el = document.getElementById('painel-proximo');
+      var el = document.getElementById('proximo-agendamento');
       if (proximo) {
         var badges = badgesProduto(proximo.produto);
         el.innerHTML =
