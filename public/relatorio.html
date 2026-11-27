@@ -810,6 +810,15 @@
           <option value="reagendado_fila">Reagendado</option>
         </select>
       </div>
+      <div class="filtro-grupo">
+        <label>Tipo de operação</label>
+        <select id="filtro-tipo">
+          <option value="">Todos</option>
+          <option value="CIF">CIF</option>
+          <option value="FOB">FOB</option>
+          <option value="TRANSFERENCIA">Transferência</option>
+        </select>
+      </div>
       <div class="filtro-grupo"><label>Usuário</label><select id="filtro-usuario"><option value="">Todos</option></select></div>
       <div class="filtro-grupo"><label>Placa</label><input type="text" id="filtro-placa" placeholder="ABC1D23"></div>
       <button class="btn-filtrar" onclick="aplicarFiltros()">Filtrar</button>
@@ -1168,16 +1177,27 @@
     }
 
     // ── RELATÓRIO ──
+    // Compara o tipo sem depender de acento ou caixa (CIF, FOB, transferencia/Transferência)
+    function normalizarTipoOperacao(v) {
+      return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toUpperCase();
+    }
+    function combinaTipoOperacao(valor, filtro) {
+      if(!filtro) return true;
+      const t=normalizarTipoOperacao(valor);
+      return filtro==="TRANSFERENCIA" ? t.startsWith("TRANSFER") : t===filtro;
+    }
     function aplicarFiltros() {
       const inicio=document.getElementById("filtro-inicio").value;
       const fim=document.getElementById("filtro-fim").value;
       const status=document.getElementById("filtro-status").value;
+      const tipo=document.getElementById("filtro-tipo").value;
       const usuario=document.getElementById("filtro-usuario").value;
       const placa=document.getElementById("filtro-placa").value.trim().toUpperCase();
       dadosFiltrados=todosAgendamentos.filter(a=>{
         if(inicio&&a.data<inicio) return false;
         if(fim&&a.data>fim) return false;
         if(status&&a.status!==status) return false;
+        if(!combinaTipoOperacao(a.tipo_operacao,tipo)) return false;
         if(usuario&&a.alterado_por!==usuario) return false;
         if(placa&&!(a.placa||"").toUpperCase().includes(placa)) return false;
         return true;
@@ -1187,6 +1207,7 @@
     function limparFiltros() {
       ["filtro-inicio","filtro-fim","filtro-placa"].forEach(id=>document.getElementById(id).value="");
       document.getElementById("filtro-status").value="";
+      document.getElementById("filtro-tipo").value="";
       document.getElementById("filtro-usuario").value="";
       aplicarFiltros();
     }
