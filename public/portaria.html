@@ -975,11 +975,7 @@
       { value: "CPV-ARI-SC-40-V",    label: "CPV"    },
     ];
 
-    let filaFobAtual = [];
-    let filaAdminKey = lerArmazenamento("fila_admin") || lerArmazenamento("FILA_ADMIN_KEY");
-    let filaOperador = lerArmazenamento("fila_operador");
-
-    function lerArmazenamento(chave) {
+      function lerArmazenamento(chave) {
       try {
         return (localStorage.getItem(chave) || '').trim();
       } catch (e) {
