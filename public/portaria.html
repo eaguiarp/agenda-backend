@@ -1061,19 +1061,32 @@ let filaOperador = lerArmazenamento("fila_operador") || "Operador Teste";
     }
 
     async function obterFilaFob() {
-      const chave = obterChaveMonitorFila();
-      if (!chave) {
-        return { itens: [], aviso: 'Chave de monitor não encontrada neste navegador. Abra o monitor da fila uma vez para salvá-la.' };
-      }
+      function salvarChaveMonitorFila(valor) {
+  valor = (valor || '').trim();
+  if (!valor) return;
+  salvarArmazenamento('fila_chave', valor);
+  renderizarCarga();
+}
 
-      const res = await fetch(`${FILA_API_URL}/tv-lista`, {
-        headers: { 'x-fila-chave': chave },
-        cache: 'no-store'
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.erro || 'Não foi possível carregar a fila FOB.');
-      return { itens: Array.isArray(json.itens) ? json.itens : [], aviso: '' };
-    }
+async function obterFilaFob() {
+  const chave = obterChaveMonitorFila();
+  if (!chave) {
+    return { itens: [], semChave: true, aviso: 'Informe a chave do monitor da fila (só uma vez neste navegador).' };
+  }
+
+  const res = await fetch(`${FILA_API_URL}/tv-lista`, {
+    headers: { 'x-fila-chave': chave },
+    cache: 'no-store'
+  });
+  const json = await res.json().catch(() => ({}));
+
+  if (res.status === 401 || res.status === 403) {
+    try { localStorage.removeItem('fila_chave'); localStorage.removeItem('tv_fila_chave'); } catch (e) {}
+    return { itens: [], semChave: true, aviso: 'Chave inválida. Informe novamente.' };
+  }
+  if (!res.ok) throw new Error(json.erro || 'Não foi possível carregar a fila FOB.');
+  return { itens: Array.isArray(json.itens) ? json.itens : [], aviso: '' };
+}
 
     function escaparHtmlPortaria(valor) {
       return String(valor == null ? '' : valor).replace(/[&<>"']/g, caractere =>
@@ -1538,12 +1551,21 @@ let filaOperador = lerArmazenamento("fila_operador") || "Operador Teste";
         ? ''
         : '<div class="lista-vazia">Nenhum veículo CIF/FOB no pátio ou aguardando na fila.</div>';
       const avisoFilaHtml = filaInfo.aviso
-        ? `<div class="item-resumo" role="status">${escaparHtmlPortaria(filaInfo.aviso)}</div>`
-        : '';
+  ? `<div class="item-resumo" role="status">${escaparHtmlPortaria(filaInfo.aviso)}</div>`
+  : '';
+const formChaveHtml = filaInfo.semChave
+  ? `<div style="display:flex;gap:6px;margin-top:8px;">
+       <input id="portaria-chave-input" type="password" autocomplete="off" placeholder="Cole a chave do monitor"
+              style="flex:1;padding:8px;border:1px solid var(--border);border-radius:4px;">
+       <button type="button" class="btn-acao btn-salvar"
+               onclick="salvarChaveMonitorFila(document.getElementById('portaria-chave-input').value)">SALVAR CHAVE</button>
+     </div>`
+  : '';
 
-      el.innerHTML = veiculosHtml + filaHtml + vazioHtml + avisoFilaHtml;
-    }
+// não apagar o campo enquanto a pessoa digita/cola (a lista recarrega a cada 15s)
+if (document.activeElement && document.activeElement.id === 'portaria-chave-input') return;
 
+el.innerHTML = veiculosHtml + filaHtml + vazioHtml + avisoFilaHtml + formChaveHtml;
     /* ── VASILHAME ─────────────────────────── */
     const vasilhameState = {};
     let _finalizando = false; // trava para evitar duplo clique
