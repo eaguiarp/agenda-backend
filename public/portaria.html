@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portaria — CD Itaboraí</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg:        #f4f6f9;
@@ -79,7 +79,21 @@
       background: var(--accent); color: #fff;
       padding: 9px 16px;
     }
-    .card-body { padding: 18px 20px; }
+    .card-body {
+      padding: 18px 20px;
+      font-family: var(--fn-body, 'Inter', sans-serif);
+    }
+    .card-body .nome-motorista {
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+    }
+    .card-body .legenda-fila {
+      font-family: 'Inter', sans-serif;
+      font-weight: 400;
+      font-size: 0.875rem;
+      line-height: 1.4;
+    }
 
     /* ── FORMULÁRIO ──────────────────────────── */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -97,12 +111,9 @@
       background: var(--bg); color: var(--text); width: 100%;
     }
     .campo textarea { resize: vertical; min-height: 100px; }
-    .campo-chave { border-bottom: 1px dashed var(--border); padding-bottom: 16px; margin-bottom: 16px; }
     .campo input:focus, .campo select:focus, .campo textarea:focus {
       outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,86,164,0.12);
     }
-    .input-status-sucesso { border-color: #2ecc71 !important; background: rgba(46,204,113,0.12) !important; }
-    .input-status-erro    { border-color: #e74c3c !important; background: rgba(231,76,60,0.08)  !important; }
 
     .btn-registrar {
       background: var(--accent); color: white; border: none;
@@ -183,10 +194,10 @@
     .item-veiculo.status-cancelado     { border-left-color: #95a5a6; opacity: 0.4; }
 
     .item-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .item-placa     { font-family: var(--fn-mono); font-size: 1.1rem; font-weight: 500; }
-    .item-hora      { font-family: var(--fn-mono); font-size: 0.82rem; color: var(--muted); }
+    .item-placa     { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 1.1rem; font-weight: 600; letter-spacing: -0.015em; }
+    .item-hora      { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-weight: 400; font-size: 0.875rem; line-height: 1.4; letter-spacing: -0.005em; color: var(--muted); }
     .item-produto   { font-size: 0.75rem; font-weight: 700; color: var(--orange); }
-    .item-motorista { font-size: 0.78rem; color: var(--blue); font-family: var(--fn-mono); }
+    .item-motorista { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-weight: 400; font-size: 0.875rem; line-height: 1.4; letter-spacing: -0.005em; color: var(--blue); }
 
     .badge {
       display: inline-block; font-family: var(--fn-mono); font-size: 0.58rem;
@@ -229,7 +240,7 @@
 
     .permanencia        { font-family: var(--fn-mono); font-size: 0.75rem; color: var(--muted); margin-left: auto; }
     .permanencia.alerta { color: var(--red); font-weight: 700; }
-    .item-resumo        { font-size: 0.75rem; color: var(--muted); font-family: var(--fn-mono); }
+    .item-resumo        { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-weight: 400; font-size: 0.875rem; line-height: 1.4; letter-spacing: -0.005em; color: var(--muted); }
 
     .lista-vazia {
       text-align: center; padding: 32px; color: var(--muted);
@@ -815,10 +826,6 @@
       <div class="cadastro-body">
         <div id="cadastro-contexto" class="triagem-aviso info" style="display:none;"></div>
         <div class="form-grid">
-          <div class="campo full campo-chave">
-            <label>Chave NF-e</label>
-            <input type="text" id="chave_nfe" maxlength="44" autocomplete="off" placeholder="Leitura rápida da chave NF-e">
-          </div>
           <div class="campo">
             <label>Placa</label>
             <input type="text" id="cif-placa" placeholder="ABC1D23" maxlength="7" autocomplete="off">
@@ -1087,121 +1094,6 @@
       return produto || "—";
     }
 
-    let ultimaChaveNfeProcessada = "";
-
-    function limparStatusChave() {
-      const input = document.getElementById("chave_nfe");
-      if (!input) return;
-      input.classList.remove("input-status-sucesso", "input-status-erro");
-    }
-
-    function marcarStatusChave(tipo) {
-      const input = document.getElementById("chave_nfe");
-      if (!input) return;
-      input.classList.remove("input-status-sucesso", "input-status-erro");
-      input.classList.add(tipo === "sucesso" ? "input-status-sucesso" : "input-status-erro");
-      setTimeout(limparStatusChave, 2500);
-    }
-
-    function lerValor(obj, paths) {
-      for (const path of paths) {
-        const partes = path.split('.');
-        let atual = obj;
-        for (const parte of partes) {
-          if (!atual || typeof atual !== 'object') { atual = null; break; }
-          atual = atual[parte];
-        }
-        if (atual != null) return atual;
-      }
-      return null;
-    }
-
-    function selecionarProdutoPorTexto(select, texto) {
-      if (!select || !texto) return;
-      const textoUpper = texto.toString().toUpperCase();
-      for (const opt of Array.from(select.options)) {
-        const valueText = `${opt.value} ${opt.text}`.toUpperCase();
-        if (valueText.includes(textoUpper) || textoUpper.includes(opt.text.toUpperCase()) || textoUpper.includes(opt.value.toUpperCase())) {
-          select.value = opt.value;
-          return;
-        }
-      }
-    }
-
-    function preencherProdutosNfe(itens, totalQuantidade) {
-      const lista = document.getElementById("produtos-lista");
-      if (!lista) return;
-      if (!lista.querySelector(".produto-linha")) adicionarProduto();
-      const linhas = Array.from(document.querySelectorAll(".produto-linha"));
-      const itensArray = Array.isArray(itens) ? itens : [];
-      if (itensArray.length === 0) {
-        const linha = linhas[0];
-        if (!linha) return;
-        const qtd = linha.querySelector("input[id^='qtd-']");
-        if (qtd) qtd.value = totalQuantidade || "";
-        return;
-      }
-      itensArray.forEach((item, idx) => {
-        if (!linhas[idx]) adicionarProduto();
-        const linha = document.querySelectorAll(".produto-linha")[idx];
-        const select = linha.querySelector("select[id^='prod-']");
-        const qtd    = linha.querySelector("input[id^='qtd-']");
-        const nfInput = linha.querySelector("input[id^='nf-']");
-        const descricao  = item.descricao || item.produto || item.xProd || item.infAdProd || item.nome || "";
-        const quantidade = item.quantidade || item.qtd || item.qtde || item.quantidade_total || totalQuantidade || "";
-        const nf = item.nf || item.nota || item.numero_nota || item.nota_fiscal || "";
-        selecionarProdutoPorTexto(select, descricao);
-        if (qtd) qtd.value = quantidade;
-        if (nfInput) nfInput.value = nf;
-      });
-    }
-
-    async function buscarNfePorChave(chave) {
-      try {
-        const res = await fetch(`/api/nfe/${chave}`);
-        if (!res.ok) {
-          const erroJson = await res.json().catch(() => ({}));
-          throw new Error(erroJson.erro || "Nota fiscal não encontrada");
-        }
-        const json = await res.json();
-        if (!json || !json.dados) throw new Error("Nota fiscal não encontrada");
-        const dados = json.dados;
-        const placaValor = (lerValor(dados, ['placa','veiculo_placa','placa_veiculo','veiculo.placa']) || "").toString().replace(/-/g,'').trim().toUpperCase();
-        if (placaValor) document.getElementById("cif-placa").value = placaValor;
-        const motoristaValor = lerValor(dados, ['transportador_nome','transportador.nome']) || "";
-        if (motoristaValor) document.getElementById("cif-motorista").value = motoristaValor;
-        const modFrete = String(lerValor(dados, ['modFrete','mod_frete']) || "").trim();
-        if (modFrete === "0" || modFrete.toLowerCase() === 'cif') document.getElementById("cif-tipo").value = "CIF";
-        else if (modFrete === "1" || modFrete.toLowerCase() === 'fob') document.getElementById("cif-tipo").value = "FOB";
-        const itens = Array.isArray(json.itens) ? json.itens : [];
-        const totalQuantidade = lerValor(dados, ['total_quantidade','quantidade_total','qtd_total','totalQtde']) || "";
-        preencherProdutosNfe(itens, totalQuantidade);
-        marcarStatusChave('sucesso');
-        mostrarMensagem('Dados da NF-e carregados.', 'sucesso');
-      } catch (err) {
-        console.error(err);
-        marcarStatusChave('erro');
-        mostrarMensagem(err.message || 'Erro ao buscar NF-e.', 'erro');
-      }
-    }
-
-    function validarChaveNfeInput() {
-      const input = document.getElementById('chave_nfe');
-      if (!input) return;
-      let valor = input.value.replace(/\D/g, '');
-      if (valor.length > 44) valor = valor.slice(0, 44);
-      if (valor !== input.value) input.value = valor;
-      if (valor.length === 44) {
-        if (valor !== ultimaChaveNfeProcessada) {
-          ultimaChaveNfeProcessada = valor;
-          buscarNfePorChave(valor);
-        }
-      } else {
-        ultimaChaveNfeProcessada = "";
-        limparStatusChave();
-      }
-    }
-
     function horaAgora() {
       return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
     }
@@ -1312,9 +1204,6 @@
 
     function limparFormularioCif(tipo) {
       const operacao = tipo || "CIF";
-      document.getElementById("chave_nfe").value = "";
-      ultimaChaveNfeProcessada = "";
-      limparStatusChave();
       ["cif-placa","cif-motorista","cif-transportadora"].forEach(id => {
         document.getElementById(id).value = "";
       });
@@ -1333,7 +1222,7 @@
       document.getElementById("cadastro-contexto").style.display = "none";
       document.getElementById("cadastro-overlay").classList.add("aberto");
       document.body.style.overflow = "hidden";
-      document.getElementById("chave_nfe").focus();
+      document.getElementById("cif-placa").focus();
     }
 
     function abrirCadastroFob(id) {
@@ -1352,11 +1241,11 @@
       document.getElementById("cadastro-titulo").textContent = "Registrar veículo da Fila FOB";
       document.getElementById("cadastro-placa-tag").textContent = `Posição ${item.posicao || "—"} · ${item.placa || ""}`;
       const contexto = document.getElementById("cadastro-contexto");
-      contexto.textContent = "Placa e motorista foram preenchidos pela fila. Informe a chave NF-e e os produtos. O registro original continuará ativo na fila.";
+      contexto.textContent = "Placa e motorista foram preenchidos pela fila. Informe os produtos. O registro original continuará ativo na fila.";
       contexto.style.display = "block";
       document.getElementById("cadastro-overlay").classList.add("aberto");
       document.body.style.overflow = "hidden";
-      document.getElementById("chave_nfe").focus();
+      document.querySelector("#produtos-lista select")?.focus();
     }
 
     function fecharCadastro() {
@@ -1453,8 +1342,8 @@
           <div class="item-veiculo status-${item.status}">
             <div class="item-info">
               <span class="item-placa">${item.placa}</span>
-              ${item.motorista ? `<span class="item-motorista">👤 ${item.motorista}</span>` : ''}
-              <span class="item-hora">Agendado: ${item.hora} · ${formatarData(item.data)}</span>
+              ${item.motorista ? `<span class="item-motorista nome-motorista">👤 ${item.motorista}</span>` : ''}
+              <span class="item-hora legenda-fila">Agendado: ${item.hora} · ${formatarData(item.data)}</span>
               <span class="item-produto">${simplificarProduto(item.produto)}</span>
               ${badgeStatus(item.status)}
               ${permHTML}
@@ -1579,8 +1468,8 @@
           <div class="item-veiculo status-${item.status}">
             <div class="item-info">
               <span class="item-placa">${item.placa}</span>
-              ${item.motorista ? `<span class="item-motorista">👤 ${item.motorista}</span>` : ''}
-              <span class="item-hora">Entrada: ${item.hora_entrada || item.hora}</span>
+              ${item.motorista ? `<span class="item-motorista nome-motorista">👤 ${item.motorista}</span>` : ''}
+              <span class="item-hora legenda-fila">Entrada: ${item.hora_entrada || item.hora}</span>
               <span class="badge" style="background:#e8f0fb;color:#1a4a7a;">${item.tipo_operacao}</span>
               ${permHTML}
             </div>
@@ -1640,8 +1529,8 @@
           <div class="item-veiculo ${classeStatusFila}">
             <div class="item-info">
               <span class="item-placa">${placa}</span>
-              ${item.nome ? `<span class="item-motorista">👤 ${escaparHtmlPortaria(item.nome)}</span>` : ''}
-              <span class="item-hora">Fila desde: ${escaparHtmlPortaria(item.hora || '—')}</span>
+              ${item.nome ? `<span class="item-motorista nome-motorista">👤 ${escaparHtmlPortaria(item.nome)}</span>` : ''}
+              <span class="item-hora legenda-fila">Fila desde: ${escaparHtmlPortaria(item.hora || '—')}</span>
               ${badges}
               <span class="permanencia">#${escaparHtmlPortaria(item.posicao || '—')}</span>
             </div>
@@ -1790,7 +1679,6 @@
 
     /* ── REGISTRAR CIF/FOB ──────────────────── */
     async function registrarCifFob() {
-      const chaveNfe       = document.getElementById("chave_nfe").value.replace(/\D/g, "").trim();
       const placa          = document.getElementById("cif-placa").value.trim().toUpperCase();
       const motorista      = document.getElementById("cif-motorista").value.trim();
       const tipo           = document.getElementById("cif-tipo").value;
@@ -1799,10 +1687,6 @@
       const produtos       = coletarProdutos();
 
       if (!placa)          { mostrarMensagem("Informe a placa.", "erro"); return; }
-      if (chaveNfe.length !== 44) {
-        mostrarMensagem("Informe a chave NF-e completa de 44 dígitos.", "erro");
-        return;
-      }
       if (!produtos.length){ mostrarMensagem("Adicione ao menos um produto.", "erro"); return; }
       if (produtos.some(p => !p.quantidade.trim() || !p.nf.trim())) {
         mostrarMensagem("Informe quantidade e nota fiscal em cada produto.", "erro");
@@ -2215,7 +2099,6 @@
     setInterval(() => renderizarCarga(), 15000);
     conectarSse();
 
-    document.getElementById('chave_nfe')?.addEventListener('input', validarChaveNfeInput);
     document.getElementById('cif-placa')?.addEventListener('input', function() {
       this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     });
