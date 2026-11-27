@@ -998,6 +998,7 @@
 let filaAdminKey = "8d2a2c4f09b44d998a5daee9ea60c082"; 
 let filaOperador = lerArmazenamento("fila_operador") || "Operador Teste";
 
+    function obterCredenciaisFila() {
       if (!filaOperador) {
         filaOperador = (prompt("Informe seu nome para registrar as ações da fila:") || "").trim();
         if (filaOperador) salvarArmazenamento("fila_operador", filaOperador);
