@@ -113,6 +113,29 @@
     .btn-registrar:hover    { background: var(--accent-esc); }
     .btn-registrar:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    .cadastro-overlay {
+      position: fixed; inset: 0; z-index: 300; display: none;
+      align-items: center; justify-content: center;
+      padding: 18px; background: rgba(0,0,0,0.48);
+    }
+    .cadastro-overlay.aberto { display: flex; }
+    .cadastro-dialog {
+      width: 100%; max-width: 760px; max-height: 94vh; overflow-y: auto;
+      background: var(--surface); border-radius: 8px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.28);
+    }
+    .cadastro-header {
+      position: sticky; top: 0; z-index: 2;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 13px 18px; color: #fff; background: var(--accent);
+    }
+    .cadastro-header h2 { font-size: 0.92rem; letter-spacing: 0.06em; text-transform: uppercase; }
+    .cadastro-fechar {
+      border: 0; padding: 0 5px; background: transparent; color: #fff;
+      font-size: 1.6rem; line-height: 1; cursor: pointer;
+    }
+    .cadastro-body { padding: 18px 20px; }
+
     /* ── PRODUTOS DINÂMICOS ──────────────────── */
     .produtos-lista { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
 
@@ -161,6 +184,12 @@
 
     .item-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .item-placa     { font-family: var(--fn-mono); font-size: 1.1rem; font-weight: 500; }
+    .item-placa-fila {
+      padding: 0; border: 0; background: transparent; color: var(--accent);
+      font: inherit; font-family: var(--fn-mono); font-size: 1.1rem;
+      text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+    }
+    .item-placa-fila:hover { color: var(--accent-esc); }
     .item-hora      { font-family: var(--fn-mono); font-size: 0.82rem; color: var(--muted); }
     .item-produto   { font-size: 0.75rem; font-weight: 700; color: var(--orange); }
     .item-motorista { font-size: 0.78rem; color: var(--blue); font-family: var(--fn-mono); }
@@ -174,6 +203,7 @@
     .badge-descarregando { background: #fdf0e6; color: var(--orange); }
     .badge-finalizado    { background: #e6f4ec; color: var(--green); }
     .badge-cancelado     { background: #f0f0f0; color: var(--muted); }
+    .badge-fila-fob      { background: #e8f0fb; color: var(--blue); }
 
     .item-extras { display: flex; gap: 8px; flex-wrap: wrap; }
     .mini-campo  { display: flex; flex-direction: column; gap: 3px; min-width: 90px; flex: 1; }
@@ -778,32 +808,22 @@
     </div><!-- triagem-painel -->
   </div><!-- triagem-overlay -->
 
-  <!-- ABAS -->
-  <div class="abas">
-    <button class="aba ativa"          onclick="trocarAba('descarga')">⬇ Descarga</button>
-    <button class="aba"                onclick="trocarAba('carga')">⬆ Carga CIF/FOB</button>
-    <button class="aba aba-anomalia"   onclick="trocarAba('anomalia')">⚠ Anomalias</button>
-  </div>
-
-  <!-- ═══ PAINEL DESCARGA ═══ -->
-  <div class="painel ativo" id="painel-descarga">
-    <div class="card">
-      <div class="card-titulo">Veículos agendados para descarga</div>
-      <div class="card-body">
-        <div id="lista-descarga"><div class="lista-vazia">Carregando...</div></div>
+  <!-- ═══ CADASTRO CIF/FOB (modal) ═══ -->
+  <div class="cadastro-overlay" id="cadastro-overlay" onclick="fecharCadastroSeTela(event)">
+    <div class="cadastro-dialog" role="dialog" aria-modal="true" aria-labelledby="cadastro-titulo">
+      <div class="cadastro-header">
+        <div>
+          <h2 id="cadastro-titulo">Registrar entrada</h2>
+          <div id="cadastro-placa-tag" style="font-family:var(--fn-mono);font-size:0.75rem;margin-top:3px;"></div>
+        </div>
+        <button type="button" class="cadastro-fechar" onclick="fecharCadastro()" aria-label="Fechar cadastro">×</button>
       </div>
-    </div>
-  </div>
-
-  <!-- ═══ PAINEL CARGA CIF/FOB ═══ -->
-  <div class="painel" id="painel-carga">
-    <div class="card">
-      <div class="card-titulo">Registrar entrada de veículo</div>
-      <div class="card-body">
+      <div class="cadastro-body">
+        <div id="cadastro-contexto" class="triagem-aviso info" style="display:none;"></div>
         <div class="form-grid">
           <div class="campo full campo-chave">
             <label>Chave NF-e</label>
-            <input type="text" id="chave_nfe" maxlength="44" autocomplete="off" autofocus placeholder="Leitura rápida da chave NF-e">
+            <input type="text" id="chave_nfe" maxlength="44" autocomplete="off" placeholder="Leitura rápida da chave NF-e">
           </div>
           <div class="campo">
             <label>Placa</label>
@@ -834,12 +854,42 @@
           <div class="campo full">
             <label>Produtos</label>
             <div class="produtos-lista" id="produtos-lista"></div>
-            <button class="btn-add-produto" onclick="adicionarProduto()">+ Adicionar produto</button>
+            <button type="button" class="btn-add-produto" onclick="adicionarProduto()">+ Adicionar produto</button>
           </div>
           <div class="campo full">
-            <button class="btn-registrar" onclick="registrarCifFob()">+ Registrar entrada</button>
+            <button type="button" class="btn-registrar" id="btn-registrar-cif-fob" onclick="registrarCifFob()">+ Registrar entrada</button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABAS -->
+  <div class="abas">
+    <button class="aba ativa"          onclick="trocarAba('descarga')">⬇ Descarga</button>
+    <button class="aba"                onclick="trocarAba('carga')">⬆ Carga CIF/FOB</button>
+    <button class="aba aba-anomalia"   onclick="trocarAba('anomalia')">⚠ Anomalias</button>
+  </div>
+
+  <!-- ═══ PAINEL DESCARGA ═══ -->
+  <div class="painel ativo" id="painel-descarga">
+    <div class="card">
+      <div class="card-titulo">Veículos agendados para descarga</div>
+      <div class="card-body">
+        <div id="lista-descarga"><div class="lista-vazia">Carregando...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAINEL CARGA CIF/FOB ═══ -->
+  <div class="painel" id="painel-carga">
+    <div class="card">
+      <div class="card-titulo">Registrar veículo CIF</div>
+      <div class="card-body">
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:12px;">
+          Para CIF, preencha os dados completos. Para aproveitar os dados da Fila FOB, clique na placa correspondente na lista abaixo.
+        </p>
+        <button type="button" class="btn-registrar" onclick="abrirCadastroCif()">+ Registrar CIF</button>
       </div>
     </div>
 
@@ -914,6 +964,7 @@
   <script>
     const API_URL      = 'https://agenda-backend-production-5b72.up.railway.app/agendamentos';
     const ANOMALIA_URL = 'https://agenda-backend-production-5b72.up.railway.app/anomalia';
+    const FILA_API_URL = 'https://agenda-backend-production-5b72.up.railway.app/api/fila';
 
     const PRODUTOS_OPCOES = [
       { value: "CPIII-32-RS-SC-V",   label: "CPIII"  },
@@ -922,6 +973,47 @@
       { value: "CPII-F-32-SC-25-MA", label: "M25KG"  },
       { value: "CPV-ARI-SC-40-V",    label: "CPV"    },
     ];
+
+    let filaFobAtual = [];
+
+    function obterChaveMonitorFila() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const daUrl = (params.get('chave') || '').trim();
+        if (daUrl) {
+          localStorage.setItem('fila_chave', daUrl);
+          params.delete('chave');
+          const novaBusca = params.toString();
+          const novaUrl = window.location.pathname + (novaBusca ? '?' + novaBusca : '') + window.location.hash;
+          window.history.replaceState({}, '', novaUrl);
+          return daUrl;
+        }
+        return (localStorage.getItem('fila_chave') || localStorage.getItem('tv_fila_chave') || '').trim();
+      } catch (e) {
+        return '';
+      }
+    }
+
+    async function obterFilaFob() {
+      const chave = obterChaveMonitorFila();
+      if (!chave) {
+        return { itens: [], aviso: 'Chave de monitor não encontrada neste navegador. Abra o monitor da fila uma vez para salvá-la.' };
+      }
+
+      const res = await fetch(`${FILA_API_URL}/tv-lista`, {
+        headers: { 'x-fila-chave': chave },
+        cache: 'no-store'
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.erro || 'Não foi possível carregar a fila FOB.');
+      return { itens: Array.isArray(json.itens) ? json.itens : [], aviso: '' };
+    }
+
+    function escaparHtmlPortaria(valor) {
+      return String(valor == null ? '' : valor).replace(/[&<>"']/g, caractere =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[caractere]
+      );
+    }
 
     function simplificarProduto(produto) {
       const p = (produto || "").toUpperCase();
@@ -1154,15 +1246,62 @@
       }).filter(p => p.produto);
     }
 
-    function limparFormularioCif() {
+    function limparFormularioCif(tipo) {
+      const operacao = tipo || "CIF";
+      document.getElementById("chave_nfe").value = "";
+      ultimaChaveNfeProcessada = "";
+      limparStatusChave();
       ["cif-placa","cif-motorista","cif-transportadora"].forEach(id => {
         document.getElementById(id).value = "";
       });
-      document.getElementById("cif-transp-tipo").value = "proprio";
-      document.getElementById("campo-transp-nome").style.display = "none";
+      document.getElementById("cif-tipo").value = operacao;
+      document.getElementById("cif-transp-tipo").value = operacao === "CIF" ? "transportadora" : "proprio";
+      toggleTransp();
       document.getElementById("produtos-lista").innerHTML = "";
       contadorProduto = 0;
       adicionarProduto();
+    }
+
+    function abrirCadastroCif() {
+      limparFormularioCif("CIF");
+      document.getElementById("cadastro-titulo").textContent = "Registrar veículo CIF";
+      document.getElementById("cadastro-placa-tag").textContent = "Preencha todos os dados do veículo e da carga";
+      document.getElementById("cadastro-contexto").style.display = "none";
+      document.getElementById("cadastro-overlay").classList.add("aberto");
+      document.body.style.overflow = "hidden";
+      document.getElementById("chave_nfe").focus();
+    }
+
+    function abrirCadastroFob(id) {
+      const item = filaFobAtual.find(v => String(v.id) === String(id));
+      if (!item) {
+        mostrarMensagem("Este veículo não está mais na fila. Atualize a lista e tente novamente.", "erro");
+        return;
+      }
+
+      limparFormularioCif("FOB");
+      document.getElementById("cif-placa").value = item.placa || "";
+      document.getElementById("cif-motorista").value = item.nome || "";
+      document.getElementById("cif-tipo").value = "FOB";
+      document.getElementById("cif-transp-tipo").value = "proprio";
+      toggleTransp();
+      document.getElementById("cadastro-titulo").textContent = "Registrar veículo da Fila FOB";
+      document.getElementById("cadastro-placa-tag").textContent = `Posição ${item.posicao || "—"} · ${item.placa || ""}`;
+      const contexto = document.getElementById("cadastro-contexto");
+      contexto.textContent = "Placa e motorista foram preenchidos pela fila. Informe a chave NF-e e os produtos. O registro original continuará ativo na fila.";
+      contexto.style.display = "block";
+      document.getElementById("cadastro-overlay").classList.add("aberto");
+      document.body.style.overflow = "hidden";
+      document.getElementById("chave_nfe").focus();
+    }
+
+    function fecharCadastro() {
+      document.getElementById("cadastro-overlay").classList.remove("aberto");
+      document.body.style.overflow = "";
+    }
+
+    function fecharCadastroSeTela(event) {
+      if (event.target === document.getElementById("cadastro-overlay")) fecharCadastro();
     }
 
     /* ── MENSAGEM ───────────────────────────── */
@@ -1323,8 +1462,21 @@
 
     /* ── RENDERIZAR CARGA CIF/FOB ─────────── */
     async function renderizarCarga(dadosPre) {
-      const dados = dadosPre || await obterAgendamentos();
       const el    = document.getElementById("lista-carga");
+      let dados;
+      try {
+        dados = dadosPre || await obterAgendamentos();
+      } catch (e) {
+        el.innerHTML = `<div class="lista-vazia">Não foi possível carregar os veículos CIF/FOB.</div>`;
+        return;
+      }
+
+      let filaInfo;
+      try {
+        filaInfo = await obterFilaFob();
+      } catch (e) {
+        filaInfo = { itens: [], aviso: e.message || 'Não foi possível carregar a fila FOB.' };
+      }
 
       const cifFob = dados
         .filter(a =>
@@ -1333,12 +1485,11 @@
         )
         .sort((a, b) => new Date(`${a.data} ${a.hora}`) - new Date(`${b.data} ${b.hora}`));
 
-      if (!cifFob.length) {
-        el.innerHTML = `<div class="lista-vazia">Nenhum veículo CIF/FOB no pátio.</div>`;
-        return;
-      }
+      filaFobAtual = filaInfo.itens.filter(item =>
+        ['aguardando', 'chamado', 'carregando'].includes(item.status)
+      );
 
-      el.innerHTML = cifFob.map(item => {
+      const veiculosHtml = cifFob.map(item => {
         const perm     = calcularPermanencia(item.hora_entrada || item.hora);
         const permHTML = perm
           ? `<span class="permanencia ${perm.alerta ? 'alerta' : ''}">⏱ ${perm.texto}</span>`
@@ -1380,6 +1531,49 @@
             </div>
           </div>`;
       }).join("");
+
+      const filaHtml = filaFobAtual.map(item => {
+        const id = Number(item.id);
+        const placa = escaparHtmlPortaria(item.placa);
+        const jaNoPatio = cifFob.some(veiculo =>
+          String(veiculo.placa || '').replace(/[^A-Z0-9]/gi, '').toUpperCase() ===
+          String(item.placa || '').replace(/[^A-Z0-9]/gi, '').toUpperCase()
+        );
+        const placaHtml = Number.isSafeInteger(id) && id > 0 && !jaNoPatio
+          ? `<button type="button" class="item-placa-fila" onclick="abrirCadastroFob(${id})" aria-label="Abrir cadastro FOB para a placa ${placa}">${placa}</button>`
+          : `<span class="item-placa">${placa}</span>`;
+        const badges = [
+          '<span class="badge badge-fila-fob">FILA FOB</span>',
+          item.retido_de
+            ? `<span class="badge ${item.revalidado === true ? 'badge-finalizado' : 'badge-agendado'}">${item.revalidado === true ? 'REVALIDADO' : 'AGUARDANDO REVALIDAÇÃO'}</span>`
+            : '',
+          item.em_contingencia === true
+            ? '<span class="badge badge-chamando">CONTINGÊNCIA</span>'
+            : '',
+          jaNoPatio ? '<span class="badge badge-agendado">JÁ NO PÁTIO</span>' : ''
+        ].filter(Boolean).join(' ');
+
+        return `
+          <div class="item-veiculo status-agendado">
+            <div class="item-info">
+              ${placaHtml}
+              ${item.nome ? `<span class="item-motorista">👤 ${escaparHtmlPortaria(item.nome)}</span>` : ''}
+              <span class="item-hora">Fila desde: ${escaparHtmlPortaria(item.hora || '—')}</span>
+              ${badges}
+              <span class="permanencia">#${escaparHtmlPortaria(item.posicao || '—')}</span>
+            </div>
+            <div class="item-resumo">${jaNoPatio ? 'Este veículo já tem registro ativo no pátio.' : 'Clique na placa para abrir o cadastro de entrada FOB.'}</div>
+          </div>`;
+      }).join("");
+
+      const vazioHtml = cifFob.length || filaFobAtual.length
+        ? ''
+        : '<div class="lista-vazia">Nenhum veículo CIF/FOB no pátio ou aguardando na fila.</div>';
+      const avisoFilaHtml = filaInfo.aviso
+        ? `<div class="item-resumo" role="status">${escaparHtmlPortaria(filaInfo.aviso)}</div>`
+        : '';
+
+      el.innerHTML = veiculosHtml + filaHtml + vazioHtml + avisoFilaHtml;
     }
 
     /* ── VASILHAME ─────────────────────────── */
@@ -1512,14 +1706,34 @@
 
     /* ── REGISTRAR CIF/FOB ──────────────────── */
     async function registrarCifFob() {
+      const chaveNfe       = document.getElementById("chave_nfe").value.replace(/\D/g, "").trim();
       const placa          = document.getElementById("cif-placa").value.trim().toUpperCase();
       const motorista      = document.getElementById("cif-motorista").value.trim();
       const tipo           = document.getElementById("cif-tipo").value;
+      const tipoVeiculo    = document.getElementById("cif-transp-tipo").value;
       const transportadora = document.getElementById("cif-transportadora").value.trim();
       const produtos       = coletarProdutos();
 
       if (!placa)          { mostrarMensagem("Informe a placa.", "erro"); return; }
+      if (chaveNfe.length !== 44) {
+        mostrarMensagem("Informe a chave NF-e completa de 44 dígitos.", "erro");
+        return;
+      }
       if (!produtos.length){ mostrarMensagem("Adicione ao menos um produto.", "erro"); return; }
+      if (produtos.some(p => !p.quantidade.trim() || !p.nf.trim())) {
+        mostrarMensagem("Informe quantidade e nota fiscal em cada produto.", "erro");
+        return;
+      }
+      if (tipo === "CIF") {
+        if (!motorista) {
+          mostrarMensagem("Para CIF, informe o motorista.", "erro");
+          return;
+        }
+        if (tipoVeiculo === "transportadora" && !transportadora) {
+          mostrarMensagem("Para CIF, informe o nome da transportadora.", "erro");
+          return;
+        }
+      }
 
       const agora = horaAgora();
       const hoje  = new Date().toISOString().split("T")[0];
@@ -1539,6 +1753,9 @@
         status:         "agendado"
       };
 
+      const botao = document.getElementById("btn-registrar-cif-fob");
+      botao.disabled = true;
+      botao.textContent = "Registrando…";
       try {
         const res = await fetch(API_URL, {
           method: "POST",
@@ -1547,13 +1764,18 @@
         });
         if (res.ok) {
           mostrarMensagem("Veículo registrado!", "sucesso");
-          limparFormularioCif();
-          renderizarCarga();
+          fecharCadastro();
+          limparFormularioCif("CIF");
+          await renderizarCarga();
         } else {
-          mostrarMensagem("Erro ao registrar.", "erro");
+          const json = await res.json().catch(() => ({}));
+          mostrarMensagem(json.erro || "Erro ao registrar.", "erro");
         }
       } catch (e) {
         mostrarMensagem("Erro de conexão.", "erro");
+      } finally {
+        botao.disabled = false;
+        botao.textContent = "+ Registrar entrada";
       }
     }
 
@@ -1906,9 +2128,16 @@
     }
 
     setInterval(atualizarRelogio, 1000);
+    setInterval(() => renderizarCarga(), 15000);
     conectarSse();
 
     document.getElementById('chave_nfe')?.addEventListener('input', validarChaveNfeInput);
+    document.getElementById('cif-placa')?.addEventListener('input', function() {
+      this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    });
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') fecharCadastro();
+    });
 
     atualizarRelogio();
     adicionarProduto();
