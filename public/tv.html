@@ -473,22 +473,18 @@
         '<div style="font-size:1.1rem;color:' + (cor || '#888') + ';max-width:90%;">' + escaparHtmlTV(texto) + '</div>';
     }
 
-    function mostrarConfigChaveTV(aviso) {
-      var el = document.getElementById('qr-fila-tv');
-      if (!el) return;
-      el.innerHTML =
-        '<div class="label">Fila FOB &mdash; configurar esta TV</div>' +
-        (aviso ? '<div style="font-size:0.9rem;color:#ff6d00;margin-bottom:8px;">' + escaparHtmlTV(aviso) + '</div>' : '') +
-        '<div style="font-size:0.85rem;color:#888;margin-bottom:8px;">Informe a chave do monitor da fila (só uma vez)</div>' +
-        '<input id="tv-chave-input" class="qr-config-input" type="password" autocomplete="off">' +
-        '<button id="tv-chave-salvar" class="qr-config-btn" type="button">Salvar</button>';
-      var inp = document.getElementById('tv-chave-input');
-      var btn = document.getElementById('tv-chave-salvar');
-      var salvar = function () { salvarChaveTV(inp.value); };
-      btn.onclick = salvar;
-      inp.onkeydown = function (e) { if (e.key === 'Enter' || e.keyCode === 13) salvar(); };
-      inp.focus();
-    }
+   function mostrarConfigChaveTV(aviso) {
+  // Coloque a sua chave completa aqui dentro das aspas:
+  var chaveTemporaria = '8d2a2c4f09b44d998a5daee9ea60c082';
+
+  var el = document.getElementById('qr-fila-tv');
+  if (el) {
+    el.innerHTML = '<div class="label">Salvando configuração automaticamente...</div>';
+  }
+
+  // Salva direto no armazenamento do navegador (ex: localStorage)
+  salvarChaveTV(chaveTemporaria);
+}
 
     function salvarChaveTV(valor) {
       valor = String(valor || '').trim();
