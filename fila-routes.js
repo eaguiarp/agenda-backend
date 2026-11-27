@@ -691,6 +691,28 @@ module.exports = function montarFila(app, pool) {
     }
   });
 
+  router.get('/tv-lista', exigirMonitor, async (req, res) => {
+    try {
+      await processarCicloContingencia();
+      const rel = await infoRelogio();
+      const { rows } = await pool.query(
+        `SELECT row_number() OVER (ORDER BY ${SQL_ORDEM})::int AS posicao,
+                id, placa, nome, status, em_contingencia, retido_de,
+                (revalidado_em IS NOT NULL) AS revalidado,
+                to_char(registrado_em AT TIME ZONE '${TZ}', 'HH24:MI:SS') AS hora
+           FROM fila_motoristas
+          WHERE data_fila = $1::date
+            AND status IN ('aguardando', 'chamado', 'carregando')
+          ORDER BY ${SQL_ORDEM}`,
+        [rel.hoje]
+      );
+      res.json({ itens: rows });
+    } catch (e) {
+      console.error('fila tv-lista', e);
+      res.status(500).json({ erro: 'Erro interno.' });
+    }
+  });
+
   router.get('/lista', exigirAdmin, async (req, res) => {
     try {
       await processarCicloContingencia();

@@ -348,9 +348,10 @@
       </div>
       <div class="fila-secao">
         <div class="fila-secao-titulo" style="color:#4fc3f7;">[⤒] CARGA</div>
-        <div id="fila-carga"></div>
-        <div class="fila-secao-titulo" style="color:#f0b429;margin-top:12px;">FILA FOB</div>
-        <div id="fila-fob-tv"></div>
+        <div id="fila-carga">
+          <div id="fila-carga-agendada"></div>
+          <div id="fila-carga-fob"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -411,7 +412,6 @@
         var adminUrl = (params.get('chave_admin') || '').trim();
 
         if (monitorUrl) localStorage.setItem('tv_fila_chave', monitorUrl);
-        if (adminUrl) localStorage.setItem('tv_fila_admin_chave', adminUrl);
 
         if (monitorUrl || adminUrl) {
           params.delete('chave');
@@ -423,18 +423,14 @@
 
         var monitor = (localStorage.getItem('tv_fila_chave') || localStorage.getItem('fila_chave') || '').trim();
         if (monitor) localStorage.setItem('tv_fila_chave', monitor);
-        return {
-          monitor: monitor,
-          admin: (localStorage.getItem('tv_fila_admin_chave') || monitor).trim()
-        };
+        return { monitor: monitor };
       } catch (e) {
-        return { monitor: '', admin: '' };
+        return { monitor: '' };
       }
     }
 
     var CHAVES_FILA_TV = obterChavesFilaTV();
     var CHAVE_MONITOR_TV = CHAVES_FILA_TV.monitor;
-    var CHAVE_ADMIN_TV = CHAVES_FILA_TV.admin;
     var timerQrTv = null;
     var timerFilaFobTv = null;
 
@@ -494,23 +490,23 @@
     }
 
     function atualizarFilaFobTV() {
-      var alvo = document.getElementById('fila-fob-tv');
+      var alvo = document.getElementById('fila-carga-fob');
       if (!alvo) return;
 
-      if (!CHAVE_ADMIN_TV) {
-        alvo.innerHTML = '<div style="color:#888;font-size:0.8rem;margin-top:8px;">Informe ?chave_admin= na URL da TV para carregar a lista.</div>';
+      if (!CHAVE_MONITOR_TV) {
+        alvo.innerHTML = '<div style="color:#888;font-size:0.8rem;margin-top:8px;">Informe ?chave= na URL da TV para carregar a fila.</div>';
         return;
       }
 
       var xhr = new XMLHttpRequest();
-      xhr.open('GET', FILA_BASE + '/lista', true);
-      xhr.setRequestHeader('x-fila-admin', CHAVE_ADMIN_TV);
+      xhr.open('GET', FILA_BASE + '/tv-lista', true);
+      xhr.setRequestHeader('x-fila-chave', CHAVE_MONITOR_TV);
       xhr.timeout = 10000;
       xhr.onreadystatechange = function () {
         if (xhr.readyState !== 4) return;
         if (xhr.status !== 200) {
           alvo.innerHTML = xhr.status === 401
-            ? '<div style="color:#888;font-size:0.8rem;margin-top:8px;">Chave administrativa da fila inválida.</div>'
+            ? '<div style="color:#888;font-size:0.8rem;margin-top:8px;">Chave do monitor da fila inválida.</div>'
             : '<div style="color:#888;font-size:0.8rem;margin-top:8px;">Não foi possível carregar a Fila FOB.</div>';
           return;
         }
@@ -521,7 +517,7 @@
           });
 
           if (!itens.length) {
-            alvo.innerHTML = '<div style="color:#444;font-size:0.8rem;margin-top:8px;">Fila FOB vazia</div>';
+            alvo.innerHTML = '';
             return;
           }
 
@@ -538,7 +534,7 @@
             }
 
             html +=
-              '<div class="item-fila tipo-carga' + (i === 0 ? ' primeiro' : '') + '">' +
+              '<div class="item-fila tipo-carga">' +
                 '<div class="fila-linha-topo">' +
                   '<span class="placa-fila">' + escaparHtmlTV(it.placa) + '</span>' +
                   '<span class="hora-fila-carga">' + escaparHtmlTV(it.hora || '') + '</span>' +
@@ -975,7 +971,7 @@
 
       document.getElementById('fila-descarga').innerHTML =
         htmlDescarga || '<div style="color:#444;font-size:0.8rem;margin-top:8px;">Fila vazia</div>';
-      document.getElementById('fila-carga').innerHTML =
+      document.getElementById('fila-carga-agendada').innerHTML =
         htmlCarga    || '<div style="color:#444;font-size:0.8rem;margin-top:8px;">Fila vazia</div>';
     }
 
