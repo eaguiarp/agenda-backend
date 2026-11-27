@@ -566,14 +566,14 @@ module.exports = function montarFila(app, pool) {
       } else {
         // Modo normal: bloqueia por FILA_BLOQUEIO_HORAS (padrão 1h) após virar 'finalizado'
         const bloqueio = await client.query(`
-          SELECT to_char((status_alterado_em + make_interval(hours => $3)) AT TIME ZONE $4, 'HH24:MI') AS libera_hora
+          SELECT to_char((status_alterado_em + make_interval(hours => $2)) AT TIME ZONE $3, 'HH24:MI') AS libera_hora
             FROM fila_motoristas
            WHERE placa = $1
              AND status = 'finalizado'
              AND status_alterado_em IS NOT NULL
-             AND (status_alterado_em + make_interval(hours => $3)) > now()
+             AND (status_alterado_em + make_interval(hours => $2)) > now()
            ORDER BY status_alterado_em DESC LIMIT 1
-        `, [placa, rel.hoje, cfg.bloqueioHoras, TZ]);
+        `, [placa, cfg.bloqueioHoras, TZ]);
 
         if (bloqueio.rowCount) {
           await client.query('ROLLBACK');
